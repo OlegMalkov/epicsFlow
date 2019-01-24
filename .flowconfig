@@ -1,0 +1,11 @@
+[ignore]
+
+[include]
+
+[libs]
+src/tests/flowDefs.js
+[lints]
+
+[options]
+
+[strict]
