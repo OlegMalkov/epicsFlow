@@ -1,4 +1,4 @@
-// @flow
+// @flow strict
 import { inc } from '../utils'
 
 type state = {| result: number, multiplier: number |}

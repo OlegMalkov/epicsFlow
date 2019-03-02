@@ -1,4 +1,4 @@
-// @flow
+// @flow strict
 
 declare function describe(name: string, callback: Function):void;
 declare function before(callback: Function):void;

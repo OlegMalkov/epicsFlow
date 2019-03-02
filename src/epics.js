@@ -1,6 +1,7 @@
 // @flow
 
 type CompulsoryConditionFields = {|
+	sealed: boolean,
 	actionType: string,
 	passive: boolean,
 	optional: boolean,
@@ -8,59 +9,65 @@ type CompulsoryConditionFields = {|
 |}
 
 type Subscription = {| epicVat: string, updaterKey: string, conditionKey: string, passive: boolean |}
-export opaque type Condition<V: Object>: {
+
+opaque type Condition<V: Object>: {
+	value: V,
     toOptional: () => Condition<V>,
-	o: () => Condition<V>,
+	to: () => Condition<V>,
 	toPassive: () => Condition<V>,
-	p: () => Condition<V>,
-	//Q: Why selector key? Why not use function as selector?
-	//A: Because with functions is not possible to create detailed dependency graph, and functions are just too flexible just for picking up part of state
+	tp: () => Condition<V>,
     withSelectorKey: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
-    sk: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
+	wsk: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
+	withSelector: <R>(V => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
+	ws: <R>(V => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
     resetAllConditionsBelowThis: () => Condition<V>,
-    withGuard: (guard: V => boolean) => Condition<V>,
-    g: (guard: V => boolean) => Condition<V>,
+    withGuard: (guard: (value: V, prevValue: V) => boolean) => Condition<V>,
+    wg: (guard: (value: V, prevValue: V) => boolean) => Condition<V>,
 	actionType: string
 } = {|
-	key: string,
-	parentCondition?: AnyCondition,
+	valueKey: string,
 	subscriptions?: Array<Subscription>,
-	childrenConditionsWithSelector?: Array<AnyCondition>,
-	childrenConditionsWithoutSelector?: Array<AnyCondition>,
-	selectorKey?: string,
-	selectorPath?: Array<string>,
-	guard?: V => boolean,
+	guard?: (V, V) => boolean,
 	value: V,
+	selectorPath?: Array<string>,
 	...CompulsoryConditionFields,
+
 	toPassive: () => Condition<V>,	
-	p: () => Condition<V>,
-    ro: () => Condition<V>,
+	tp: () => Condition<V>,
     toOptional: () => Condition<V>,
-	o: () => Condition<V>,
-	//Q: Why selector key? Why not use function as selector?
-	//A: Because with functions is not possible to create detailed dependency graph, and functions are just too flexible just for picking up part of state
-    withSelectorKey: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
-    sk: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
+	to: () => Condition<V>,
     resetAllConditionsBelowThis: () => Condition<V>,
-    withGuard: (guard: V => boolean) => Condition<V>,
-	g: (guard: V => boolean) => Condition<V>
+    withGuard: (guard: (value: V, prevValue: V) => boolean) => Condition<V>,
+	wg: (guard: (value: V, prevValue: V) => boolean) => Condition<V>,
+
+	parentCondition?: Condition<AnyValue>,
+
+	childrenConditionsWithoutSelectorAndGuard?: Array<Condition<V>>,
+	childrenConditionsWithSelectorOrGuard?: Array<Condition<AnyValue>>,
+
+	withSelector: <R>(V => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
+	ws: <R>(V => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
+	withSelectorKey: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
+    wsk: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
+	selectorKey?: string,
+	selector?: AnyValue => AnyValue
 |}
 
-const rootConditionsByActionType = {}
-const conditionsByKey = {}
-function getFields(condition: AnyCondition): {| ...CompulsoryConditionFields, parentCondition: AnyCondition |} {
+function getFields(condition: Condition<AnyValue>): {| ...CompulsoryConditionFields, parentCondition: Condition<AnyValue> |} {
 	const {
 		actionType,
 		passive,
 		optional,
-		resetAllConditionsBelowThisValue
+		resetAllConditionsBelowThisValue,
+		sealed
 	} = condition
 	return {
 		actionType,
 		passive,
 		optional,
 		resetAllConditionsBelowThisValue,
-		parentCondition: condition
+		parentCondition: condition,
+		sealed
 	}
 }
 
@@ -68,111 +75,10 @@ type makeConditionProps = {|
 	...CompulsoryConditionFields,
 	selectorKey?: string,
 	guard?: AnyValue => boolean,
-	parentCondition?: AnyCondition
+	parentCondition?: Condition<AnyValue>,
+	selector?: AnyValue => AnyValue,
+	sealed: boolean
 |}
-function _makeCondition({
-	actionType,
-	passive,
-	optional,
-	selectorKey,
-	guard,
-	resetAllConditionsBelowThisValue,
-	parentCondition
-}: makeConditionProps, calledFromRoot) {
-	if (parentCondition && !parentCondition.selectorKey && parentCondition.parentCondition) {
-		parentCondition = parentCondition.parentCondition
-	}
-
-	const condition: { [$Keys<AnyCondition>]: any } = {
-		key: `${parentCondition ? parentCondition.key : actionType}${selectorKey ? `.${selectorKey}` : ''}`,
-		parentCondition,
-		actionType,
-		passive: passive,
-		optional: optional,
-		selectorKey,
-		guard,
-		resetAllConditionsBelowThisValue,
-		toPassive() {
-			return _makeCondition({ ...getFields(condition), passive: true })
-		},
-		p() {
-			return condition.toPassive()
-		},
-		toOptional() {
-			return _makeCondition({ ...getFields(condition), optional: true })
-		},
-		o() {
-			return condition.toOptional()
-		},
-		withSelectorKey (selectorKey) {
-			if (condition && condition.childrenConditionsWithSelector) {
-				const existingCondition = condition.childrenConditionsWithSelector.find(c => c.selectorKey === selectorKey)
-				if (existingCondition) {
-					if (!condition.selectorKey) return existingCondition
-					return _makeCondition({ ...getFields(existingCondition), selectorKey })
-				}
-			}
-			return _makeCondition({ ...getFields(condition), selectorKey })
-		},
-		sk(selectorKey) {
-			return condition.withSelectorKey(selectorKey)
-		},
-		resetAllConditionsBelowThis(){
-			return _makeCondition({ ...getFields(condition), resetAllConditionsBelowThisValue: true })
-		},
-		// You can have multiple guards for different levels of selectors like this: c.s().p().s().p()
-		withGuard(guard) {
-			const newCondition = _makeCondition({ ...getFields(condition), guard })
-			return newCondition
-		},
-		g(guard) {
-			return condition.withGuard(guard)
-		}
-	}
-
-	if (parentCondition && parentCondition.selectorPath) {
-		if (condition.selectorKey) {
-			condition.selectorPath = [...parentCondition.selectorPath, condition.selectorKey]
-		} else {
-			condition.selectorPath = parentCondition.selectorPath
-		}
-	} else if (condition.selectorKey) {
-		condition.selectorPath = [condition.selectorKey]
-	}
-
-	if (parentCondition) {
-		if (condition.selectorKey){
-			if (!parentCondition.childrenConditionsWithSelector) {
-				parentCondition.childrenConditionsWithSelector = []
-			}
-			parentCondition.childrenConditionsWithSelector.push(condition)
-		} else {
-			if (!parentCondition.childrenConditionsWithoutSelector) {
-				parentCondition.childrenConditionsWithoutSelector = []
-			}
-			parentCondition.childrenConditionsWithoutSelector.push(condition)
-		}
-	}
-
-	if (calledFromRoot) {
-		rootConditionsByActionType[actionType] = condition
-	}
-
-	if (!conditionsByKey[condition.key]) {
-		conditionsByKey[condition.key] = []
-	}
-	conditionsByKey[condition.key].push(condition)
-
-	return condition
-}
-
-export function makeCondition<V: Object> (actionType: string): Condition<V> {
-	if(rootConditionsByActionType[actionType]) {
-		return rootConditionsByActionType[actionType]
-	}
-	return _makeCondition({ actionType, passive: false, optional: false, resetAllConditionsBelowThisValue: false }, true)
-}
-
 
 type AA = { type: $Subtype<string> }
 type Meta = {| targetEpicVats?: string[] |}
@@ -244,58 +150,38 @@ export type Reducer<S: AnyValue, SC: Object, CV, E> = ({| values: CV, state: S, 
 export type Updater<S, SC, C, E> = {| 
 	conditions: C, 
 	conditionKeysToConditionUpdaterKeys: Array<[string, $Keys<C>]>, 
-	guardedActiveConditonsKeys: Array<$Keys<C>>,
 	compulsoryConditionsKeys: Array<$Keys<C>>,
-	passiveConditionsKeys: Array<$Keys<C>>,
-	activeConditionsKeys: Array<$Keys<C>>,
 	reducer: Reducer<S, SC, $Exact<$ObjMap<C, typeof extractConditionV>>, E> 
 |};
 
 type EpicValueAction<State> = {| type: string, value: State |}
 
-export function makeEpicConditionReceiveFullAction<State>(vat: string): Condition<EpicValueAction<State>> {
-	return makeCondition<EpicValueAction<State>>(vat)
-}
+const extractConditionV =<V>(c: { value: V }): V => c.value
 
-export function makeEpicCondition<State>(vat: string): Condition<State> {
-	return makeEpicConditionReceiveFullAction(vat).withSelectorKey('value')
-}
-
-const extractConditionV =<V>(c: Condition<V>): V => c.value
-
-export function makeUpdater<S: AnyValue, SC: Object, C: { [string]: Condition<any> }, E> ({ conditions, reducer }: {|
+function makeUpdater<S: AnyValue, SC: Object, C: { [string]: Object }, E> ({ conditions, reducer }: {|
 	conditions: C,
 	reducer: ({| values: $Exact<$ObjMap<C, typeof extractConditionV>>, state: S, scope: SC, triggerCondition: Condition<any>, sourceAction: AA |}) => EpicUpdaterResult<S, SC, E>
 |}): Updater<S, SC, any, E> {
-	let activeConditionsCount = 0
+	let noActiveConditions = true
 	const 
 		conditionKeysToConditionUpdaterKeys = [],
-		guardedActiveConditonsKeys = [],
-		compulsoryConditionsKeys = [],
-		passiveConditionsKeys = [],
-		activeConditionsKeys = []
+		compulsoryConditionsKeys = []
 
 	Object.keys(conditions).forEach(conditionKey => {
-		const condition = conditions[conditionKey]
+		const condition: Condition<AnyValue> = conditions[conditionKey]
 
-		conditionKeysToConditionUpdaterKeys.push([condition.key, conditionKey])
-
-		if (condition.passive) {
-			passiveConditionsKeys.push(conditionKey)
-		} else {
-			activeConditionsKeys.push(conditionKey)
-			activeConditionsCount++
-			if (condition.guard) {
-				guardedActiveConditonsKeys.push(conditionKey)
-			}
-		}
+		conditionKeysToConditionUpdaterKeys.push([condition.valueKey, conditionKey])
 
 		if (!condition.optional) {
 			compulsoryConditionsKeys.push(conditionKey)
 		}
+
+		if (!condition.passive) {
+			noActiveConditions = false
+		}
 	})
 
-	if (activeConditionsCount === 0) {
+	if (noActiveConditions) {
 		throw new Error('makeUpdater requires at least one condition to be active')
 	}
 
@@ -304,9 +190,6 @@ export function makeUpdater<S: AnyValue, SC: Object, C: { [string]: Condition<an
 		reducer: (reducer: any),
 		conditionKeysToConditionUpdaterKeys,
 		compulsoryConditionsKeys,
-		guardedActiveConditonsKeys,
-		passiveConditionsKeys,
-		activeConditionsKeys
 	}
 }
 
@@ -319,35 +202,18 @@ opaque type Epic<S, SC, E>: { c: Condition<S>, condition: Condition<S>, initialS
 	condition: Condition<S>
 |}
 
-export type MakeEpicWithScopeProps<S, SC, E> = {|
+type MakeEpicWithScopeProps<S, SC, E> = {|
 	vat: string,
 	updaters: { [string]: Updater<S, SC, *, E> },
 	initialState: S,
 	initialScope: SC,
 |}
 
-export function makeEpicWithScope<S, SC, E>({ vat, updaters, initialState, initialScope }: MakeEpicWithScopeProps<S, SC, E>): Epic<S, SC, E> {
-	const c = makeEpicCondition<S>(vat)
-
-	return ({
-		vat,
-		updaters,
-		initialState,
-		initialScope,
-		c,
-		condition: c
-	})
-}
-
-export type MakeEpicProps<S, E> = {|
+type MakeEpicProps<S, E> = {|
 	vat: string,
 	updaters: { [string]: Updater<S, void, *, E> },
 	initialState: S
 |}
-
-export function makeEpic<S, E>({ vat, updaters, initialState }: MakeEpicProps<S, E>): Epic<S, void, E> {
-	return makeEpicWithScope({ vat, updaters, initialState, initialScope: undefined })
-}
 
 const 
 	do_nothing_emrt: 'do_nothing_emrt' = 'do_nothing_emrt',
@@ -362,7 +228,7 @@ type EffectManagerResultTypeT<State> =
 | UpdateStateEMRT<State>
 | UpdateStateWithEffectPromiseRT<State>
 
-export const EffectManagerResultType = { 
+const EffectManagerResultType = { 
 	doNothing: ({ type: do_nothing_emrt }: DoNothingEMRT),
 	updateState: <S>({ state }: {| state: S |}): UpdateStateEMRT<S> =>
 		({ type: update_state_emrt, state }),
@@ -370,7 +236,9 @@ export const EffectManagerResultType = {
 		({ type: update_state_with_effect_promise_emrt, state, promise })
 }
 
-export const EMRT = EffectManagerResultType
+const EMRT = EffectManagerResultType
+
+export type EMRTType = typeof EMRT
 
 opaque type EffectManager<S, SC, E> = {|
 	key?: string,
@@ -391,12 +259,7 @@ type EffectManagersState<S, E> = { [string]: EffectManagerState<S, E> }
 type EffectManagerStateUpdate = {| state?: AnyValue, pendingEffects?: Array<PendingEffect<any>> |}
 type EffectManagersStateUpdate = { [string]: EffectManagerStateUpdate }
 
-export function makeEffectManager<E, S, SC>({ 
-	initialState,
-	initialScope,
-	onEffectRequest,
-	requestType
-}: {|
+type MakeEffectManagerProps<E, S, SC> = {|
 	requestType: string,
 	initialState?: S,
 	initialScope?: SC,
@@ -407,7 +270,16 @@ export function makeEffectManager<E, S, SC>({
 		scope: SC, 
 		dispatch: Dispatch
 	}) => EffectManagerResultTypeT<S>
-|}): EffectManager<S, SC, E> {
+|}
+
+export type MakeEffectManager = <E, S, SC>(MakeEffectManagerProps<E, S, SC>) => EffectManager<S, SC, E>
+
+function makeEffectManager<E, S, SC>({ 
+	initialState,
+	initialScope,
+	onEffectRequest,
+	requestType
+}: MakeEffectManagerProps<E, S, SC>): EffectManager<S, SC, E> {
 	return {
 		requestType,
 		initialState,
@@ -424,7 +296,6 @@ const
 	last = arr => arr.slice(-1)[0]
 
 const MatchAnyActionType: '*' = '*'
-export const matchAnyActionCondition: C<typeof MatchAnyActionType> = makeCondition(MatchAnyActionType)
 
 type UpdaterStateValuesFullfilled = { [string]: boolean }
 
@@ -441,23 +312,23 @@ type UpdaterStateUpdate = {|
 type EpicUpdatersState = { [string]: UpdaterState }
 type EpicUpdatersStateUpdate = { [string]: UpdaterStateUpdate }
 
-export type EpicState = {|
+type EpicState = {|
 	updatersState: EpicUpdatersState,
 	state: AnyValue,
 	scope: AnyValue
 |}
 
-export type EpicsState = {
+type EpicsState = {
 	[key: string]: EpicState
 }
 
-export type EpicStateUpdate = {|
+type EpicStateUpdate = {|
 	updatersState: EpicUpdatersStateUpdate,
 	state ?: AnyValue,
 	scope ?: AnyValue
 |}
 
-export type EpicsStateUpdate = {
+type EpicsStateUpdate = {
 	[key: string]: EpicStateUpdate
 }
 
@@ -604,35 +475,56 @@ function mergeEffectManagersStateWithUpdate(effectManagersState: EffectManagersS
 const effectPromiseCompleteAT = 'effect_promise_complete'
 
 // TODO consider having deepCompare option on condition, so condition will be cosidered changed only if it's value changed using deep compare
-const findChangedConditions = (condition, value: Object, changedConditions, conditionsValues, conditionsValuesUpdate) => {
+const findChangedConditions = (condition, value: Object, changedConditions, conditionsValues, prevConditionsValues, conditionsValuesUpdate) => {
 	const changedConditionsKeysMap = {}	
 	let atLeastOneChange = false
 
-	// $FlowFixMe condition.childrenConditionsWithSelector checked outside
-	condition.childrenConditionsWithSelector.forEach(childCondition => {
-		const
-			{ key } = childCondition, 
-			newChildValue = value[childCondition.selectorKey],
-			prevChildValue = conditionsValuesUpdate[key] || conditionsValues[key]
+	// $FlowFixMe condition.childrenConditionsWithSelectorOrGuard checked outside
+	condition.childrenConditionsWithSelectorOrGuard.forEach(childCondition => {
+		const { valueKey, guard } = childCondition
+		let newChildValue
+		if (guard) {
+			newChildValue = value
 
-		if (prevChildValue === newChildValue) return
+			const
+				_prevChildValue = prevConditionsValues[valueKey],
+				_prevChildValueIsUndefined = _prevChildValue === undefined,
+				prevChildValue = _prevChildValueIsUndefined ? conditionsValues[valueKey] : _prevChildValue
 
-		atLeastOneChange = true
-		changedConditionsKeysMap[key] = true
-		conditionsValuesUpdate[key] = newChildValue
-		changedConditions.push(childCondition)
+			prevConditionsValues[valueKey] = value
+			conditionsValuesUpdate[valueKey] = value // used for next action, will come in conditionsValues
 
+			if (guard && !guard(value, prevChildValue)) return
 
-		if (childCondition.childrenConditionsWithoutSelector && atLeastOneChange) {
-			childCondition.childrenConditionsWithoutSelector.forEach(childCondition => {
-				if (changedConditionsKeysMap[childCondition.key]) {
-					changedConditions.push(childCondition)
-				}
-			})
+			changedConditions.push(childCondition)
+		} else {
+			const
+				_prevChildValue = prevConditionsValues[valueKey],
+				_prevChildValueIsUndefined = _prevChildValue === undefined,
+				prevChildValue = _prevChildValueIsUndefined ? conditionsValues[valueKey] : _prevChildValue
+			
+			newChildValue = childCondition.selector ? childCondition.selector(value) : value[childCondition.selectorKey]
+
+			if (prevChildValue === newChildValue) return
+
+			atLeastOneChange = true
+			changedConditionsKeysMap[valueKey] = true
+
+			prevConditionsValues[valueKey] = conditionsValuesUpdate[valueKey]
+
+			if (_prevChildValueIsUndefined) {
+				prevConditionsValues[valueKey] = newChildValue
+			}
+			conditionsValuesUpdate[valueKey] = newChildValue
+			changedConditions.push(childCondition)
+
+			if (atLeastOneChange && childCondition.childrenConditionsWithoutSelectorAndGuard) {
+				changedConditions.push(...childCondition.childrenConditionsWithoutSelectorAndGuard)
+			}
 		}
-		if (!childCondition.childrenConditionsWithSelector) return
+		if (!childCondition.childrenConditionsWithSelectorOrGuard) return
 
-		findChangedConditions(childCondition, newChildValue, changedConditions, conditionsValues, conditionsValuesUpdate)
+		findChangedConditions(childCondition, newChildValue, changedConditions, conditionsValues, prevConditionsValues, conditionsValuesUpdate)
 	})
 }
 
@@ -641,16 +533,16 @@ type ExecuteActionProps = {|
 	latestActionsByType: { [string]: AA },
 	latestActionsByTypeUpdate: { [string]: AA },
 	conditionsValues: ConditonsValues,
+	prevConditionsValues: ConditonsValues,
 	conditionsValuesUpdate: ConditonsValuesUpdate,
 	epicsState: EpicsState,
 	epicsStateUpdate: EpicsStateUpdate,
 	effectManagersState: EffectManagersState<*, *>,
 	effectManagersStateUpdate: EffectManagersStateUpdate,
-	messagesToSendOutside: Array<AA>,
-	calledForInitalStateComputation?: true
+	messagesToSendOutside: Array<AA>
 |}
 
-const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effectManagers, dispatch }) => { 
+const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effectManagers, dispatch, rootConditionsByActionType }) => { 
 	const effectManagersByRequestType: { [string]: EffectManager<*, *, *> } = Object.keys(effectManagers).reduce((m, emk) => {
 		const effectManager = { ...effectManagers[emk] }
 		effectManager.key = emk
@@ -667,18 +559,14 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 		latestActionsByType,
 		latestActionsByTypeUpdate,
 		conditionsValues,
+		prevConditionsValues,
 		conditionsValuesUpdate,
 		epicsState,
 		epicsStateUpdate,
 		effectManagersState,
 		effectManagersStateUpdate,
-		messagesToSendOutside,
-		calledForInitalStateComputation
+		messagesToSendOutside
 	}: ExecuteActionProps): void {
-		if (!calledForInitalStateComputation && trace && (!skipTraceActions || !skipTraceActions(actionsChain))) {
-			trace('redux ->', actionsChainToStringReverse(actionsChain))
-		}
-
 		function getEpicStateUpdate(epicVat) {
 			let epicStateUpdate: EpicStateUpdate = epicsStateUpdate[epicVat]
 
@@ -703,17 +591,19 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 		const
 			sourceAction = last(actionsChain),
 			action = actionsChain[0],
-			rootCondition: AnyCondition = rootConditionsByActionType[action.type],
+			rootCondition: Condition<AnyValue> = rootConditionsByActionType[action.type],
 			subscriptions: Array<Subscription> = []
+
+		conditionsValuesUpdate[rootCondition.valueKey] = action
 
 		if (rootCondition.subscriptions) {
 			subscriptions.push(...rootCondition.subscriptions)
 		}
 
-		if (rootCondition.childrenConditionsWithSelector) {
+		if (rootCondition.childrenConditionsWithSelectorOrGuard) {
 			const changedConditions = []
 
-			findChangedConditions(rootCondition, action, changedConditions, conditionsValues, conditionsValuesUpdate)
+			findChangedConditions(rootCondition, action, changedConditions, conditionsValues, prevConditionsValues, conditionsValuesUpdate)
 			changedConditions.forEach(cac => {
 				const { subscriptions: cacSub } = cac
 				
@@ -736,7 +626,12 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 
 		const activeSubs = subscriptions.filter(s => !s.passive)
 
-		if (!activeSubs.length) return
+		if (!activeSubs.length) {
+			if (trace && (!skipTraceActions || !skipTraceActions(actionsChain))) {
+				trace(actionsChainToStringReverse(actionsChain))
+			}
+			return
+		}
 
 		const epicSubs = activeSubs.reduce((r, sub) => {
 			const { updaterKey, epicVat } = sub
@@ -781,23 +676,9 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 				
 				if (updater.compulsoryConditionsKeys.some(k => !valuesFullfilled[k])) return
 
-				const 
-					conditions: { [string]: AnyCondition } = updater.conditions,
-					guardedActiveConditonsKeys = updater.guardedActiveConditonsKeys
-
-				const guardsCheckFailed = !guardedActiveConditonsKeys.every(keyInUpdaterConditions => {
-					const 
-						condition = conditions[keyInUpdaterConditions],
-						conditionValue = conditionsValuesUpdate[condition.key]
-
-					// TODO trace that execution skipped because of guard returned false
-					return condition.guard(conditionValue)
-				})
-
-				if (guardsCheckFailed) return
-
 				const reducerValues: Object = updater.conditionKeysToConditionUpdaterKeys.reduce((v, [conditionKey, conditionUpdaterKey]) => {
-					v[conditionUpdaterKey] = conditionsValuesUpdate[conditionKey] || conditionsValues[conditionKey]
+					const valueUpdate = conditionsValuesUpdate[conditionKey]
+					v[conditionUpdaterKey] = valueUpdate === undefined ? conditionsValues[conditionKey] : valueUpdate
 					return v
 				}, {})
 
@@ -905,14 +786,18 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 					latestActionsByType,
 					latestActionsByTypeUpdate,
 					conditionsValues,
+					prevConditionsValues,
 					conditionsValuesUpdate,
 					epicsState,
 					epicsStateUpdate,
 					effectManagersState,
 					effectManagersStateUpdate,
-					messagesToSendOutside,
-					calledForInitalStateComputation
-				})
+					messagesToSendOutside
+				}) 
+			} else {
+				if (trace && (!skipTraceActions || !skipTraceActions(actionsChain))) {
+					trace(actionsChainToStringReverse(actionsChain))
+				}
 			}
 
 			if (allEffects.length) {
@@ -929,13 +814,13 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 							latestActionsByType,
 							latestActionsByTypeUpdate,
 							conditionsValues,
+							prevConditionsValues,
 							conditionsValuesUpdate,
 							epicsState,
 							epicsStateUpdate,
 							effectManagersState,
 							effectManagersStateUpdate,
-							messagesToSendOutside,
-							calledForInitalStateComputation
+							messagesToSendOutside
 						})
 						break
 					}
@@ -996,7 +881,6 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 
 	return executeAction
 }
-type AnyCondition = Condition<AnyValue>
 
 function computeInitialStates({ epicsArr, warn, executeAction }) {
 	const epicsState: EpicsState = epicsArr.reduce((state, epic) => {
@@ -1040,13 +924,13 @@ function computeInitialStates({ epicsArr, warn, executeAction }) {
 				latestActionsByType, 
 				latestActionsByTypeUpdate, 
 				conditionsValues, 
+				prevConditionsValues: {},
 				conditionsValuesUpdate,
 				epicsState,
 				epicsStateUpdate, 
 				effectManagersState: {},
 				effectManagersStateUpdate, 
-				messagesToSendOutside,
-				calledForInitalStateComputation: true
+				messagesToSendOutside
 			})
 
 			if (messagesToSendOutside.length) {
@@ -1082,7 +966,7 @@ function setConditionsSubscriptions(epics) {
 		Object.keys(epic.updaters).forEach(updaterKey => {
 			const updater = epic.updaters[updaterKey]
 			Object.keys(updater.conditions).forEach(conditionKey => {
-				const condition: AnyCondition = updater.conditions[conditionKey]
+				const condition: Condition<AnyValue> = updater.conditions[conditionKey]
 				if (!condition.subscriptions) {
 					condition.subscriptions = []
 				}
@@ -1097,132 +981,323 @@ function setConditionsSubscriptions(epics) {
 	})
 }
 
-export function createStore<Epics: { [string]: Epic<*, *, *> }> ({
-	epics,
-	effectManagers = {},
-	onMsg = I,
-	onStateChanged = I,
-	debug
-}: {|
-	epics: Epics,
-	effectManagers?: { [string]: EffectManager<*, *, *> },
-	onMsg?: Object => any,
-	onStateChanged?: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any,
-	debug?: {| skipTraceActions ?: (Array<AA>) => boolean, trace?: Function, getState?: () => EpicsState, warn?: Function |},
-	|}): EpicsStore<Epics> {
+export type MakeCondition = <V: Object>(actionType: string) => Condition<V>
+export function initEpics() {
+	const rootConditionsByActionType = {}
+	const selectorsInUse = []
+	const guardsInUse = []
 
-	const { warn = (() => null: Function), skipTraceActions, trace } = debug || {}
-	
-	validateUniqVats(epics)
-	
-	setConditionsSubscriptions(epics)
-
-	function dispatch(action: { type: any }, meta?: Meta = ({}: any)) {
-		const 
-			messagesToSendOutside = [],
-			epicsStateUpdate = {},
-			effectManagersStateUpdate = {}
-
-		if (meta.targetEpicVats) {
-			(action: any).targetEpicVatsMap = meta.targetEpicVats.reduce(
-				(m,v) => { 
-					m[v] = true 
-					return m 
-				},
-				{}
-			)
+	function _makeCondition({
+		actionType,
+		passive,
+		optional,
+		selectorKey,
+		guard,
+		resetAllConditionsBelowThisValue,
+		parentCondition,
+		selector,
+		sealed
+	}: makeConditionProps, calledFromRoot) {
+		// skipping parents without selectors or guards, as they are useless during changed conditions computation
+		if (parentCondition && !parentCondition.selectorKey && !parentCondition.selector && !parentCondition.guard && parentCondition.parentCondition) {
+			parentCondition = parentCondition.parentCondition
 		}
 
-		if (action.type === effectPromiseCompleteAT) {
-			const 
-				{ effect, error, effectRequestType } = ((action: any): {| effect: {||}, effectRequestType: string, error: Error |}),
-				effectManagerState = effectManagersState[effectRequestType]
-
-			effectManagersStateUpdate[effectRequestType] = { 
-				...effectManagersStateUpdate[effectRequestType],
-				pendingEffects: effectManagerState.pendingEffects.filter(pe => pe.effect !== effect)
-			}
-
-			if (error) {
-				warn(`Effect ${effectRequestType} error ${error.message}.`, effect, error)
-			}
-		} else {
-			const 
-				conditionsValuesUpdate = {},
-				latestActionsByTypeUpdate = {}
-
-			executeAction({
-				actionsChain: [action],
-				latestActionsByType,
-				latestActionsByTypeUpdate,
-				conditionsValues,
-				conditionsValuesUpdate,
-				epicsState,
-				epicsStateUpdate,
-				effectManagersState,
-				effectManagersStateUpdate,
-				messagesToSendOutside,
-			})
-
-			if (Object.keys(conditionsValuesUpdate).length !== 0){
-				conditionsValues = { ...conditionsValues, ...conditionsValuesUpdate }
-			}
-
-			latestActionsByType = { ...latestActionsByType, ...latestActionsByTypeUpdate }
-
-			const updatedEpicsTypes = Object.keys(epicsStateUpdate)
-			if (updatedEpicsTypes.length !== 0) {
-				epicsState = mergeEpicsStateWithUpdate(epicsState, epicsStateUpdate)
-				// todo deepFreeze state
-				outsideState = computeOutsideState(epicsState)
-				onStateChanged((outsideState: any))
-			}
-			messagesToSendOutside.forEach(m => onMsg(m))
+		if (selector && selectorsInUse.indexOf(selector) === -1) {
+			selectorsInUse.push(selector)
 		}
 
-		effectManagersState = mergeEffectManagersStateWithUpdate(effectManagersState, effectManagersStateUpdate)
+		if (guard && guardsInUse.indexOf(guard) === -1) {
+			guardsInUse.push(guard)
+		}
+	
+		const condition: Condition<AnyValue> = ({
+			valueKey: `${parentCondition ? parentCondition.valueKey : actionType}${selectorKey ? `.${selectorKey}` : ''}${selector ? ('.$$selector' + selectorsInUse.indexOf(selector)) : ''}${guard ? '.$$guard' + guardsInUse.indexOf(guard) : ''}`,
+			parentCondition,
+			actionType,
+			passive: passive,
+			optional: optional,
+			guard,
+			resetAllConditionsBelowThisValue,
+			selector,
+			toPassive() {
+				return _makeCondition({ ...getFields(condition), passive: true })
+			},
+			tp() {
+				return condition.toPassive()
+			},
+			toOptional() {
+				return _makeCondition({ ...getFields(condition), optional: true })
+			},
+			to() {
+				return condition.toOptional()
+			},
+			resetAllConditionsBelowThis(){
+				return _makeCondition({ ...getFields(condition), resetAllConditionsBelowThisValue: true })
+			},
+			// You can have multiple guards for different levels of selectors like this: c.ws().tp().ws().tp()
+			withGuard(guard) {
+				if (condition.guard) {
+					throw new Error(`Guards can be applied only once per level. Condition "${condition.valueKey}" already has guard.`)
+				}
+				const { childrenConditionsWithSelectorOrGuard } = condition
+				if (childrenConditionsWithSelectorOrGuard) {
+					const existingCondition = childrenConditionsWithSelectorOrGuard.find(c => c.guard === guard)
+					if (existingCondition) return existingCondition
+				}
+				const newCondition = _makeCondition({ ...getFields(condition), guard })
+				return newCondition
+			},
+			wg(guard) {
+				return condition.withGuard(guard)
+			}
+		}: any)
+	
+		if (!sealed) {
+			const withSelectorKey = (selectorKey: string): Condition<AnyValue> => {
+				const { childrenConditionsWithSelectorOrGuard } = condition
+				if (childrenConditionsWithSelectorOrGuard) {
+					const existingCondition = childrenConditionsWithSelectorOrGuard.find(c => c.selectorKey === selectorKey)
+					if (existingCondition) return existingCondition
+				}
+				return _makeCondition({ ...getFields(condition), selectorKey })
+			}
+			condition.withSelectorKey = (withSelectorKey: any)
+			condition.wsk = condition.withSelectorKey
+		
+			const withSelector = selector => {
+				const { childrenConditionsWithSelectorOrGuard } = condition
+				if (childrenConditionsWithSelectorOrGuard) {
+					const existingCondition = childrenConditionsWithSelectorOrGuard.find(c => c.selector === selector)
+					if (existingCondition) return (existingCondition: any) 
+				}
+				return (_makeCondition({ ...getFields(condition), selector, sealed: true }): any)
+			}
+			condition.withSelector = withSelector
+		
+			condition.ws = condition.withSelector
+		
+			if (selectorKey) {
+				condition.selectorKey = selectorKey
+			}
+		}
+	
+		if (parentCondition && parentCondition.selectorPath) {
+			if (condition.selectorKey) {
+				condition.selectorPath = [...parentCondition.selectorPath, condition.selectorKey]
+			} else {
+				condition.selectorPath = parentCondition.selectorPath
+			}
+		} else if (condition.selectorKey) {
+			condition.selectorPath = [condition.selectorKey]
+		}
+	
+		if (parentCondition) {
+			if (condition.selectorKey || condition.selector || condition.guard) {
+				if (!parentCondition.childrenConditionsWithSelectorOrGuard) {
+					parentCondition.childrenConditionsWithSelectorOrGuard = []
+				}
+				parentCondition.childrenConditionsWithSelectorOrGuard.push(condition)
+			} else {
+				if (!parentCondition.childrenConditionsWithoutSelectorAndGuard) {
+					parentCondition.childrenConditionsWithoutSelectorAndGuard = []
+				}
+				parentCondition.childrenConditionsWithoutSelectorAndGuard.push(condition)
+			}
+		}
+	
+		if (calledFromRoot) {
+			rootConditionsByActionType[actionType] = condition
+		}
+	
+		return condition
+	}
+	
+	function makeCondition<V: Object> (actionType: string): Condition<V> {
+		if(rootConditionsByActionType[actionType]) {
+			return rootConditionsByActionType[actionType]
+		}
+		return (_makeCondition({ 
+			actionType,
+			passive: false,
+			optional: false, 
+			resetAllConditionsBelowThisValue: false,
+			sealed: false
+		}, true): any)
+	}
+	
+	function makeEpicConditionReceiveFullAction<State>(vat: string): Condition<EpicValueAction<State>> {
+		return makeCondition<EpicValueAction<State>>(vat)
+	}
+	
+	function makeEpicCondition<State>(vat: string): Condition<State> {
+		return makeEpicConditionReceiveFullAction(vat).withSelectorKey('value')
 	}
 
-	const 
-		epicsArr = values(epics),
-		epicsMapByVat = values(epics).reduce((a, e) => ({ ...a, [e.vat]: e }), {}),
-		executeAction = makeExecuteAction({
-			skipTraceActions,
-			trace,
-			epicsMapByVat,
-			warn,
-			effectManagers,
-			dispatch
-		}),
-		epicsVatToStateKeyMap = Object.keys(epics).reduce((r, epicStateKey) => {
-			r[epics[epicStateKey].vat] = epicStateKey
-			return r
-		}, {}),
-		computeOutsideState = makeComputeOutsideState({ epicsVatToStateKeyMap })
+	function makeEpicWithScope<S, SC, E>({ vat, updaters, initialState, initialScope }: MakeEpicWithScopeProps<S, SC, E>): Epic<S, SC, E> {
+		const c = makeEpicCondition<S>(vat)
 
-	const { initialEpicsState, initialLatestActionsByType, initialCondtionsValues } = computeInitialStates({ epicsArr, warn, executeAction })
+		return ({
+			vat,
+			updaters,
+			initialState,
+			initialScope,
+			c,
+			condition: c
+		})
+	}
 
-	let 
-		conditionsValues: ConditionsValues = initialCondtionsValues,
-		epicsState: EpicsState = initialEpicsState,
-		latestActionsByType = initialLatestActionsByType,
-		effectManagersState: EffectManagersState<*, *> = getEffectManagersInitialState(effectManagers),
-		outsideState = computeOutsideState(epicsState)
 
-	function getAllPendingEffectsPromises() {
-		return Object.keys(effectManagersState).reduce((pendingEffectsPromises, requestEffectType) => {
-			pendingEffectsPromises.push(...effectManagersState[requestEffectType]
-				.pendingEffects.map(({ promise, effect }) => ({ promise, requestEffectType, effect })))
-			return pendingEffectsPromises
-		}, [])
+	function makeEpic<S, E>({ vat, updaters, initialState }: MakeEpicProps<S, E>): Epic<S, void, E> {
+		return makeEpicWithScope({ vat, updaters, initialState, initialScope: undefined })
+	}
+
+	const matchAnyActionCondition: C<typeof MatchAnyActionType> = makeCondition(MatchAnyActionType)
+	
+	function createStore<Epics: { [string]: Epic<*, *, *> }> ({
+		epics,
+		effectManagers = {},
+		onMsg = I,
+		onStateChanged = I,
+		debug
+	}: {|
+		epics: Epics,
+		effectManagers?: { [string]: EffectManager<*, *, *> },
+		onMsg?: Object => any,
+		onStateChanged?: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any,
+		debug?: {| skipTraceActions ?: (Array<AA>) => boolean, trace?: Function, getState?: () => EpicsState, warn?: Function |},
+		|}): EpicsStore<Epics> {
+	
+		const { warn = (() => null: Function), skipTraceActions, trace } = debug || {}
+		
+		validateUniqVats(epics)
+		
+		setConditionsSubscriptions(epics)
+	
+		function dispatch(action: { type: any }, meta?: Meta = ({}: any)) {
+			const 
+				messagesToSendOutside = [],
+				epicsStateUpdate = {},
+				effectManagersStateUpdate = {}
+	
+			if (meta.targetEpicVats) {
+				(action: any).targetEpicVatsMap = meta.targetEpicVats.reduce(
+					(m,v) => { 
+						m[v] = true 
+						return m 
+					},
+					{}
+				)
+			}
+	
+			if (action.type === effectPromiseCompleteAT) {
+				const 
+					{ effect, error, effectRequestType } = ((action: any): {| effect: {||}, effectRequestType: string, error: Error |}),
+					effectManagerState = effectManagersState[effectRequestType]
+	
+				effectManagersStateUpdate[effectRequestType] = { 
+					...effectManagersStateUpdate[effectRequestType],
+					pendingEffects: effectManagerState.pendingEffects.filter(pe => pe.effect !== effect)
+				}
+	
+				if (error) {
+					warn(`Effect ${effectRequestType} error ${error.message}.`, effect, error)
+				}
+			} else {
+				const 
+					conditionsValuesUpdate = {},
+					latestActionsByTypeUpdate = {}
+	
+				executeAction({
+					actionsChain: [action],
+					latestActionsByType,
+					latestActionsByTypeUpdate,
+					conditionsValues,
+					prevConditionsValues: {},
+					conditionsValuesUpdate,
+					epicsState,
+					epicsStateUpdate,
+					effectManagersState,
+					effectManagersStateUpdate,
+					messagesToSendOutside,
+				})
+	
+				if (Object.keys(conditionsValuesUpdate).length !== 0){
+					conditionsValues = { ...conditionsValues, ...conditionsValuesUpdate }
+				}
+	
+				latestActionsByType = { ...latestActionsByType, ...latestActionsByTypeUpdate }
+	
+				const updatedEpicsTypes = Object.keys(epicsStateUpdate)
+				if (updatedEpicsTypes.length !== 0) {
+					epicsState = mergeEpicsStateWithUpdate(epicsState, epicsStateUpdate)
+					// todo deepFreeze state
+					outsideState = computeOutsideState(epicsState)
+					onStateChanged((outsideState: any))
+				}
+				messagesToSendOutside.forEach(m => onMsg(m))
+			}
+	
+			effectManagersState = mergeEffectManagersStateWithUpdate(effectManagersState, effectManagersStateUpdate)
+		}
+	
+		const 
+			epicsArr = values(epics),
+			epicsMapByVat = values(epics).reduce((a, e) => ({ ...a, [e.vat]: e }), {}),
+			executeAction = makeExecuteAction({
+				skipTraceActions,
+				trace,
+				epicsMapByVat,
+				warn,
+				effectManagers,
+				dispatch,
+				rootConditionsByActionType
+			}),
+			epicsVatToStateKeyMap = Object.keys(epics).reduce((r, epicStateKey) => {
+				r[epics[epicStateKey].vat] = epicStateKey
+				return r
+			}, {}),
+			computeOutsideState = makeComputeOutsideState({ epicsVatToStateKeyMap })
+	
+		const { initialEpicsState, initialLatestActionsByType, initialCondtionsValues } = computeInitialStates({ epicsArr, warn, executeAction })
+	
+		let 
+			conditionsValues: ConditionsValues = initialCondtionsValues,
+			epicsState: EpicsState = initialEpicsState,
+			latestActionsByType = initialLatestActionsByType,
+			effectManagersState: EffectManagersState<*, *> = getEffectManagersInitialState(effectManagers),
+			outsideState = computeOutsideState(epicsState)
+	
+		function getAllPendingEffectsPromises() {
+			return Object.keys(effectManagersState).reduce((pendingEffectsPromises, requestEffectType) => {
+				pendingEffectsPromises.push(...effectManagersState[requestEffectType]
+					.pendingEffects.map(({ promise, effect }) => ({ promise, requestEffectType, effect })))
+				return pendingEffectsPromises
+			}, [])
+		}
+	
+		return {
+			dispatch,
+			getState() {
+				return (outsideState: any)
+			},
+			getAllPendingEffectsPromises,
+			warn
+		}
 	}
 
 	return {
-		dispatch,
-		getState() {
-			return (outsideState: any)
-		},
-		getAllPendingEffectsPromises,
-		warn
+		makeCondition,
+		ResultType,
+		RT,
+		makeEpicConditionReceiveFullAction,
+		makeEpicCondition,
+		makeUpdater,
+		makeEpicWithScope,
+		makeEpic,
+		EMRT,
+		makeEffectManager,
+		matchAnyActionCondition,
+		createStore
 	}
 }

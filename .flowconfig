@@ -4,8 +4,13 @@
 
 [libs]
 src/tests/flowDefs.js
+flow-typed
 [lints]
 
 [options]
 
 [strict]
+unclear-type
+unsafe-getters-setters
+untyped-import
+untyped-type-import

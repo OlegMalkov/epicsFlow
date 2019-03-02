@@ -1,4 +1,4 @@
-// @flow
+// @flow strict
 import { inc, dec } from '../utils'
 
 type state = {| value: number, color: 'green' | 'red' |}

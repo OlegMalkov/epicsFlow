@@ -1,49 +1,58 @@
-// @flow
-import { createStore, makeEpic, RT, makeCondition, makeUpdater } from '../epics'
-import { requestAnimationFrameEM, type RequestAnimationFrameEffect, afC, rafEC } from '../effectManagers/requestAnimationFrameEM'
+// @flow strict
+import { RT, initEpics } from '../epics'
+import { type RequestAnimationFrameEffect, rafEC, initRequestAnimationFrameEM } from '../effectManagers/requestAnimationFrameEM'
 import { waitEffectManagers } from './utils'
 
 const
 	aAT: 'a' = 'a'
 
-type A = {| type: typeof aAT, o: {| v: {| n: number |} |} |}
+type A = {| type: typeof aAT, to: {| v: {| n: number |} |} |}
 
 const 
-	aAC = (n): A => ({ type: aAT, o: { v: { n } }}),
-	aC = makeCondition<A>(aAT)
+	aAC = (n): A => ({ type: aAT, to: { v: { n } }})
 	
+let
+	E = initEpics(),
+	raf = initRequestAnimationFrameEM(E),
+	aC = E.makeCondition<A>(aAT)
+
 type CustomEpicEffect = RequestAnimationFrameEffect
 
 describe('effectManager', () => {
+	beforeEach(() => {
+		(E = initEpics(), raf = initRequestAnimationFrameEM(E))
+		aC = E.makeCondition<A>(aAT)
+	})
+
 	it('only epic that requested effect can receive response from effect manager (animation frame)', async () => {
 		const 
-			e1 = makeEpic<number, CustomEpicEffect>({
+			e1 = E.makeEpic<number, CustomEpicEffect>({
 				vat: 'e1',
 				initialState: 0,
 				updaters: { 
-					af: makeUpdater({ 
-						conditions: { _af: afC }, 
+					af: E.makeUpdater({ 
+						conditions: { _af: raf.afC }, 
 						reducer: () => RT.updateState(1)
 					})
 				} 
 			}),
-			e2 = makeEpic<number, CustomEpicEffect>({
+			e2 = E.makeEpic<number, CustomEpicEffect>({
 				vat: 'e2',
 				initialState: 0,
 				updaters: {
-					a: makeUpdater({ 
+					a: E.makeUpdater({ 
 						conditions: { _a: aC }, 
 						reducer: () => RT.sideEffects([rafEC()])
 					}),
-					af: makeUpdater({
-						conditions: { _af: afC },
+					af: E.makeUpdater({
+						conditions: { _af: raf.afC },
 						reducer: ({ state }) => RT.updateState(state + 1)
 					})
 				}
 			}),
-			store = createStore({ 
+			store = E.createStore({ 
 				effectManagers: {
-					requestAnimationFrame: requestAnimationFrameEM,
+					requestAnimationFrame: raf.requestAnimationFrameEM,
 				},
 				epics: { e1, e2 }
 			})

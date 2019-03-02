@@ -1,15 +1,15 @@
-// @flow 
+// @flow strict 
 import { type yState } from './yState'
-import { makeEpicCondition, makeCondition } from '../../../src/epics'
+import { CDE } from '../utils'
 
 export const 
 	yVat = 'Y',
-	yC = makeEpicCondition<yState>(yVat),
-	yValueC = yC.sk('value'),
-	yColorC = yC.sk('color')
+	yC = CDE.makeEpicCondition<yState>(yVat),
+	yValueC = yC.wsk('value'),
+	yColorC = yC.wsk('color')
 
 
 const yClickedAT = 'Y_CLICKED'
 export const 
 	yClickedAC = () => ({ type: yClickedAT }),
-	yClickedC = makeCondition<empty>(yClickedAT)
+	yClickedC = CDE.makeCondition<empty>(yClickedAT)

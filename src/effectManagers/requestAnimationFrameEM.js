@@ -1,6 +1,6 @@
-// @flow
-import { makeCondition, makeEffectManager, EMRT } from '../epics'
+// @flow strict
 
+import { type MakeCondition, type MakeEffectManager, type EMRTType } from '../epics'
 const afAT: 'af' = 'af'
 
 type afA = {| type: typeof afAT, dateNow: number |}
@@ -28,51 +28,60 @@ export const
 	rafEC = requestAnimationFrameEffectCreator,
 	cancelRafEC = cancelAnimationFrameEffectCreator
 
-export const
-	animationFrameCondition = makeCondition<afA>(afAT),
-	afC = animationFrameCondition,
-	requestAnimationFrameEM = makeEffectManager<RequestAnimationFrameEffect, State, Scope>({
-		requestType,
-		initialState: { requestsByEpicVat: {} },
-		initialScope: { resolvePromiseByEpicVat: {} },
-		onEffectRequest: ({ effect, requesterEpicVat, state, scope, dispatch }) => {
-			if (effect.cmd === 'REQUEST') {
-				let rafId
-				const promise = new Promise((resolve) => {
-					const resolvePromise = () => {
-						delete scope.resolvePromiseByEpicVat[requesterEpicVat]
-						resolve()
-					}
-					rafId = window.requestAnimationFrame(() => {
-						dispatch(afAC(Date.now()), { targetEpicVats: [requesterEpicVat] })
-						resolvePromise()
+type Props = { makeCondition: MakeCondition, makeEffectManager: MakeEffectManager, EMRT: EMRTType }
+export function initRequestAnimationFrameEM({ makeCondition, makeEffectManager, EMRT }: Props) {
+	const
+		animationFrameCondition = makeCondition<afA>(afAT),
+		afC = animationFrameCondition,
+		requestAnimationFrameEM = makeEffectManager<RequestAnimationFrameEffect, State, Scope>({
+			requestType,
+			initialState: { requestsByEpicVat: {} },
+			initialScope: { resolvePromiseByEpicVat: {} },
+			onEffectRequest: ({ effect, requesterEpicVat, state, scope, dispatch }) => {
+				if (effect.cmd === 'REQUEST') {
+					let rafId
+					const promise = new Promise((resolve) => {
+						const resolvePromise = () => {
+							delete scope.resolvePromiseByEpicVat[requesterEpicVat]
+							resolve()
+						}
+						rafId = window.requestAnimationFrame(() => {
+							dispatch(afAC(Date.now()), { targetEpicVats: [requesterEpicVat] })
+							resolvePromise()
+						})
+						scope.resolvePromiseByEpicVat[requesterEpicVat] = resolvePromise
 					})
-					scope.resolvePromiseByEpicVat[requesterEpicVat] = resolvePromise
-				})
-				return EMRT.updateStateWithEffectPromise({
-					state: {
-						...state,
-						requestsByEpicVat: { 
-							...state.requestsByEpicVat,
-							[requesterEpicVat]: rafId
-						}
-					},
-					promise
-				})
-			} else if (effect.cmd === 'CANCEL') {
-				window.cancelAnimationFrame(state.requestsByEpicVat[requesterEpicVat])
-				scope.resolvePromiseByEpicVat[requesterEpicVat]()
+					return EMRT.updateStateWithEffectPromise({
+						state: {
+							...state,
+							requestsByEpicVat: { 
+								...state.requestsByEpicVat,
+								[requesterEpicVat]: rafId
+							}
+						},
+						promise
+					})
+				} else if (effect.cmd === 'CANCEL') {
+					window.cancelAnimationFrame(state.requestsByEpicVat[requesterEpicVat])
+					scope.resolvePromiseByEpicVat[requesterEpicVat]()
                 
-				return EMRT.updateState({
-					state:{
-						...state,
-						requestsByEpicVat: { 
-							...state.requestsByEpicVat,
-							[requesterEpicVat]: null
+					return EMRT.updateState({
+						state:{
+							...state,
+							requestsByEpicVat: { 
+								...state.requestsByEpicVat,
+								[requesterEpicVat]: null
+							}
 						}
-					}
-				})
+					})
+				}
+				return EMRT.doNothing
 			}
-			return EMRT.doNothing
-		}
-	})
+		})
+
+	return {
+		animationFrameCondition,
+		afC,
+		requestAnimationFrameEM
+	}
+}

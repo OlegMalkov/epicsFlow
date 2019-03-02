@@ -46,6 +46,7 @@ module.exports = {
         "require": true,
         "describe": true,
         "it": true,
-        "expect": true
+        "expect": true,
+        "beforeEach": true
     }
 };

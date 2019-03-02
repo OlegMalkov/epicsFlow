@@ -1,4 +1,4 @@
-// @flow
+// @flow strict
 
 /* type Key = 'x' | 'y'
 type MapKV<K, V> = { [K]: V | void }

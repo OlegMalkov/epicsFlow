@@ -1,27 +1,27 @@
-// @flow
-import { makeUpdater, makeCondition, RT, type Updater } from '../../../src/epics'
+// @flow strict
+import { RT, type Updater } from '../../../src/epics'
 import { xValueC } from '../x/xAAC'
 import { yValueC } from '../y/yAAC'
-import { compose2 } from '../utils'
+import { compose2, CDE } from '../utils'
 import { zComputeResult, zIncMultiplier, type zState } from './zState'
 
 const zClickedAT = 'Z_CLICKED'
 export const zClickedAC = () => ({ type: zClickedAT })
-const zClickedC = makeCondition(zClickedAT)
+const zClickedC = CDE.makeCondition(zClickedAT)
 
 type zUpdater = Updater<zState, *, *, *>
 const 
-	zClicked: zUpdater = makeUpdater({
+	zClicked: zUpdater = CDE.makeUpdater({
 		conditions: {
-			x: xValueC.p(),
-			y: yValueC.p(),
+			x: xValueC.tp(),
+			y: yValueC.tp(),
 			_zClicked: zClickedC 
 		},
 		reducer: ({ values: { x, y }, state }) => {
 			return RT.updateState(compose2(zComputeResult(x,y), zIncMultiplier, state))
 		}
 	}),
-	xOrYChanged: zUpdater = makeUpdater({
+	xOrYChanged: zUpdater = CDE.makeUpdater({
 		conditions: { 
 			x: xValueC, 
 			y: yValueC

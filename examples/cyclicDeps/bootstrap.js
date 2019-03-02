@@ -1,12 +1,12 @@
-// @flow
+// @flow strict
 
-import { createStore } from '../../src/epics'
 import { x } from './x/xEpic'
 import { y } from './y/yEpic'
 import { z } from './z/z'
 import { zClickedAC } from './z/zUpdaters'
 import { xClickedAC } from './x/xAAC'
 import { yClickedAC } from './y/yAAC'
+import { CDE } from './utils'
 
 const debug = { 
 	warn: console.warn, // eslint-disable-line
@@ -19,7 +19,7 @@ const epics = {
 	z 
 }
 
-export const store = createStore<typeof epics>({
+export const store = CDE.createStore<typeof epics>({
 	epics,
 	onStateChanged: (s) => {
 		console.log('state changed', s) // eslint-disable-line
@@ -45,7 +45,7 @@ const assert = (result, xColor, yColor) => {
 		throw new Error(`Expected ${yColor} but got ${state.y.color} for yColor`)
 	}
 }
-debugger;
+
 store.dispatch(xClickedAC())
 assert(7, red, green)
 store.dispatch(xClickedAC())

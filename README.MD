@@ -5,10 +5,10 @@ AC - action creator
 U - updater
 
 condition methods
-.o() - .optional()
-.s() - .selector()
-.p() - .passive()
-.g() - .guard()
+.to() - .optional()
+.ws() - .selector()
+.tp() - .passive()
+.wg() - .guard()
 
 condition variable names postfix
 C - condition
