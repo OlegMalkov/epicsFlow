@@ -22,6 +22,17 @@ class App extends Component<{}, typeof initialState> {
   render() {
     return (
       <div className="App">
+        <div className="Header"/>
+        <div className="Body">
+            <div className="LeftPanel"/>
+            <div className="Workspace">
+              <div className="TemplateArea">
+                <div className="Component"/>
+                <div className="ComponentMainActions"/>
+              </div>
+            </div>
+            <div className="PropertiesPanel"/>
+        </div>
       </div>
     );
   }
