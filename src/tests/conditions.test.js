@@ -419,16 +419,16 @@ describe('conditions', () => {
 		expect(store.getState().e1).toBe(3)
 	})
 
-	it('can use prevValue inside guard of condition', () => {
+	it('can use prevValue inside selector of condition', () => {
 		const 
-			aWhenNIncreasedBy5C = aC.wg((value, prevValue) => prevValue && (value.o.v.n - prevValue.o.v.n === 5)),
+			nDiffC = aC.ws((value, prevValue) => prevValue ? value.o.v.n - prevValue.o.v.n : 0),
 			e1 = E.makeEpic<number, empty>({
 				vat: 'e1',
 				initialState: 0,
 				updaters: {
 					nChanged: E.makeUpdater({ 
-						conditions: { a: aWhenNIncreasedBy5C }, 
-						reducer: ({ state, values: { a } }) => RT.updateState(state + a.o.v.n) 
+						conditions: { diff: nDiffC }, 
+						reducer: ({ state, values: { diff } }) => RT.updateState(state + diff) 
 					})
 				}
 			}),
@@ -438,16 +438,16 @@ describe('conditions', () => {
 		expect(store.getState().e1).toBe(0)
 
 		store.dispatch(aAC(9))
+		expect(store.getState().e1).toBe(4)
+
+		store.dispatch(aAC(5))
 		expect(store.getState().e1).toBe(0)
 
-		store.dispatch(aAC(4))
-		expect(store.getState().e1).toBe(0)
+		store.dispatch(aAC(20))
+		expect(store.getState().e1).toBe(15)
 
-		store.dispatch(aAC(9))
-		expect(store.getState().e1).toBe(9)
-
-		store.dispatch(aAC(14))
-		expect(store.getState().e1).toBe(23)
+		store.dispatch(aAC(40))
+		expect(store.getState().e1).toBe(35)
 	})
 
 	it('if epic is changed multiple times during same action, but condition changed only once, updater should be called only once', () => {
@@ -484,39 +484,6 @@ describe('conditions', () => {
 		expect(store.getState()).toEqual({ e1: { flag: true, value: 2 }, e2: 2 })
 	})
 
-	it('ensure guards prevValue is not refering to outdated one in case of multiple epic changes per single user action', () => {
-		const
-			E = initEpics(),
-			aC = E.makeCondition<A>(a), 
-			e1 = E.makeEpic<{| value: number, flag: boolean |}, empty>({
-				vat: 'e1',
-				initialState: { value: 0, flag: false },
-				updaters: {
-					nChanged: E.makeUpdater({ 
-						conditions: { a: aC }, 
-						reducer: ({ state }) => RT.updateState({ ...state, flag: true }) 
-					}),
-					e2Changed: E.makeUpdater({ 
-						conditions: { e2: E.makeEpicCondition<number>('e2') }, 
-						reducer: ({ state }) => RT.updateState({ ...state, value: state.value + 1 })
-					})
-				}
-			}),
-			e2 = E.makeEpic<number, empty>({
-				vat: 'e2',
-				initialState: 0,
-				updaters: {
-					e1Changed: E.makeUpdater({ 
-						conditions: { e1: e1.c.wg((value, prevValue) => prevValue && prevValue.flag === false && value.flag === true) }, 
-						reducer: ({ state }) => RT.updateState(state + 1)
-					})
-				}
-			}),
-			store = E.createStore({ epics: { e1, e2 } })
-
-		store.dispatch(aAC(3))
-		expect(store.getState()).toEqual({ e1: { flag: true, value: 2 }, e2: 1 })
-	})
 	// TODO resetAllConditionsAfterThis
 	// TODO matchAnyActionCondition
 })

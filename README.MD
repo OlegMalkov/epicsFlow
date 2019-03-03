@@ -15,3 +15,4 @@ C - condition
 PC - passive condition
 OC - optionalCondition
 POC - passive optional condition
+GOC - guarded optional condition
