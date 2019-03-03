@@ -29,7 +29,6 @@ opaque type Condition<V: Object>: {
 	subscriptions?: Array<Subscription>,
 	guard?: (V, V) => boolean,
 	value: V,
-	selectorPath?: Array<string>,
 	...CompulsoryConditionFields,
 
 	toPassive: () => Condition<V>,	
@@ -137,7 +136,7 @@ export const ResultType = {
 	updateState: <S>(state: S, updateReason?: string): UpdateStateRT<S> => ({ type: updateStateResultType, state, updateReason }),
 	updateStateWithSideEffects: <S, E>(state: S, effects: SideEffects<E>, updateReason?: string): UpdateStateWithSideEffectsRT<S, E> => ({ type: updateStateWithSideEffectsResultType, state, effects, updateReason }),
 	updateScope: <SC>(scope: SC): UpdateScopeRT<SC> => ({ type: updateScopeResultType, scope }),
-	updateScipeWithSideEffects: <SC, E>(scope: SC, effects: SideEffects<E>): UpdateScopeWithSideEffectsRT<SC, E> => ({ type: updateScopeWithSideEffectsResultType, scope, effects }),
+	updateScopeWithSideEffects: <SC, E>(scope: SC, effects: SideEffects<E>): UpdateScopeWithSideEffectsRT<SC, E> => ({ type: updateScopeWithSideEffectsResultType, scope, effects }),
 	updateStateAndScope: <S, SC>(state: S, scope: SC, updateReason?: string): UpdateStateAndScopeRT<S, SC> => ({ type: updateStateAndScopeResultType, state, scope, updateReason }),
 	updateStateAndScopeWithSideEffectsResultType: <S, SC, E>(state: S, scope: SC, effects: SideEffects<E>, updateReason?: string): UpdateStateAndScopeWithSideEffectsRT<S, SC, E> => ({ type: updateStateAndScopeWithSideEffectsResultType, state, scope, effects, updateReason })
 }
@@ -476,9 +475,6 @@ const effectPromiseCompleteAT = 'effect_promise_complete'
 
 // TODO consider having deepCompare option on condition, so condition will be cosidered changed only if it's value changed using deep compare
 const findChangedConditions = (condition, value: Object, changedConditions, conditionsValues, prevConditionsValues, conditionsValuesUpdate) => {
-	const changedConditionsKeysMap = {}	
-	let atLeastOneChange = false
-
 	// $FlowFixMe condition.childrenConditionsWithSelectorOrGuard checked outside
 	condition.childrenConditionsWithSelectorOrGuard.forEach(childCondition => {
 		const { valueKey, guard } = childCondition
@@ -507,9 +503,6 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 
 			if (prevChildValue === newChildValue) return
 
-			atLeastOneChange = true
-			changedConditionsKeysMap[valueKey] = true
-
 			prevConditionsValues[valueKey] = conditionsValuesUpdate[valueKey]
 
 			if (_prevChildValueIsUndefined) {
@@ -518,7 +511,7 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 			conditionsValuesUpdate[valueKey] = newChildValue
 			changedConditions.push(childCondition)
 
-			if (atLeastOneChange && childCondition.childrenConditionsWithoutSelectorAndGuard) {
+			if (childCondition.childrenConditionsWithoutSelectorAndGuard) {
 				changedConditions.push(...childCondition.childrenConditionsWithoutSelectorAndGuard)
 			}
 		}
@@ -530,8 +523,6 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 
 type ExecuteActionProps = {|
 	actionsChain: Array<AA>,
-	latestActionsByType: { [string]: AA },
-	latestActionsByTypeUpdate: { [string]: AA },
 	conditionsValues: ConditonsValues,
 	prevConditionsValues: ConditonsValues,
 	conditionsValuesUpdate: ConditonsValuesUpdate,
@@ -556,8 +547,6 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 
 	function executeAction({
 		actionsChain,
-		latestActionsByType,
-		latestActionsByTypeUpdate,
 		conditionsValues,
 		prevConditionsValues,
 		conditionsValuesUpdate,
@@ -783,8 +772,6 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 
 				executeAction({
 					actionsChain: [epicChangedAction, ...actionsChain],
-					latestActionsByType,
-					latestActionsByTypeUpdate,
 					conditionsValues,
 					prevConditionsValues,
 					conditionsValuesUpdate,
@@ -811,8 +798,6 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 						}
 						executeAction({
 							actionsChain: [dispatchActionEffect.action, ...actionsChain],
-							latestActionsByType,
-							latestActionsByTypeUpdate,
 							conditionsValues,
 							prevConditionsValues,
 							conditionsValuesUpdate,
@@ -905,8 +890,6 @@ function computeInitialStates({ epicsArr, warn, executeAction }) {
 	
 	const 
 		epicsStateUpdate = {},
-		latestActionsByType = {},
-		latestActionsByTypeUpdate = {},
 		conditionsValues = {},
 		conditionsValuesUpdate = {},
 		effectManagersStateUpdate = {}
@@ -921,8 +904,6 @@ function computeInitialStates({ epicsArr, warn, executeAction }) {
 
 			executeAction({ 
 				actionsChain: [({ type: epic.vat, value: epic.initialState }: EpicStateChangedAction)], 
-				latestActionsByType, 
-				latestActionsByTypeUpdate, 
 				conditionsValues, 
 				prevConditionsValues: {},
 				conditionsValuesUpdate,
@@ -950,7 +931,6 @@ function computeInitialStates({ epicsArr, warn, executeAction }) {
 
 	return {
 		initialEpicsState,
-		initialLatestActionsByType: { ...latestActionsByType, ...latestActionsByTypeUpdate },
 		initialCondtionsValues: { ...conditionsValues, ...conditionsValuesUpdate }
 	}
 }
@@ -1082,16 +1062,6 @@ export function initEpics() {
 			}
 		}
 	
-		if (parentCondition && parentCondition.selectorPath) {
-			if (condition.selectorKey) {
-				condition.selectorPath = [...parentCondition.selectorPath, condition.selectorKey]
-			} else {
-				condition.selectorPath = parentCondition.selectorPath
-			}
-		} else if (condition.selectorKey) {
-			condition.selectorPath = [condition.selectorKey]
-		}
-	
 		if (parentCondition) {
 			if (condition.selectorKey || condition.selector || condition.guard) {
 				if (!parentCondition.childrenConditionsWithSelectorOrGuard) {
@@ -1205,13 +1175,10 @@ export function initEpics() {
 				}
 			} else {
 				const 
-					conditionsValuesUpdate = {},
-					latestActionsByTypeUpdate = {}
+					conditionsValuesUpdate = {}
 	
 				executeAction({
 					actionsChain: [action],
-					latestActionsByType,
-					latestActionsByTypeUpdate,
 					conditionsValues,
 					prevConditionsValues: {},
 					conditionsValuesUpdate,
@@ -1225,8 +1192,6 @@ export function initEpics() {
 				if (Object.keys(conditionsValuesUpdate).length !== 0){
 					conditionsValues = { ...conditionsValues, ...conditionsValuesUpdate }
 				}
-	
-				latestActionsByType = { ...latestActionsByType, ...latestActionsByTypeUpdate }
 	
 				const updatedEpicsTypes = Object.keys(epicsStateUpdate)
 				if (updatedEpicsTypes.length !== 0) {
@@ -1259,12 +1224,11 @@ export function initEpics() {
 			}, {}),
 			computeOutsideState = makeComputeOutsideState({ epicsVatToStateKeyMap })
 	
-		const { initialEpicsState, initialLatestActionsByType, initialCondtionsValues } = computeInitialStates({ epicsArr, warn, executeAction })
+		const { initialEpicsState, initialCondtionsValues } = computeInitialStates({ epicsArr, warn, executeAction })
 	
 		let 
 			conditionsValues: ConditionsValues = initialCondtionsValues,
 			epicsState: EpicsState = initialEpicsState,
-			latestActionsByType = initialLatestActionsByType,
 			effectManagersState: EffectManagersState<*, *> = getEffectManagersInitialState(effectManagers),
 			outsideState = computeOutsideState(epicsState)
 	

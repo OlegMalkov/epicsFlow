@@ -227,21 +227,6 @@ describe('conditions', () => {
 		expect(aP1GP2PassiveC.valueKey).toBe('A.p1.$$guard0.p2')
 	})
 
-	it('compute selectorPath correctly', () => {
-		const 
-			aC = E.makeCondition('A'),
-			aP1C = aC.wsk('p1'),
-			aP1PassiveGOC = aP1C.tp().wg(() => true).to(),
-			aP1P2PassiveC = aP1PassiveGOC.wsk('p2')
-
-		// $FlowFixMe
-		expect(aP1C.selectorPath).toEqual(['p1'])
-		// $FlowFixMe
-		expect(aP1PassiveGOC.selectorPath).toEqual(['p1'])
-		// $FlowFixMe
-		expect(aP1P2PassiveC.selectorPath).toEqual(['p1', 'p2'])
-	})
-
 	it('reuse existiting root conditions', () => {
 		const 
 			aC = E.makeCondition('A'),

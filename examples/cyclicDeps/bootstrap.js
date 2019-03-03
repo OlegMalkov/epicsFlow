@@ -19,6 +19,7 @@ const epics = {
 	z 
 }
 
+debugger
 export const store = CDE.createStore<typeof epics>({
 	epics,
 	onStateChanged: (s) => {
@@ -45,7 +46,6 @@ const assert = (result, xColor, yColor) => {
 		throw new Error(`Expected ${yColor} but got ${state.y.color} for yColor`)
 	}
 }
-
 store.dispatch(xClickedAC())
 assert(7, red, green)
 store.dispatch(xClickedAC())
