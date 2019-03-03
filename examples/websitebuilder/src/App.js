@@ -1,18 +1,23 @@
 // @flow strict
 import React, { Component } from 'react';
 import './App.css';
-import { initEpics } from '../../../src/epics';
+import { initEpics } from './epics';
 
 const
       E = initEpics(),
       store = E.createStore({
-        epics: {},
-        onStateChanged: appState => this.setState(appState)
-      })
+        epics: {}
+      }),
+      initialState = store.getState(),
+      dispatch = store.dispatch
       
-class App extends Component<{}> {
+class App extends Component<{}, typeof initialState> {
+  constructor(props: {}) {
+    super(props)
+    this.state = initialState
+  }
   componentDidMount() {
-    
+    store.subscribeOnStateChange(appState => this.setState(appState))
   }
   render() {
     return (
