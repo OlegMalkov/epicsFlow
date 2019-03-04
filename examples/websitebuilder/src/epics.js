@@ -12,7 +12,7 @@ type CompulsoryConditionFields = {|
 
 type Subscription = {| epicVat: string, updaterKey: string, conditionKey: string, passive: boolean |}
 
-opaque type Condition<V: Object>: {
+export opaque type Condition<V: Object>: {
 	value: V,
     toOptional: () => Condition<V>,
 	to: () => Condition<V>,
