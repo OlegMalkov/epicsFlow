@@ -1,5 +1,7 @@
 // @flow
 
+type AnyValue = number | string | boolean | Object | Array<AnyValue> | null
+
 type CompulsoryConditionFields = {|
 	sealed: boolean,
 	actionType: string,
@@ -82,7 +84,6 @@ type makeConditionProps = {|
 type AA = { type: $Subtype<string> }
 type Meta = {| targetEpicVats?: string[] |}
 type Dispatch = (AA, meta?: Meta) => void
-type AnyValue = number | string | boolean | Object | Array<AnyValue> | null
 
 type ConditionsValues = { [string]: AnyValue }
 
@@ -146,6 +147,9 @@ export const RT = ResultType
 type C<V> = Condition<V>
 
 export type Reducer<S: AnyValue, SC: Object, CV, E> = ({| values: CV, state: S, scope: SC, changedActiveConditionsKeys: Array<$Keys<CV>>, sourceAction: AA |}) => EpicUpdaterResult<S, SC, E>
+
+const extractConditionV =<V>(c: { value: V }): V => c.value
+
 export type Updater<S, SC, C, E> = {| 
 	conditions: C, 
 	conditionKeysToConditionUpdaterKeys: Array<[string, $Keys<C>]>, 
@@ -155,7 +159,6 @@ export type Updater<S, SC, C, E> = {|
 
 type EpicValueAction<State> = {| type: string, value: State |}
 
-const extractConditionV =<V>(c: { value: V }): V => c.value
 
 function makeUpdater<S: AnyValue, SC: Object, C: { [string]: Object }, E> ({ conditions, reducer }: {|
 	conditions: C,
