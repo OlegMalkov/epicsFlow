@@ -8,57 +8,85 @@ import React, { Component } from 'react';
 import './App.css';
 import { wsbE } from './E';
 import { type LTPosition, type Dimensions } from './types'
-import { makeDndByMouseUpdaters, dndByMouseInitialScope, type DndByMouseScope } from './dndByMouse';
-import { windowMouseMove, windowMouseUp } from './acac'
+import { windowMouseMove, windowMousePositionC, windowMouseUp } from './acac'
 
 declare var window: EventTarget;
 
-const { makeEpicWithScope, createStore, SACAC, RT } = wsbE
+const { makeEpicWithScope, makeUpdater, createStore, SACAC, RT } = wsbE
 
 const
   componentMouseDown = new SACAC('COMPONENT_MOUSE_DOWN'),
   templateWidthLeftResizeHandleMouseDown = new SACAC('TEMPLATE_WIDTH_LEFT_RESIZE_HANDLE_MOUSE_DOWN'),
   templateWidthRightResizeHandleMouseDown = new SACAC('TEMPLATE_WIDTH_RIGHT_RESIZE_HANDLE_MOUSE_DOWN')
 
+const dndInitialState = { type: 'idle' }
 
 type TemplateState = {| width: number |}
-type TemplateScope = {| dndChangeWidthByMouseUsingLeftHandle: DndByMouseScope, dndChangeWidthByMouseUsingRightHandle: DndByMouseScope |}
+type TemplateScope = {| dnd: {| type: 'idle' |} | {| type: 'progress', startWidth: number, mouseStartLeft: number |} |}
 const
-  makeUpdateWidthByDndUpdaters = ({ key, mouseDownCondition, reverse }) => makeDndByMouseUpdaters<TemplateState>({ 
-        key,
-        mouseDownCondition,
-        getEntityPositionOnStart: ({ width }) => ({ left: width, top: 0 }),
-        computeResult: ({ state, startPosition, positionDiff }) => 
-          RT.updateState(({ ...state, width: Math.max(reverse ? startPosition.left + positionDiff.left : startPosition.left - positionDiff.left, 300) }))
-      }),
   template = makeEpicWithScope<TemplateState, TemplateScope, empty>({
     vat: 'TEMPLATE',
     initialState: { width: 940 },
-    initialScope: { 
-      dndChangeWidthByMouseUsingLeftHandle: dndByMouseInitialScope,
-      dndChangeWidthByMouseUsingRightHandle: dndByMouseInitialScope 
-    },
+    initialScope: { dnd: dndInitialState },
     updaters: {
-      ...makeUpdateWidthByDndUpdaters({ key: 'dndChangeWidthByMouseUsingLeftHandle', mouseDownCondition: templateWidthLeftResizeHandleMouseDown.c, reverse: true }),
-      ...makeUpdateWidthByDndUpdaters({ key: 'dndChangeWidthByMouseUsingRightHandle', mouseDownCondition: templateWidthRightResizeHandleMouseDown.c, reverse: false })
+      dnd: makeUpdater({
+        conditions: {
+          mouseLeft: windowMousePositionC.ws(({ left }) => left),
+          mouseUp: windowMouseUp.c.to().resetAllConditionsBelowThisAfterReducerCall(),
+          leftDown: templateWidthLeftResizeHandleMouseDown.c.to(),
+          rightDown: templateWidthRightResizeHandleMouseDown.c.to()
+        },
+        reducer: ({ state, scope, values: { mouseLeft, leftDown, rightDown }, changedActiveConditionsKeys }) => { 
+          if (!leftDown && !rightDown) return RT.doNothing
+          
+          if (changedActiveConditionsKeys[0] === 'mouseUp') {
+            return RT.updateScope({ ...scope, dnd: dndInitialState })
+          }
+
+          const { dnd } = scope
+          if (dnd.type === 'idle') {
+            return RT.updateScope({ ...scope, dnd: { type: 'progress', startWidth: state.width, mouseStartLeft: mouseLeft } })
+          }
+
+          const 
+            { startWidth, mouseStartLeft } = dnd,
+            leftDiff = mouseStartLeft - mouseLeft
+
+          return RT.updateState(({ ...state, width: leftDown ? startWidth + leftDiff : startWidth - leftDiff })) 
+        }
+      })
     }
   })
 
-
 type ComponentState =  {| ...LTPosition, ...Dimensions |}
-type ComponentScope = {| dndMoveByMouse: DndByMouseScope |}
+type ComponentScope = {| dnd: {| type: 'idle' |} | {| type: 'progress', componentStartPos: LTPosition, mouseStartPos: LTPosition |} |}
 const
   component = makeEpicWithScope<ComponentState, ComponentScope, empty>({
     vat: 'COMPONENT',
     initialState: { left: 100, top: 100, width: 300, height: 200 },
-    initialScope: { dndMoveByMouse: dndByMouseInitialScope },
+    initialScope: { dnd: dndInitialState },
     updaters: {
-      ...makeDndByMouseUpdaters<ComponentState, 'dndMoveByMouse', ComponentScope>({ 
-        key: 'dndMoveByMouse',
-        mouseDownCondition: componentMouseDown.c,
-        getEntityPositionOnStart: ({ left, top }) => ({ left, top }),
-        computeResult: ({ state, startPosition, positionDiff }) => 
-          RT.updateState(({ ...state, left: startPosition.left - positionDiff.left, top: startPosition.top - positionDiff.top }))
+      dnd: makeUpdater({
+        conditions: {
+          mousePosition: windowMousePositionC,
+          mouseUp: windowMouseUp.c.to().resetAllConditionsBelowThisAfterReducerCall(),
+          __: componentMouseDown.c,
+        },
+        reducer: ({ state, state: { left, top }, scope, values: { mousePosition }, changedActiveConditionsKeys }) => { 
+          if (changedActiveConditionsKeys[0] === 'mouseUp') {
+            return RT.updateScope({ ...scope, dnd: dndInitialState })
+          }
+          const { dnd } = scope
+          if (dnd.type === 'idle') {
+            return RT.updateScope({ ...scope, dnd: { type: 'progress', componentStartPos: { left, top }, mouseStartPos: mousePosition } })
+          }
+          const 
+            { componentStartPos, mouseStartPos } = dnd,
+            diffLeft = mouseStartPos.left - mousePosition.left,
+            diffTop = mouseStartPos.top - mousePosition.top
+
+          return RT.updateState(({ ...state, left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop })) 
+        }
       })
     }
   })

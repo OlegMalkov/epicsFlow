@@ -46,6 +46,7 @@
   background-color: #d6bb20;
   position: absolute;
   z-index: 1;
+  cursor: move;
 }
 
 .TemplateWidthResizeHandle {
