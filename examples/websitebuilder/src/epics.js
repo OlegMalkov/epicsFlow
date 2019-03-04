@@ -1277,6 +1277,19 @@ export function initEpics() {
 		}
 	}
 
+	class SACAC{ 
+		actionCreator: () => {| type: string |}
+		condition: Condition<{| type: string |}>
+		ac: () => {| type: string |}
+		c: Condition<{| type: string |}>
+		constructor(actionType: string) {
+			this.actionCreator = () => ({ type: actionType })
+			this.condition = makeCondition(actionType)
+			this.ac = this.actionCreator
+			this.c = this.condition
+		}
+	}
+
 	return {
 		makeCondition,
 		ResultType,
@@ -1290,6 +1303,7 @@ export function initEpics() {
 		makeEffectManager,
 		matchAnyActionCondition,
 		createStore,
-		ACAC
+		ACAC,
+		SACAC
 	}
 }
