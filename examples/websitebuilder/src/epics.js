@@ -1264,6 +1264,19 @@ export function initEpics() {
 		}
 	}
 
+	class ACAC<ActionExtraFields = {||}> { 
+		actionCreator: ActionExtraFields => {| ...ActionExtraFields, type: string |}
+		condition: Condition<{| ...ActionExtraFields, type: string |}>
+		ac: ActionExtraFields => {| ...ActionExtraFields, type: string |}
+		c: Condition<{| ...ActionExtraFields, type: string |}>
+		constructor(actionType: string) {
+			this.actionCreator = extraFields => ({ type: actionType, ...extraFields })
+			this.condition = makeCondition(actionType)
+			this.ac = this.actionCreator
+			this.c = this.condition
+		}
+	}
+
 	return {
 		makeCondition,
 		ResultType,
@@ -1276,6 +1289,7 @@ export function initEpics() {
 		EMRT,
 		makeEffectManager,
 		matchAnyActionCondition,
-		createStore
+		createStore,
+		ACAC
 	}
 }
