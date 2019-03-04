@@ -48,6 +48,21 @@
   z-index: 1;
 }
 
+.TemplateWidthResizeHandle {
+  background-color: #6b83a393;
+  width: 11px;
+  height: 2000px;
+  top: 0px;
+  left: -6px;
+  position: absolute;
+  z-index: 2;
+  cursor: ew-resize;
+}
+
+.TemplateWidthResizeHandleRight {
+  left: unset;
+  right: -6px;
+}
 .ComponentMainActions {
   width: 500px;
   height: 35px;
@@ -55,7 +70,7 @@
   position: absolute;
   left: 100px;
   top: 40px;
-  z-index: 2;
+  z-index: 3;
 }
 
 .PropertiesPanel {
@@ -65,5 +80,5 @@
   position: absolute;
   left: 1100px;
   top: 100px;
-  z-index: 3;
+  z-index: 4;
 }

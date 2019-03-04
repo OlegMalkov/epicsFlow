@@ -1,80 +1,69 @@
-// @flow strict
+// @flow
 
 // Requirements
-// 1. Moving component
+// 1. Moving component within template area
+// 2. Changing template width with restriction to contain component
 
 import React, { Component } from 'react';
 import './App.css';
-import { initEpics } from './epics';
+import { wsbE } from './E';
+import { type LTPosition, type Dimensions } from './types'
+import { makeDndByMouseUpdaters, dndByMouseInitialScope, type DndByMouseScope } from './dndByMouse';
+import { windowMouseMove, windowMouseUp } from './acac'
 
 declare var window: EventTarget;
 
-const { RT, makeUpdater, makeEpicWithScope, createStore, ACAC, SACAC } = initEpics()
-
-type Position = {| left: number, top: number |}
-type Dimensions = {| width: number, height: number |}
+const { makeEpicWithScope, createStore, SACAC, RT } = wsbE
 
 const
-  windowMouseMove = new ACAC<{| position: Position |}>('WINDOW_MOUSE_MOVE'),
-  windowMousePositionC = windowMouseMove.c.wsk('position'),
-  windowMousePositionPC = windowMousePositionC.tp(),
-  windowMouseUp = new SACAC('WINDOW_MOUSE_UP'),
   componentMouseDown = new SACAC('COMPONENT_MOUSE_DOWN'),
-  templateWidthResizeHandleMouseDown = new SACAC('TEMPLATE_WIDTH_RESIZE_HANDLE_MOUSE_DOWN')
+  templateWidthLeftResizeHandleMouseDown = new SACAC('TEMPLATE_WIDTH_LEFT_RESIZE_HANDLE_MOUSE_DOWN'),
+  templateWidthRightResizeHandleMouseDown = new SACAC('TEMPLATE_WIDTH_RIGHT_RESIZE_HANDLE_MOUSE_DOWN')
 
-type LTWH = {| ...Position, ...Dimensions |}
 
-type DndByMouseScope = {| type: 'idle' |} | {|
-  type: 'in_progress',
-  entityPositionOnStart: Position,
-  windowMousePositionOnStart: Position
-|}
-const dndByMouseInitialScope = { type: 'idle' }
-
+type TemplateState = {| width: number |}
+type TemplateScope = {| dndChangeWidthByMouseUsingLeftHandle: DndByMouseScope, dndChangeWidthByMouseUsingRightHandle: DndByMouseScope |}
 const
-  component = makeEpicWithScope<LTWH, {| dndByMouse: DndByMouseScope |}, empty>({
-    vat: 'COMPONENT',
-    initialState: { left: 100, top: 100, width: 300, height: 200 },
-    initialScope: { dndByMouse: dndByMouseInitialScope },
-    updaters: {
-      mouseDownOnComponent: makeUpdater({ 
-        conditions: { _: componentMouseDown.c, mousePosition: windowMousePositionPC },
-        reducer: ({ values: { mousePosition }, scope, state: { left, top } }) => RT.updateScope({ 
-          ...scope, 
-          dndByMouse: {
-            type: 'in_progress',
-            entityPositionOnStart: { left, top },
-            windowMousePositionOnStart: mousePosition
-          }
-        })
+  makeUpdateWidthByDndUpdaters = ({ key, mouseDownCondition, reverse }) => makeDndByMouseUpdaters<TemplateState>({ 
+        key,
+        mouseDownCondition,
+        getEntityPositionOnStart: ({ width }) => ({ left: width, top: 0 }),
+        computeResult: ({ state, startPosition, positionDiff }) => 
+          RT.updateState(({ ...state, width: Math.max(reverse ? startPosition.left + positionDiff.left : startPosition.left - positionDiff.left, 300) }))
       }),
-      mouseMove: makeUpdater({ 
-        conditions: { windowMousePosition: windowMousePositionC },
-        reducer: ({ values: { windowMousePosition }, state, scope: { dndByMouse } }) => {
-          if (dndByMouse.type === 'idle') return RT.doNothing
-
-          const { windowMousePositionOnStart, entityPositionOnStart } = dndByMouse
-          return RT.updateState({ 
-            ...state,
-            left: entityPositionOnStart.left - (windowMousePositionOnStart.left - windowMousePosition.left),
-            top: entityPositionOnStart.top - (windowMousePositionOnStart.top - windowMousePosition.top),
-          })
-        }
-      }),
-      mouseUp: makeUpdater({ 
-        conditions: { _: windowMouseUp.c },
-        reducer: ({ scope }) => RT.updateScope({ ...scope, dndByMouse: dndByMouseInitialScope })
-      })
-    }
-  }),
-  template = makeEpicWithScope<{| width: number |}, DndByMouseScope, empty>({
+  template = makeEpicWithScope<TemplateState, TemplateScope, empty>({
     vat: 'TEMPLATE',
     initialState: { width: 940 },
-    initialScope: dndByMouseInitialScope,
+    initialScope: { 
+      dndChangeWidthByMouseUsingLeftHandle: dndByMouseInitialScope,
+      dndChangeWidthByMouseUsingRightHandle: dndByMouseInitialScope 
+    },
     updaters: {
-      
+      ...makeUpdateWidthByDndUpdaters({ key: 'dndChangeWidthByMouseUsingLeftHandle', mouseDownCondition: templateWidthLeftResizeHandleMouseDown.c, reverse: true }),
+      ...makeUpdateWidthByDndUpdaters({ key: 'dndChangeWidthByMouseUsingRightHandle', mouseDownCondition: templateWidthRightResizeHandleMouseDown.c, reverse: false })
     }
-  }),
+  })
+
+
+type ComponentState =  {| ...LTPosition, ...Dimensions |}
+type ComponentScope = {| dndMoveByMouse: DndByMouseScope |}
+const
+  component = makeEpicWithScope<ComponentState, ComponentScope, empty>({
+    vat: 'COMPONENT',
+    initialState: { left: 100, top: 100, width: 300, height: 200 },
+    initialScope: { dndMoveByMouse: dndByMouseInitialScope },
+    updaters: {
+      ...makeDndByMouseUpdaters<ComponentState, 'dndMoveByMouse', ComponentScope>({ 
+        key: 'dndMoveByMouse',
+        mouseDownCondition: componentMouseDown.c,
+        getEntityPositionOnStart: ({ left, top }) => ({ left, top }),
+        computeResult: ({ state, startPosition, positionDiff }) => 
+          RT.updateState(({ ...state, left: startPosition.left - positionDiff.left, top: startPosition.top - positionDiff.top }))
+      })
+    }
+  })
+
+const
   store = createStore({
     epics: {
       component,
@@ -108,7 +97,8 @@ class App extends Component<{}, typeof initialState> {
             <div className="LeftPanel"/>
             <div className="Workspace">
               <div className="TemplateArea" style={{ width: this.state.template.width }}>
-                <div className="TemplateWidthResizeHandle" onMouseDown={() => dispatch(templateWidthResizeHandleMouseDown.ac())}/>
+                <div className="TemplateWidthResizeHandle" onMouseDown={() => dispatch(templateWidthLeftResizeHandleMouseDown.ac())}/>
+                <div className="TemplateWidthResizeHandle TemplateWidthResizeHandleRight" onMouseDown={() => dispatch(templateWidthRightResizeHandleMouseDown.ac())}/>
                 <div 
                   className="Component"
                   style={this.state.component}
