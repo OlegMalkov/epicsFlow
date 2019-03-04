@@ -12,7 +12,7 @@ import { windowMouseMove, windowMousePositionCondition, windowMouseUp } from './
 
 declare var window: EventTarget;
 
-const { makeEpicWithScope, makeUpdater, createStore, makeSACAC, ResultType } = wsbE
+const { makeEpicCondition, makeEpicWithScope, makeUpdater, createStore, makeSACAC, ResultType } = wsbE
 
 const
   componentMouseDown = makeSACAC('COMPONENT_MOUSE_DOWN'),
@@ -20,6 +20,11 @@ const
   templateWidthRightResizeHandleMouseDown = makeSACAC('TEMPLATE_WIDTH_RIGHT_RESIZE_HANDLE_MOUSE_DOWN')
 
 const dndInitialState = { type: 'idle' }
+
+type ComponentState =  {| ...LTPosition, ...Dimensions |}
+const 
+  componentVat = 'COMPONENT',
+  componentRightPassiveCondition = makeEpicCondition<ComponentState>(componentVat).withSelector(({ left, width }) => left + width).toPassive()
 
 type TemplateState = {| width: number |}
 type TemplateScope = {| dnd: {| type: 'idle' |} | {| type: 'progress', startWidth: number, mouseStartLeft: number |} |}
@@ -31,12 +36,13 @@ const
     updaters: {
       dnd: makeUpdater({
         conditions: {
+          componentRight: componentRightPassiveCondition,
           mouseLeft: windowMousePositionCondition.withSelector(({ left }) => left),
           mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['leftDown', 'rightDown']),
           leftDown: templateWidthLeftResizeHandleMouseDown.condition.toOptional(),
           rightDown: templateWidthRightResizeHandleMouseDown.condition.toOptional()
         },
-        reducer: ({ state, scope, values: { mouseLeft, leftDown, rightDown }, changedActiveConditionsKeys }) => { 
+        reducer: ({ state, scope, values: { mouseLeft, leftDown, rightDown, componentRight }, changedActiveConditionsKeys }) => { 
           if (!leftDown && !rightDown) return ResultType.doNothing
           
           if (changedActiveConditionsKeys[0] === 'mouseUp') {
@@ -52,27 +58,54 @@ const
             { startWidth, mouseStartLeft } = dnd,
             leftDiff = mouseStartLeft - mouseLeft
 
-          return ResultType.updateState(({ ...state, width: leftDown ? startWidth + leftDiff : startWidth - leftDiff })) 
+          return ResultType.updateState(({ ...state, width: Math.max(300, componentRight, leftDown ? startWidth + leftDiff : startWidth - leftDiff) })) 
         }
       })
     }
-  })
+  }),
+  templateWidthPC = template.c.wsk('width').tp()
 
-type ComponentState =  {| ...LTPosition, ...Dimensions |}
 type ComponentScope = {| dnd: {| type: 'idle' |} | {| type: 'progress', componentStartPos: LTPosition, mouseStartPos: LTPosition |} |}
 const
+  makeComponentWithinTemplateAdjuster = (templateWidth: number) => (componentState: ComponentState) => {
+    const { left, width, top } = componentState
+    let adjustedLeft
+    if (left < 0) {
+      adjustedLeft = 0
+    }
+    const right = width + left
+    if (right > templateWidth) {
+      adjustedLeft = templateWidth - width
+    }
+
+    let adjustedTop
+
+    if (top < 0) {
+      adjustedTop = 0
+    }
+
+    let nextState = componentState
+    if (adjustedLeft !== undefined) {
+      nextState = { ...nextState, left: adjustedLeft }
+    }
+    if (adjustedTop !== undefined) {
+      nextState = { ...nextState, top: adjustedTop }
+    }
+    return nextState
+  },
   component = makeEpicWithScope<ComponentState, ComponentScope, empty>({
-    vat: 'COMPONENT',
+    vat: componentVat,
     initialState: { left: 100, top: 100, width: 300, height: 200 },
     initialScope: { dnd: dndInitialState },
     updaters: {
       dnd: makeUpdater({
         conditions: {
+          templateWidth: templateWidthPC,
           mousePosition: windowMousePositionCondition,
           mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
           mouseDown: componentMouseDown.condition,
         },
-        reducer: ({ state, state: { left, top }, scope, values: { mousePosition }, changedActiveConditionsKeys }) => { 
+        reducer: ({ state, state: { left, top }, scope, values: { mousePosition, templateWidth }, changedActiveConditionsKeys }) => { 
           if (changedActiveConditionsKeys[0] === 'mouseUp') {
             return ResultType.updateScope({ ...scope, dnd: dndInitialState })
           }
@@ -83,9 +116,10 @@ const
           const 
             { componentStartPos, mouseStartPos } = dnd,
             diffLeft = mouseStartPos.left - mousePosition.left,
-            diffTop = mouseStartPos.top - mousePosition.top
+            diffTop = mouseStartPos.top - mousePosition.top,
+            componentWithinTemplateAdjuster = makeComponentWithinTemplateAdjuster(templateWidth)
 
-          return ResultType.updateState(({ ...state, left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop })) 
+          return ResultType.updateState(componentWithinTemplateAdjuster({ ...state, left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop })) 
         }
       })
     }
