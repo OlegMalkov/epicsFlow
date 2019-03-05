@@ -688,7 +688,7 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 
 				changedActiveConditionsKeys.forEach(cck => {
 					if (updater.conditions[cck].resetAllConditionsBelowThisValue) {
-						let reset = false;
+						let reset = false
 						updater.conditionsKeys.forEach(ck => {
 							if (ck === cck) {
 								reset = true
@@ -733,7 +733,7 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 
 				changedActiveConditionsKeys.forEach(cck => {
 					if (updater.conditions[cck].resetAllConditionsBelowThisAfterReducerCallValue) {
-						let reset = false;
+						let reset = false
 						updater.conditionsKeys.forEach(ck => {
 							if (ck === cck) {
 								reset = true
@@ -1324,30 +1324,40 @@ export function initEpics() {
 		}
 	}
 
-	class ACAC<ActionExtraFields = {||}> { 
-		actionCreator: ActionExtraFields => {| ...ActionExtraFields, type: string |}
-		condition: Condition<{| ...ActionExtraFields, type: string |}>
-		ac: ActionExtraFields => {| ...ActionExtraFields, type: string |}
+	function makeACAC<ActionExtraFields>(actionType: string): {|
+		actionCreator: ActionExtraFields => {| ...ActionExtraFields, type: string |},
+		condition: Condition<{| ...ActionExtraFields, type: string |}>,
+		ac: ActionExtraFields => {| ...ActionExtraFields, type: string |},
 		c: Condition<{| ...ActionExtraFields, type: string |}>
-		constructor(actionType: string) {
-			this.actionCreator = extraFields => ({ type: actionType, ...extraFields })
-			this.condition = makeCondition(actionType)
-			this.ac = this.actionCreator
-			this.c = this.condition
-		}
+	|} { 
+		const 
+			actionCreator = extraFields => ({ type: actionType, ...extraFields }),
+			condition = makeCondition(actionType)
+
+		return ({ 
+			actionCreator,
+			condition,
+			ac: actionCreator,
+			c: condition,
+		})
 	}
 
-	class SACAC{ 
-		actionCreator: () => {| type: string |}
-		condition: Condition<{| type: string |}>
-		ac: () => {| type: string |}
+	function makeSACAC(actionType: string): {|
+		actionCreator: () => {| type: string |},
+		condition: Condition<{| type: string |}>,
+		ac: () => {| type: string |},
 		c: Condition<{| type: string |}>
-		constructor(actionType: string) {
-			this.actionCreator = () => ({ type: actionType })
-			this.condition = makeCondition(actionType)
-			this.ac = this.actionCreator
-			this.c = this.condition
-		}
+	|} { 
+		const 
+			actionCreator = () => ({ type: actionType }),
+			condition = makeCondition(actionType)
+
+		return ({ 
+			actionCreator,
+			condition,
+			ac: actionCreator,
+			c: condition,
+		})
 	}
 
 	return {
@@ -1363,7 +1373,9 @@ export function initEpics() {
 		makeEffectManager,
 		matchAnyActionCondition,
 		createStore,
-		ACAC,
-		SACAC
+		makeActionCreatorAndCondition: makeACAC,
+		makeSimpleActionCreatorAndCondition: makeSACAC, // simple means that action is consist only of type field
+		makeACAC,
+		makeSACAC
 	}
 }
