@@ -58,7 +58,7 @@ const
             { startWidth, mouseStartLeft } = dnd,
             leftDiff = mouseStartLeft - mouseLeft
 
-          return ResultType.updateState(({ ...state, width: Math.max(300, componentRight, leftDown ? startWidth + leftDiff : startWidth - leftDiff) })) 
+          return ResultType.updateState(({ ...state, width: Math.max(300, componentRight, leftDown ? startWidth + 2 * leftDiff : startWidth - 2 * leftDiff) })) 
         }
       })
     }
