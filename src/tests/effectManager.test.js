@@ -1,5 +1,5 @@
 // @flow strict
-import { RT, initEpics } from '../epics'
+import { initEpics } from '../epics'
 import { type RequestAnimationFrameEffect, rafEC, initRequestAnimationFrameEM } from '../effectManagers/requestAnimationFrameEM'
 import { waitEffectManagers } from './utils'
 
@@ -32,7 +32,7 @@ describe('effectManager', () => {
 				updaters: { 
 					af: E.makeUpdater({ 
 						conditions: { _af: raf.afC }, 
-						reducer: () => RT.updateState(1)
+						reducer: () => E.RT.updateState(1)
 					})
 				} 
 			}),
@@ -42,11 +42,11 @@ describe('effectManager', () => {
 				updaters: {
 					a: E.makeUpdater({ 
 						conditions: { _a: aC }, 
-						reducer: () => RT.sideEffects([rafEC()])
+						reducer: () => E.RT.sideEffects([rafEC()])
 					}),
 					af: E.makeUpdater({
 						conditions: { _af: raf.afC },
-						reducer: ({ state }) => RT.updateState(state + 1)
+						reducer: ({ state }) => E.RT.updateState(state + 1)
 					})
 				}
 			}),

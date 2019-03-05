@@ -1,6 +1,5 @@
 // @flow strict
-import { RT, initEpics } from '../epics'
-import { isOdd } from '../../examples/cyclicDeps/utils';
+import { initEpics } from '../epics'
 
 type A = {| type: 'a', o: {| flag: boolean, v: {| flag: boolean, n: number |} |} |}
 
@@ -20,6 +19,7 @@ const
 // conditions are using global variable to ensure reuse across app, so we need to reset epics before each test
 let
 	E = initEpics(),
+	{ RT } = E,
 	aC = E.makeCondition<A>(a),
 	aoC = aC.wsk('o'),
 	aovnC = aoC.wsk('v').wsk('n')
@@ -27,6 +27,7 @@ let
 describe('conditions', () => {
 	beforeEach(() => {
 		E = initEpics(),
+		{ RT } = E,
 		aC = E.makeCondition<A>(a),
 		aoC = aC.wsk('o'),
 		aovnC = aoC.wsk('v').wsk('n')

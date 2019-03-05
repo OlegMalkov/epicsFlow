@@ -7,8 +7,8 @@ type CompulsoryConditionFields = {|
 	actionType: string,
 	passive: boolean,
 	optional: boolean,
-	resetAllConditionsBelowThisValue: boolean,
-	resetAllConditionsBelowThisAfterReducerCallValue: boolean
+	resetConditionsByKeyKeys: Array<string> | null,
+	resetConditionsByKeyAfterReducerCallKeys: Array<string> | null
 |}
 
 type Subscription = {| epicVat: string, updaterKey: string, conditionKey: string, passive: boolean |}
@@ -23,8 +23,8 @@ export opaque type Condition<V: Object>: {
 	wsk: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
 	withSelector: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
 	ws: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
-    resetAllConditionsBelowThis: () => Condition<V>,
-	resetAllConditionsBelowThisAfterReducerCall: () => Condition<V>,
+    resetConditionsByKey: (Array<string>) => Condition<V>,
+    resetConditionsByKeyAfterReducerCall: (Array<string>) => Condition<V>,
     withGuard: (guard: V => boolean) => Condition<V>,
     wg: (guard: V => boolean) => Condition<V>,
 	actionType: string
@@ -39,8 +39,8 @@ export opaque type Condition<V: Object>: {
 	tp: () => Condition<V>,
     toOptional: () => Condition<V>,
 	to: () => Condition<V>,
-    resetAllConditionsBelowThis: () => Condition<V>,
-	resetAllConditionsBelowThisAfterReducerCall: () => Condition<V>,
+    resetConditionsByKey: (Array<string>) => Condition<V>,
+    resetConditionsByKeyAfterReducerCall: (Array<string>) => Condition<V>,
     withGuard: (guard: V => boolean) => Condition<V>,
 	wg: (guard: V => boolean) => Condition<V>,
 
@@ -62,16 +62,16 @@ function getFields(condition: Condition<AnyValue>): {| ...CompulsoryConditionFie
 		actionType,
 		passive,
 		optional,
-		resetAllConditionsBelowThisValue,
-		resetAllConditionsBelowThisAfterReducerCallValue,
+		resetConditionsByKeyKeys,
+		resetConditionsByKeyAfterReducerCallKeys,
 		sealed
 	} = condition
 	return {
 		actionType,
 		passive,
 		optional,
-		resetAllConditionsBelowThisValue,
-		resetAllConditionsBelowThisAfterReducerCallValue,
+		resetConditionsByKeyKeys,
+		resetConditionsByKeyAfterReducerCallKeys,
 		parentCondition: condition,
 		sealed
 	}
@@ -82,6 +82,8 @@ type makeConditionProps = {|
 	selectorKey?: string,
 	guard?: AnyValue => boolean,
 	parentCondition?: Condition<AnyValue>,
+	resetConditionsByKeyKeys: Array<string> | null,
+	resetConditionsByKeyAfterReducerCallKeys: Array<string> | null,
 	selector?: AnyValue => AnyValue,
 	sealed: boolean
 |}
@@ -138,7 +140,7 @@ type EpicUpdaterResult<S, SC, E> = DoNothingRT
 
 export type AnyEpicUpdaterResultType<S, SC, E> = EpicUpdaterResult<S, SC, E>
 
-export const ResultType = { 
+const ResultType = { 
 	doNothing: ({ type: doNothingResultType }: DoNothingRT),
 	sideEffects: <E>(effects: SideEffects<E>): SideEffectsRT<E> => ({ type: sideEffectsResultType, effects }),
 	updateState: <S>(state: S, updateReason?: string): UpdateStateRT<S> => ({ type: updateStateResultType, state, updateReason }),
@@ -149,9 +151,7 @@ export const ResultType = {
 	updateStateAndScopeWithSideEffectsResultType: <S, SC, E>(state: S, scope: SC, effects: SideEffects<E>, updateReason?: string): UpdateStateAndScopeWithSideEffectsRT<S, SC, E> => ({ type: updateStateAndScopeWithSideEffectsResultType, state, scope, effects, updateReason })
 }
 
-export const RT = ResultType
-
-type C<V> = Condition<V>
+const RT = ResultType
 
 export type Reducer<S: AnyValue, SC: Object, CV, E> = ({| values: CV, state: S, scope: SC, changedActiveConditionsKeys: Array<$Keys<CV>>, sourceAction: AA |}) => EpicUpdaterResult<S, SC, E>
 
@@ -687,17 +687,12 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 				// todo put resetAllConditionsBelowThis logic here
 
 				changedActiveConditionsKeys.forEach(cck => {
-					if (updater.conditions[cck].resetAllConditionsBelowThisValue) {
-						let reset = false
-						updater.conditionsKeys.forEach(ck => {
-							if (ck === cck) {
-								reset = true
-							}
-							if (reset) {
-								valuesFullfilled[ck] = false
-								updaterStateUpdate.isFullfilled = false
-							}
+					const { resetConditionsByKeyKeys } = updater.conditions[cck]
+					if (resetConditionsByKeyKeys) {
+						resetConditionsByKeyKeys.forEach(ck => {
+							valuesFullfilled[ck] = false
 						})
+						updaterStateUpdate.isFullfilled = false
 					}
 				})
 				
@@ -732,18 +727,12 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 					})
 
 				changedActiveConditionsKeys.forEach(cck => {
-					if (updater.conditions[cck].resetAllConditionsBelowThisAfterReducerCallValue) {
-						let reset = false
-						updater.conditionsKeys.forEach(ck => {
-							if (ck === cck) {
-								reset = true
-							}
-							if (reset) {
-								valuesFullfilled[ck] = false
-								updaterStateUpdate.isFullfilled = false
-							}
-							// TODO test that condition is also reseting itself
+					const { resetConditionsByKeyAfterReducerCallKeys } = updater.conditions[cck]
+					if (resetConditionsByKeyAfterReducerCallKeys) {
+						resetConditionsByKeyAfterReducerCallKeys.forEach(ck => {
+							valuesFullfilled[ck] = false
 						})
+						updaterStateUpdate.isFullfilled = false
 					}
 				})
 
@@ -1018,6 +1007,32 @@ function setConditionsSubscriptions(epics) {
 	})
 }
 
+function validateResetConditions(epics) {
+	Object.keys(epics).forEach(epicKey => {
+		const epic = epics[epicKey]
+		Object.keys(epic.updaters).forEach(updaterKey => {
+			const updater = epic.updaters[updaterKey]
+			Object.keys(updater.conditions).forEach(conditionKey => {
+				const condition: Condition<AnyValue> = updater.conditions[conditionKey]
+				if (condition.resetConditionsByKeyKeys) {
+					condition.resetConditionsByKeyKeys.forEach(conditionKeyToReset => {
+						if (!updater.conditions[conditionKeyToReset]) {
+							throw new Error(`${epicKey}.${updaterKey}.${conditionKey} resetConditionsByKeyKeys defined ${conditionKeyToReset} which is not exist in updater.conditons`)
+						}
+					})
+				}
+				if (condition.resetConditionsByKeyAfterReducerCallKeys) {
+					condition.resetConditionsByKeyAfterReducerCallKeys.forEach(conditionKeyToReset => {
+						if (!updater.conditions[conditionKeyToReset]) {
+							throw new Error(`${epicKey}.${updaterKey}.${conditionKey} resetConditionsByKeyAfterReducerCallKeys defined ${conditionKeyToReset} which is not exist in updater.conditons`)
+						}
+					})
+				}
+			})
+		})
+	})
+}
+
 export type MakeCondition = <V: Object>(actionType: string) => Condition<V>
 export function initEpics() {
 	const rootConditionsByActionType = {}
@@ -1030,8 +1045,8 @@ export function initEpics() {
 		optional,
 		selectorKey,
 		guard,
-		resetAllConditionsBelowThisValue,
-		resetAllConditionsBelowThisAfterReducerCallValue,
+		resetConditionsByKeyKeys,
+		resetConditionsByKeyAfterReducerCallKeys,
 		parentCondition,
 		selector,
 		sealed
@@ -1053,29 +1068,23 @@ export function initEpics() {
 			valueKey: `${parentCondition ? parentCondition.valueKey : actionType}${selectorKey ? `.${selectorKey}` : ''}${selector ? ('.$$selector' + selectorsInUse.indexOf(selector)) : ''}${guard ? '.$$guard' + guardsInUse.indexOf(guard) : ''}`,
 			parentCondition,
 			actionType,
-			passive: passive,
-			optional: optional,
+			passive,
+			optional,
 			guard,
-			resetAllConditionsBelowThisValue,
-			resetAllConditionsBelowThisAfterReducerCallValue,
+			resetConditionsByKeyKeys,
+			resetConditionsByKeyAfterReducerCallKeys,
 			selector,
 			toPassive() {
 				return _makeCondition({ ...getFields(condition), passive: true })
 			},
-			tp() {
-				return condition.toPassive()
-			},
 			toOptional() {
 				return _makeCondition({ ...getFields(condition), optional: true })
 			},
-			to() {
-				return condition.toOptional()
+			resetConditionsByKey(keys) {
+				return _makeCondition({ ...getFields(condition), resetConditionsByKeyKeys: keys })
 			},
-			resetAllConditionsBelowThis(){
-				return _makeCondition({ ...getFields(condition), resetAllConditionsBelowThisValue: true })
-			},
-			resetAllConditionsBelowThisAfterReducerCall(){
-				return _makeCondition({ ...getFields(condition), resetAllConditionsBelowThisAfterReducerCallValue: true })
+			resetConditionsByKeyAfterReducerCall(keys) {
+				return _makeCondition({ ...getFields(condition), resetConditionsByKeyAfterReducerCallKeys: keys })
 			},
 			// You can have multiple guards for different levels of selectors like this: c.ws().tp().ws().tp()
 			withGuard(guard) {
@@ -1089,11 +1098,12 @@ export function initEpics() {
 				}
 				const newCondition = _makeCondition({ ...getFields(condition), guard })
 				return newCondition
-			},
-			wg(guard) {
-				return condition.withGuard(guard)
 			}
 		}: any)
+
+		condition.tp = condition.toPassive
+		condition.to = condition.toOptional
+		condition.wg = condition.withGuard
 	
 		if (!sealed) {
 			const withSelectorKey = (selectorKey: string): Condition<AnyValue> => {
@@ -1153,8 +1163,8 @@ export function initEpics() {
 			actionType,
 			passive: false,
 			optional: false, 
-			resetAllConditionsBelowThisValue: false,
-			resetAllConditionsBelowThisAfterReducerCallValue: false,
+			resetConditionsByKeyKeys: null,
+			resetConditionsByKeyAfterReducerCallKeys: null,
 			sealed: false
 		}, true): any)
 	}
@@ -1185,7 +1195,7 @@ export function initEpics() {
 		return makeEpicWithScope({ vat, updaters, initialState, initialScope: undefined })
 	}
 
-	const matchAnyActionCondition: C<typeof MatchAnyActionType> = makeCondition(MatchAnyActionType)
+	const matchAnyActionCondition: Condition<typeof MatchAnyActionType> = makeCondition(MatchAnyActionType)
 	
 	function createStore<Epics: { [string]: Epic<*, *, *> }> ({
 		epics,
@@ -1204,7 +1214,7 @@ export function initEpics() {
 		const { warn = (() => null: Function), skipTraceActions, trace } = debug || {}
 		
 		validateUniqVats(epics)
-		
+		validateResetConditions(epics)
 		setConditionsSubscriptions(epics)
 	
 		function dispatch(action: { type: any }, meta?: Meta = ({}: any)) {

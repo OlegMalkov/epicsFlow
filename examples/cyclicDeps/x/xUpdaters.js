@@ -1,5 +1,5 @@
 // @flow strict
-import { RT, type Updater } from '../../../src/epics'
+import { type Updater } from '../../../src/epics'
 import { zResultC } from '../z/zVat'
 import { isEven, CDE } from '../utils'
 import { incX, decX, setXColor, type xState } from './xState'
@@ -13,11 +13,11 @@ const
 			zResult: zResultC.tp(), 
 			_xClicked: xClickedC 
 		},
-		reducer: ({ values: { zResult }, state }) => RT.updateState((isEven(zResult)? incX: decX)(state))
+		reducer: ({ values: { zResult }, state }) => CDE.RT.updateState((isEven(zResult)? incX: decX)(state))
 	}),
 	zResultChanged: xUpdater = CDE.makeUpdater({
 		conditions: { zResult: zResultC },
-		reducer: ({ values: { zResult }, state }) => RT.updateState(setXColor(isEven(zResult) ? 'green' : 'red')(state))
+		reducer: ({ values: { zResult }, state }) => CDE.RT.updateState(setXColor(isEven(zResult) ? 'green' : 'red')(state))
 	})
     
 export const xUpdaters = {

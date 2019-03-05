@@ -1,5 +1,5 @@
 // @flow strict
-import { RT, type Updater } from '../../../src/epics'
+import { type Updater } from '../../../src/epics'
 import { xValueC } from '../x/xAAC'
 import { yValueC } from '../y/yAAC'
 import { compose2, CDE } from '../utils'
@@ -18,7 +18,7 @@ const
 			_zClicked: zClickedC 
 		},
 		reducer: ({ values: { x, y }, state }) => {
-			return RT.updateState(compose2(zComputeResult(x,y), zIncMultiplier, state))
+			return CDE.RT.updateState(compose2(zComputeResult(x,y), zIncMultiplier, state))
 		}
 	}),
 	xOrYChanged: zUpdater = CDE.makeUpdater({
@@ -27,7 +27,7 @@ const
 			y: yValueC
 		},
 		reducer: ({ values: { x, y }, state }) => {
-			return RT.updateState(zComputeResult(x,y)(state))
+			return CDE.RT.updateState(zComputeResult(x,y)(state))
 		}
 	})
 
