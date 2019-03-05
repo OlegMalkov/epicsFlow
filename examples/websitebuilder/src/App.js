@@ -6,9 +6,9 @@
 
 import React, { Component } from 'react';
 import './App.css';
-import { wsbE } from './E';
-import { type LTPosition, type Dimensions } from './types'
-import { windowMouseMove, windowMousePositionCondition, windowMouseUp } from './acac'
+import { wsbE } from './E.js';
+import { type LTPosition, type Dimensions } from './types.js'
+import { windowMouseMove, windowMousePositionCondition, windowMouseUp } from './acac.js'
 
 declare var window: EventTarget;
 
