@@ -2,9 +2,9 @@
 import { wsbE } from './E'
 import { type LTPosition } from './types' 
 
-const { ACAC, SACAC } = wsbE
+const { makeACAC, makeSACAC } = wsbE
 
 export const
-  windowMouseMove = new ACAC<{| position: LTPosition |}>('WINDOW_MOUSE_MOVE'),
-  windowMousePositionC = windowMouseMove.c.wsk('position'),
-  windowMouseUp = new SACAC('WINDOW_MOUSE_UP')
+  windowMouseMove = makeACAC<{| position: LTPosition |}>('WINDOW_MOUSE_MOVE'),
+  windowMousePositionCondition = windowMouseMove.condition.withSelectorKey('position'),
+  windowMouseUp = makeSACAC('WINDOW_MOUSE_UP')

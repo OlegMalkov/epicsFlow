@@ -8,16 +8,16 @@ import React, { Component } from 'react';
 import './App.css';
 import { wsbE } from './E';
 import { type LTPosition, type Dimensions } from './types'
-import { windowMouseMove, windowMousePositionC, windowMouseUp } from './acac'
+import { windowMouseMove, windowMousePositionCondition, windowMouseUp } from './acac'
 
 declare var window: EventTarget;
 
-const { makeEpicWithScope, makeUpdater, createStore, SACAC, RT } = wsbE
+const { makeEpicWithScope, makeUpdater, createStore, makeSACAC, ResultType } = wsbE
 
 const
-  componentMouseDown = new SACAC('COMPONENT_MOUSE_DOWN'),
-  templateWidthLeftResizeHandleMouseDown = new SACAC('TEMPLATE_WIDTH_LEFT_RESIZE_HANDLE_MOUSE_DOWN'),
-  templateWidthRightResizeHandleMouseDown = new SACAC('TEMPLATE_WIDTH_RIGHT_RESIZE_HANDLE_MOUSE_DOWN')
+  componentMouseDown = makeSACAC('COMPONENT_MOUSE_DOWN'),
+  templateWidthLeftResizeHandleMouseDown = makeSACAC('TEMPLATE_WIDTH_LEFT_RESIZE_HANDLE_MOUSE_DOWN'),
+  templateWidthRightResizeHandleMouseDown = makeSACAC('TEMPLATE_WIDTH_RIGHT_RESIZE_HANDLE_MOUSE_DOWN')
 
 const dndInitialState = { type: 'idle' }
 
@@ -31,28 +31,28 @@ const
     updaters: {
       dnd: makeUpdater({
         conditions: {
-          mouseLeft: windowMousePositionC.ws(({ left }) => left),
-          mouseUp: windowMouseUp.c.to().resetAllConditionsBelowThisAfterReducerCall(),
-          leftDown: templateWidthLeftResizeHandleMouseDown.c.to(),
-          rightDown: templateWidthRightResizeHandleMouseDown.c.to()
+          mouseLeft: windowMousePositionCondition.withSelector(({ left }) => left),
+          mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['leftDown', 'rightDown']),
+          leftDown: templateWidthLeftResizeHandleMouseDown.condition.toOptional(),
+          rightDown: templateWidthRightResizeHandleMouseDown.condition.toOptional()
         },
         reducer: ({ state, scope, values: { mouseLeft, leftDown, rightDown }, changedActiveConditionsKeys }) => { 
-          if (!leftDown && !rightDown) return RT.doNothing
+          if (!leftDown && !rightDown) return ResultType.doNothing
           
           if (changedActiveConditionsKeys[0] === 'mouseUp') {
-            return RT.updateScope({ ...scope, dnd: dndInitialState })
+            return ResultType.updateScope({ ...scope, dnd: dndInitialState })
           }
 
           const { dnd } = scope
           if (dnd.type === 'idle') {
-            return RT.updateScope({ ...scope, dnd: { type: 'progress', startWidth: state.width, mouseStartLeft: mouseLeft } })
+            return ResultType.updateScope({ ...scope, dnd: { type: 'progress', startWidth: state.width, mouseStartLeft: mouseLeft } })
           }
 
           const 
             { startWidth, mouseStartLeft } = dnd,
             leftDiff = mouseStartLeft - mouseLeft
 
-          return RT.updateState(({ ...state, width: leftDown ? startWidth + leftDiff : startWidth - leftDiff })) 
+          return ResultType.updateState(({ ...state, width: leftDown ? startWidth + leftDiff : startWidth - leftDiff })) 
         }
       })
     }
@@ -68,24 +68,24 @@ const
     updaters: {
       dnd: makeUpdater({
         conditions: {
-          mousePosition: windowMousePositionC,
-          mouseUp: windowMouseUp.c.to().resetAllConditionsBelowThisAfterReducerCall(),
-          __: componentMouseDown.c,
+          mousePosition: windowMousePositionCondition,
+          mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
+          mouseDown: componentMouseDown.condition,
         },
         reducer: ({ state, state: { left, top }, scope, values: { mousePosition }, changedActiveConditionsKeys }) => { 
           if (changedActiveConditionsKeys[0] === 'mouseUp') {
-            return RT.updateScope({ ...scope, dnd: dndInitialState })
+            return ResultType.updateScope({ ...scope, dnd: dndInitialState })
           }
           const { dnd } = scope
           if (dnd.type === 'idle') {
-            return RT.updateScope({ ...scope, dnd: { type: 'progress', componentStartPos: { left, top }, mouseStartPos: mousePosition } })
+            return ResultType.updateScope({ ...scope, dnd: { type: 'progress', componentStartPos: { left, top }, mouseStartPos: mousePosition } })
           }
           const 
             { componentStartPos, mouseStartPos } = dnd,
             diffLeft = mouseStartPos.left - mousePosition.left,
             diffTop = mouseStartPos.top - mousePosition.top
 
-          return RT.updateState(({ ...state, left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop })) 
+          return ResultType.updateState(({ ...state, left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop })) 
         }
       })
     }
@@ -114,8 +114,16 @@ class App extends Component<{}, typeof initialState> {
   componentDidMount() {
     store.subscribeOnStateChange(appState => this.setState(appState))
 
-    window.addEventListener('mousemove', (e: MouseEvent) => dispatch(windowMouseMove.ac({ position: { left: e.clientX, top: e.clientY } })))
-    window.addEventListener('mouseup', (e: MouseEvent) => dispatch(windowMouseUp.ac()))
+    window.addEventListener(
+      'mousemove', 
+      (e: MouseEvent) => dispatch(
+        windowMouseMove.actionCreator({ position: { left: e.clientX, top: e.clientY } })
+      )
+    )
+    window.addEventListener(
+      'mouseup',
+      (e: MouseEvent) => dispatch(windowMouseUp.actionCreator())
+    )
   }
   render() {
     return (
@@ -125,17 +133,21 @@ class App extends Component<{}, typeof initialState> {
             <div className="LeftPanel"/>
             <div className="Workspace">
               <div className="TemplateArea" style={{ width: this.state.template.width }}>
-                <div className="TemplateWidthResizeHandle" onMouseDown={() => dispatch(templateWidthLeftResizeHandleMouseDown.ac())}/>
-                <div className="TemplateWidthResizeHandle TemplateWidthResizeHandleRight" onMouseDown={() => dispatch(templateWidthRightResizeHandleMouseDown.ac())}/>
+                <div 
+                  className="TemplateWidthResizeHandle"
+                  onMouseDown={() => dispatch(templateWidthLeftResizeHandleMouseDown.actionCreator())}
+                />
+                <div 
+                  className="TemplateWidthResizeHandle TemplateWidthResizeHandleRight"
+                  onMouseDown={() => dispatch(templateWidthRightResizeHandleMouseDown.actionCreator())}
+                />
                 <div 
                   className="Component"
                   style={this.state.component}
                   onMouseDown={() => dispatch(componentMouseDown.ac())}
                 />
-                <div className="ComponentMainActions"/>
               </div>
             </div>
-            <div className="PropertiesPanel"/>
         </div>
       </div>
     );
