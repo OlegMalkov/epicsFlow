@@ -301,6 +301,69 @@ function makeEffectManager<E, S, SC>({
 }
 
 function getInitialState<S>({ initialState }: Epic<S, any, any>): S { return initialState }
+
+// https://github.com/epoberezkin/fast-deep-equal/blob/master/index.js
+const 
+	isArray = Array.isArray,
+	keyList = Object.keys,
+	hasProp = Object.prototype.hasOwnProperty
+
+function deepEqual(a, b) {
+	if (a === b) return true
+
+	if (a && b && typeof a == 'object' && typeof b == 'object') {
+		var arrA = isArray(a)
+			, arrB = isArray(b)
+			, i
+			, length
+			, key
+
+		if (arrA && arrB) {
+			// $FlowFixMe
+			length = a.length
+			// $FlowFixMe
+		if (length != b.length) return false; // eslint-disable-line
+			// $FlowFixMe
+			for (i = length; i-- !== 0;)
+			// $FlowFixMe
+				if (!deepEqual(a[i], b[i])) return false
+			return true
+		}
+
+	if (arrA != arrB) return false; // eslint-disable-line
+
+		var dateA = a instanceof Date
+			, dateB = b instanceof Date
+	if (dateA != dateB) return false; // eslint-disable-line
+		// $FlowFixMe
+	if (dateA && dateB) return a.getTime() == b.getTime(); // eslint-disable-line
+
+		var regexpA = a instanceof RegExp
+			, regexpB = b instanceof RegExp
+	if (regexpA != regexpB) return false; // eslint-disable-line
+	if (regexpA && regexpB) return a.toString() == b.toString(); // eslint-disable-line
+
+		var keys = keyList(a)
+		length = keys.length
+
+		if (length !== keyList(b).length)
+			return false
+
+		for (i = length; i-- !== 0;)
+			if (!hasProp.call(b, keys[i])) return false
+
+		for (i = length; i-- !== 0;) {
+			key = keys[i]
+			// $FlowFixMe
+			if (!deepEqual(a[key], b[key])) return false
+		}
+
+		return true
+	}
+
+	return a!==a && b!==b; // eslint-disable-line
+}
+
 const
 	reverse = (arr: Array<any>) => arr.slice().reverse(),
 	values = o => Object.keys(o).map(k => o[k]),
@@ -311,13 +374,11 @@ const MatchAnyActionType: '*' = '*'
 type UpdaterStateValuesFullfilled = { [string]: boolean }
 
 type UpdaterState = {|
-	valuesFullfilled: UpdaterStateValuesFullfilled,
-	isFullfilled: boolean,
+	valuesFullfilled: UpdaterStateValuesFullfilled
 |}
 
 type UpdaterStateUpdate = {|
-	valuesFullfilled: UpdaterStateValuesFullfilled,
-	isFullfilled?: boolean,
+	valuesFullfilled: UpdaterStateValuesFullfilled
 |}
 
 type EpicUpdatersState = { [string]: UpdaterState }
@@ -358,7 +419,7 @@ type PendingEffectPromise = {| requestEffectType: string, effect: {||}, promise:
 type PendingEffectPromises = Array<PendingEffectPromise>
 export opaque type EpicsStore<Epics: Object>: {| 
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>, 
-	getServiceState: () => { epicsState: EpicsState, effectManagersState: EffectManagersState<*, *>, conditionsValues: ConditionsValues },
+	getServiceState: () => { epics: EpicsState, effectManagers: EffectManagersState<*, *>, conditions: ConditionsValues },
 	dispatch: Dispatch,
 	getAllPendingEffectsPromises: () => PendingEffectPromises,
 	warn: Function,
@@ -366,7 +427,7 @@ export opaque type EpicsStore<Epics: Object>: {|
 	subscribeOnMessage: any => any
 |} = {| 
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>, 
-	getServiceState: () => { epicsState: EpicsState, effectManagersState: EffectManagersState<*, *>, conditionsValues: ConditionsValues },
+	getServiceState: () => { epics: EpicsState, effectManagers: EffectManagersState<*, *>, conditions: ConditionsValues },
 	dispatch: Dispatch,
 	getAllPendingEffectsPromises: () => PendingEffectPromises,
 	warn: Function,
@@ -417,13 +478,9 @@ const
 			.join( ' -> ')
 		
 function mergeUpdaterState(epicUpdaterState: UpdaterState, epicUpdaterStateUpdate: UpdaterStateUpdate) {
-	const
-		isFullfilled = epicUpdaterStateUpdate.isFullfilled === undefined ?
-			epicUpdaterState.isFullfilled : epicUpdaterStateUpdate.isFullfilled,
-		result: UpdaterState = {
-			valuesFullfilled: epicUpdaterStateUpdate.valuesFullfilled,
-			isFullfilled
-		}
+	const result: UpdaterState = {
+		valuesFullfilled: epicUpdaterStateUpdate.valuesFullfilled
+	}
 		
 	return result
 }
@@ -692,12 +749,10 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 						resetConditionsByKeyKeys.forEach(ck => {
 							valuesFullfilled[ck] = false
 						})
-						updaterStateUpdate.isFullfilled = false
 					}
 				})
 				
-				if (!updaterStateUpdate.isFullfilled && updater.compulsoryConditionsKeys.some(k => !valuesFullfilled[k])) return
-				updaterStateUpdate.isFullfilled = true
+				if (updater.compulsoryConditionsKeys.some(k => !valuesFullfilled[k])) return
 				
 				const reducerValues: Object = updater.conditionKeysToConditionUpdaterKeys.reduce((v, [conditionKey, conditionUpdaterKey]) => {
 					if (!valuesFullfilled[conditionUpdaterKey]) return v
@@ -732,7 +787,6 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 						resetConditionsByKeyAfterReducerCallKeys.forEach(ck => {
 							valuesFullfilled[ck] = false
 						})
-						updaterStateUpdate.isFullfilled = false
 					}
 				})
 
@@ -922,8 +976,7 @@ function computeInitialStates({ epicsArr, warn, executeAction }) {
 					(s, updaterKey) => ({ 
 						...s,
 						[updaterKey]: {
-							valuesFullfilled: {},
-							isFullfilled: false
+							valuesFullfilled: Object.keys(epic.updaters[updaterKey].conditions).reduce((a, ck) => ({...a, [ck]: false }) ,{})
 						}
 					}), 
 					{}
@@ -1068,8 +1121,8 @@ export function initEpics() {
 			valueKey: `${parentCondition ? parentCondition.valueKey : actionType}${selectorKey ? `.${selectorKey}` : ''}${selector ? ('.$$selector' + selectorsInUse.indexOf(selector)) : ''}${guard ? '.$$guard' + guardsInUse.indexOf(guard) : ''}`,
 			parentCondition,
 			actionType,
-			passive: passive,
-			optional: optional,
+			passive,
+			optional,
 			guard,
 			resetConditionsByKeyKeys,
 			resetConditionsByKeyAfterReducerCallKeys,
@@ -1077,14 +1130,8 @@ export function initEpics() {
 			toPassive() {
 				return _makeCondition({ ...getFields(condition), passive: true })
 			},
-			tp() {
-				return condition.toPassive()
-			},
 			toOptional() {
 				return _makeCondition({ ...getFields(condition), optional: true })
-			},
-			to() {
-				return condition.toOptional()
 			},
 			resetConditionsByKey(keys) {
 				return _makeCondition({ ...getFields(condition), resetConditionsByKeyKeys: keys })
@@ -1104,11 +1151,12 @@ export function initEpics() {
 				}
 				const newCondition = _makeCondition({ ...getFields(condition), guard })
 				return newCondition
-			},
-			wg(guard) {
-				return condition.withGuard(guard)
 			}
 		}: any)
+
+		condition.tp = condition.toPassive
+		condition.to = condition.toOptional
+		condition.wg = condition.withGuard
 	
 		if (!sealed) {
 			const withSelectorKey = (selectorKey: string): Condition<AnyValue> => {
@@ -1202,6 +1250,9 @@ export function initEpics() {
 
 	const matchAnyActionCondition: Condition<typeof MatchAnyActionType> = makeCondition(MatchAnyActionType)
 	
+	// TODO put correct annotation
+	type DevToolsConfig = Object
+
 	function createStore<Epics: { [string]: Epic<*, *, *> }> ({
 		epics,
 		effectManagers = {},
@@ -1213,7 +1264,7 @@ export function initEpics() {
 		effectManagers?: { [string]: EffectManager<*, *, *> },
 		onMsg?: Object => any,
 		onStateChanged?: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any,
-		debug?: {| skipTraceActions ?: (Array<AA>) => boolean, trace?: Function, getState?: () => EpicsState, warn?: Function |},
+		debug?: {| devTools?: { config: DevToolsConfig }, skipTraceActions ?: (Array<AA>) => boolean, trace?: Function, getState?: () => EpicsState, warn?: Function |},
 		|}): EpicsStore<Epics> {
 	
 		const { warn = (() => null: Function), skipTraceActions, trace } = debug || {}
@@ -1221,7 +1272,25 @@ export function initEpics() {
 		validateUniqVats(epics)
 		validateResetConditions(epics)
 		setConditionsSubscriptions(epics)
+
+		let devTools
+
+		function initDevTools(config) {
+			devTools = window.__REDUX_DEVTOOLS_EXTENSION__.connect({ ...config, name: 'service' })
+			devTools.subscribe((message) => {
+				if (message.type === 'DISPATCH' && message.state) {
+					serviceState = JSON.parse(message.state)
+					onEpicsStateChange(serviceState.epics)
+				}
+			})
+			devTools.init(serviceState)
+		}
 	
+		function onEpicsStateChange(epicsState) {
+			outsideState = computeOutsideState(epicsState)
+			onStateChanged((outsideState: any))
+			stateChangedSubscribers.forEach(sub => sub((outsideState: any)))
+		}
 		function dispatch(action: { type: any }, meta?: Meta = ({}: any)) {
 			const 
 				messagesToSendOutside = [],
@@ -1238,10 +1307,15 @@ export function initEpics() {
 				)
 			}
 	
+			let 
+				updatedConditionsValues,
+				updatedEpicsState,
+				updatedEffectManagersState
+
 			if (action.type === effectPromiseCompleteAT) {
 				const 
 					{ effect, error, effectRequestType } = ((action: any): {| effect: {||}, effectRequestType: string, error: Error |}),
-					effectManagerState = effectManagersState[effectRequestType]
+					effectManagerState = serviceState.effectManagers[effectRequestType]
 	
 				effectManagersStateUpdate[effectRequestType] = { 
 					...effectManagersStateUpdate[effectRequestType],
@@ -1257,38 +1331,69 @@ export function initEpics() {
 	
 				executeAction({
 					actionsChain: [action],
-					conditionsValues,
+					conditionsValues: serviceState.conditions,
 					prevConditionsValues: {},
 					conditionsValuesUpdate,
-					epicsState,
+					epicsState: serviceState.epics,
 					epicsStateUpdate,
-					effectManagersState,
+					effectManagersState: serviceState.effectManagers,
 					effectManagersStateUpdate,
 					messagesToSendOutside,
 				})
 	
-				if (Object.keys(conditionsValuesUpdate).length !== 0){
-					conditionsValues = { ...conditionsValues, ...conditionsValuesUpdate }
+				if (Object.keys(conditionsValuesUpdate).length !== 0) {
+					updatedConditionsValues = { ...serviceState.conditions, ...conditionsValuesUpdate }
 				}
 	
 				const updatedEpicsTypes = Object.keys(epicsStateUpdate)
+
 				if (updatedEpicsTypes.length !== 0) {
-					epicsState = mergeEpicsStateWithUpdate(epicsState, epicsStateUpdate)
+					updatedEpicsState = mergeEpicsStateWithUpdate(serviceState.epics, epicsStateUpdate)
 					// todo deepFreeze state
-					outsideState = computeOutsideState(epicsState)
-					onStateChanged((outsideState: any))
-					stateChangedSubscribers.forEach(sub => sub((outsideState: any)))
+					onEpicsStateChange(updatedEpicsState)
 				}
+
 				messagesToSendOutside.forEach(m => {
 					onMsg(m)
 					msgSubscribers.forEach(sub => sub(m))
 				})
 			}
 	
-			effectManagersState = mergeEffectManagersStateWithUpdate(effectManagersState, effectManagersStateUpdate)
+			if (Object.keys(effectManagersStateUpdate).length) {
+				updatedEffectManagersState = mergeEffectManagersStateWithUpdate(serviceState.effectManagers, effectManagersStateUpdate)
+			}
+
+			if (updatedConditionsValues || updatedEpicsState ||	updatedEffectManagersState) {
+				const nextServiceState = {
+					epics: updatedEpicsState || serviceState.epics,
+					conditions: updatedConditionsValues || serviceState.conditions,
+					effectManagers: updatedEffectManagersState || serviceState.effectManagers
+				}
+				if (devTools && Object.keys(epicsStateUpdate).length) {
+					let atLeastOneChange = false
+					Object.keys(epicsStateUpdate).forEach(vat => {
+						if (atLeastOneChange) return
+						const 
+							epicState = serviceState.epics[vat],
+							epicStateUpdate = epicsStateUpdate[vat]
+
+						if (
+							(epicStateUpdate.state !== undefined && !deepEqual(epicState.state, epicStateUpdate.state)) 
+							|| (epicStateUpdate.scope !== undefined && !deepEqual(epicState.scope, epicStateUpdate.scope))
+							|| (epicStateUpdate.updatersState !== undefined && !deepEqual(epicState.updatersState, epicStateUpdate.updatersState))
+						) {
+							atLeastOneChange = true
+						}
+					})
+					if (atLeastOneChange) {
+						devTools.send(action, nextServiceState)	
+					}					
+				}
+				serviceState = nextServiceState
+			}
 		}
-	
-		const 
+
+		const
 			epicsArr = values(epics),
 			epicsMapByVat = values(epics).reduce((a, e) => ({ ...a, [e.vat]: e }), {}),
 			executeAction = makeExecuteAction({
@@ -1309,14 +1414,16 @@ export function initEpics() {
 		const { initialEpicsState, initialCondtionsValues } = computeInitialStates({ epicsArr, warn, executeAction })
 	
 		let 
-			conditionsValues: ConditionsValues = initialCondtionsValues,
-			epicsState: EpicsState = initialEpicsState,
-			effectManagersState: EffectManagersState<*, *> = getEffectManagersInitialState(effectManagers),
-			outsideState = computeOutsideState(epicsState)
+			serviceState = {
+				conditions: initialCondtionsValues,
+				epics: initialEpicsState,
+				effectManagers: getEffectManagersInitialState(effectManagers)
+			},
+			outsideState = computeOutsideState(serviceState.epics)
 	
 		function getAllPendingEffectsPromises() {
-			return Object.keys(effectManagersState).reduce((pendingEffectsPromises, requestEffectType) => {
-				pendingEffectsPromises.push(...effectManagersState[requestEffectType]
+			return Object.keys(serviceState.effectManagers).reduce((pendingEffectsPromises, requestEffectType) => {
+				pendingEffectsPromises.push(...serviceState.effectManagers[requestEffectType]
 					.pendingEffects.map(({ promise, effect }) => ({ promise, requestEffectType, effect })))
 				return pendingEffectsPromises
 			}, [])
@@ -1326,12 +1433,17 @@ export function initEpics() {
 			stateChangedSubscribers = [],
 			msgSubscribers = []
 	
+
+		if (debug && debug.devTools) {
+			initDevTools(debug.devTools.config)
+		}
+
 		return {
 			dispatch,
 			getState() {
 				return (outsideState: any)
 			},
-			getServiceState: () => ({ epicsState, effectManagersState, conditionsValues }),
+			getServiceState: () => serviceState,
 			getAllPendingEffectsPromises,
 			warn,
 			subscribeOnStateChange: subscriber => stateChangedSubscribers.push(subscriber),

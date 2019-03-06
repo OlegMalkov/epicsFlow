@@ -131,7 +131,7 @@ const
       component,
       template
     },
-    debug: { trace: console.log }
+    debug: { trace: console.log, devTools: { config: {} } }
   }),
   initialState = store.getState(),
   dispatch = store.dispatch
