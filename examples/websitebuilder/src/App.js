@@ -67,7 +67,7 @@ class App extends Component<{}, typeof initialState> {
                 />
                 <div 
                   className="Component"
-                  style={this.state.component}
+                  style={{ ...this.state.component.position, ...this.state.component.dimensions }}
                   onMouseDown={() => dispatch(componentMouseDown.ac())}
                 />
                 <div className="ComponentMainActions"/>

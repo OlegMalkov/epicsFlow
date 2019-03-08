@@ -1,3 +1,4 @@
 // @flow strict
 
-export function makeSetter<S: {}, P: $Keys<S>>(propName: P): ($ElementType<S, P>) => S => S { return  (value) => (state: S) => ({ ...state, [propName]: value }) } // eslint-disable-line
+type MakeSetter = <S: {}, P: $Keys<S>>(propName: P) => (value: $ElementType<S, P>) => S => S
+export const makeSetter: MakeSetter = propName => value => state => ({ ...state, [propName]: value })
