@@ -1,11 +1,12 @@
 // @flow strict
 
-import { type ComponentState, componentInitialState, componentWithinTemplateAdjuster, setPosition } from './componentState';
+import { type ComponentState, componentInitialState, componentWithinTemplateAdjuster, setComponentPosition } from './componentState';
 import { type LTPosition } from '../../types'
 import { wsbE } from "../../wsbE";
 import { componentVat, componentMouseDown } from './componentACAC';
 import { windowMousePositionCondition, windowMouseUp } from '../../globalACAC.js'
 import { templateWidthPC } from '../Template/templateACAC';
+import { StateContainer } from '../../utils';
 
 const { makeEpicWithScope, makeUpdater, ResultType } = wsbE
 type ComponentScope = {| dnd: {| type: 'idle' |} | {| type: 'progress', componentStartPos: LTPosition, mouseStartPos: LTPosition |} |}
@@ -35,12 +36,14 @@ const
           const 
             { componentStartPos, mouseStartPos } = dnd,
             diffLeft = mouseStartPos.left - mousePosition.left,
-            diffTop = mouseStartPos.top - mousePosition.top,
-            nextPosition = { left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop },
-            stateWithUpdaterPosition = setPosition(nextPosition)(state),
-            stateWithAdjustedPosition = componentWithinTemplateAdjuster(templateWidth)(stateWithUpdaterPosition)
+            diffTop = mouseStartPos.top - mousePosition.top
 
-          return ResultType.updateState(stateWithAdjustedPosition) 
+          return ResultType.updateState(
+            StateContainer(state)
+              .pipe(setComponentPosition({ left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop }))
+              .pipe(componentWithinTemplateAdjuster(templateWidth))
+              .value()
+          ) 
         }
       })
     }

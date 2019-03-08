@@ -7,7 +7,7 @@ export opaque type ComponentState: { position: LTPosition, dimensions: Dimension
 
 export const 
     componentInitialState: ComponentState = { position: { left: 100, top: 100 }, dimensions: { width: 300, height: 200 } },
-    setPosition = makeSetter<ComponentState, *>('position'),
+    setComponentPosition = makeSetter<ComponentState, *>('position'),
     componentWithinTemplateAdjuster = (templateWidth: number) => (componentState: ComponentState): ComponentState => {
         const { position: { left, top }, dimensions: { width } } = componentState
         let adjustedLeft
