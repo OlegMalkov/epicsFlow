@@ -1,5 +1,5 @@
 // @flow strict
-import { wsbE } from './E.js'
+import { wsbE } from './wsbE.js'
 import { type LTPosition } from './types.js' 
 
 const { makeACAC, makeSACAC } = wsbE
