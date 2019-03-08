@@ -13,14 +13,11 @@ const
 			zResult: zResultC.tp(), 
 			_yClicked: yClickedC
 		},
-		reducer: ({ values: { zResult }, state }) => {
-			const op = isOdd(zResult)? incY: decY
-			return CDE.RT.updateState(op(state))
-		}
+		reducer: ({ values: { zResult }, R }) => R.updateState(isOdd(zResult)? incY: decY)
 	}),
 	zRezultChanged: yUpdater = CDE.makeUpdater({
 		conditions: { zResult: zResultC },
-		reducer: ({ values: { zResult }, state }) => CDE.RT.updateState(setYColor(isOdd(zResult) ? 'green' : 'red')(state))
+		reducer: ({ values: { zResult }, R }) => R.updateState(setYColor(isOdd(zResult) ? 'green' : 'red'))
 	})
     
 export const yUpdaters = {

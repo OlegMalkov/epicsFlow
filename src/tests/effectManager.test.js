@@ -32,7 +32,7 @@ describe('effectManager', () => {
 				updaters: { 
 					af: E.makeUpdater({ 
 						conditions: { _af: raf.afC }, 
-						reducer: () => E.RT.updateState(1)
+						reducer: ({ R }) => R.updateState(() => 1)
 					})
 				} 
 			}),
@@ -42,15 +42,15 @@ describe('effectManager', () => {
 				updaters: {
 					a: E.makeUpdater({ 
 						conditions: { _a: aC }, 
-						reducer: () => E.RT.sideEffects([rafEC()])
+						reducer: ({ R }) => R.sideEffect(rafEC())
 					}),
 					af: E.makeUpdater({
 						conditions: { _af: raf.afC },
-						reducer: ({ state }) => E.RT.updateState(state + 1)
+						reducer: ({ R }) => R.updateState(state => state + 1)
 					})
 				}
 			}),
-			store = E.createStore({ 
+			store = E.createStore({
 				effectManagers: {
 					requestAnimationFrame: raf.requestAnimationFrameEM,
 				},

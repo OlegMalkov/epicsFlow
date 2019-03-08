@@ -19,7 +19,6 @@ const
 // conditions are using global variable to ensure reuse across app, so we need to reset epics before each test
 let
 	E = initEpics(),
-	{ RT } = E,
 	aC = E.makeCondition<A>(a),
 	aoC = aC.wsk('o'),
 	aovnC = aoC.wsk('v').wsk('n')
@@ -27,7 +26,6 @@ let
 describe('conditions', () => {
 	beforeEach(() => {
 		E = initEpics(),
-		{ RT } = E,
 		aC = E.makeCondition<A>(a),
 		aoC = aC.wsk('o'),
 		aovnC = aoC.wsk('v').wsk('n')
@@ -41,7 +39,7 @@ describe('conditions', () => {
 				updaters: {
 					nChanged: E.makeUpdater({ 
 						conditions: { n: aovnC }, 
-						reducer: ({ state, values: { n } }) => RT.updateState(state + n) 
+						reducer: ({ values: { n }, R }) => R.updateState(state => state + n) 
 					})
 				}
 			}),
@@ -77,8 +75,8 @@ describe('conditions', () => {
 							n: aovnC.withSelector(n => { return { a: n } }),
 							n1: aovnC.ws(() => { return { a11: 11 } })
 						}, 
-						reducer: ({ state, values: { n, n1 } }) => { 
-							return RT.updateState(state + n.a + n1.a11)
+						reducer: ({ R, values: { n, n1 } }) => { 
+							return R.updateState(state => state + n.a + n1.a11)
 						}
 					})
 				}
@@ -100,8 +98,8 @@ describe('conditions', () => {
 						conditions: { 
 							n: aovnC.withSelector(n => { return { a: n } }).wg((value) => value.a > 5)
 						}, 
-						reducer: ({ state, values: { n } }) => { 
-							return RT.updateState(state + n.a)
+						reducer: ({ R, values: { n } }) => { 
+							return R.updateState(state => state + n.a)
 						}
 					})
 				}
@@ -131,8 +129,8 @@ describe('conditions', () => {
 						conditions: { 
 							n: aovnC.wg((n) => n > 5).withSelector(n => { return { a: n } })
 						}, 
-						reducer: ({ state, values: { n } }) => { 
-							return RT.updateState(state + n.a)
+						reducer: ({ R, values: { n } }) => { 
+							return R.updateState(state => state + n.a)
 						}
 					})
 				}
@@ -160,7 +158,7 @@ describe('conditions', () => {
 				updaters: {
 					nChanged: E.makeUpdater({ 
 						conditions: { n: aovnC }, 
-						reducer: ({ state, values: { n } }) => RT.updateState(state + n) 
+						reducer: ({ R, values: { n } }) => R.updateState(state => state + n) 
 					})
 				}
 			}),
@@ -180,7 +178,7 @@ describe('conditions', () => {
 				updaters: {
 					nChanged: E.makeUpdater({ 
 						conditions: { o: aoC }, 
-						reducer: ({ state, values: { o } }) => RT.updateState(state + o.v.n) 
+						reducer: ({ R, values: { o } }) => R.updateState(state => state + o.v.n) 
 					})
 				}
 			}),
@@ -200,7 +198,7 @@ describe('conditions', () => {
 				updaters: {
 					nChanged: E.makeUpdater({ 
 						conditions: { _: aC }, 
-						reducer: ({ state }) => RT.updateState(state + 1) 
+						reducer: ({ R }) => R.updateState(state => state + 1) 
 					})
 				}
 			}),
@@ -304,7 +302,7 @@ describe('conditions', () => {
 				updaters: {
 					nChanged: E.makeUpdater({ 
 						conditions: { a: aGC, o: aoGC }, 
-						reducer: ({ state, values: { a, o } }) => RT.updateState(state + a.o.v.n + o.v.n) 
+						reducer: ({ R, values: { a, o } }) => R.updateState(state => state + a.o.v.n + o.v.n) 
 					})
 				}
 			}),
@@ -342,24 +340,24 @@ describe('conditions', () => {
 						conditions: { 
 							a: aC.wg((value) => value.o.v.n > 5)
 						}, 
-						reducer: ({ state, values: { a } }) => { 
-							return RT.updateState(state + a.o.v.n)
+						reducer: ({ R, values: { a } }) => { 
+							return R.updateState(state => state + a.o.v.n)
 						}
 					}),
 					aChangedWhenNLessThan5: E.makeUpdater({
 						conditions: { 
 							a: aC.wg((value) => value.o.v.n < 5)
 						}, 
-						reducer: ({ state, values: { a } }) => { 
-							return RT.updateState(state - a.o.v.n)
+						reducer: ({ R, values: { a } }) => { 
+							return R.updateState(state => state - a.o.v.n)
 						}
 					}),
 					aChangedWhenNEquals5: E.makeUpdater({
 						conditions: { 
 							a: aC.wg((value) => value.o.v.n === 5)
 						}, 
-						reducer: ({ state }) => { 
-							return RT.updateState(state === 0 ? 1 : state * 2)
+						reducer: ({ R }) => { 
+							return R.updateState(state => state === 0 ? 1 : state * 2)
 						}
 					})
 				}
@@ -386,24 +384,24 @@ describe('conditions', () => {
 						conditions: { 
 							n: aovnC.wg((value) => value > 5)
 						}, 
-						reducer: ({ state, values: { n } }) => { 
-							return RT.updateState(state + n)
+						reducer: ({ R, values: { n } }) => { 
+							return R.updateState(state => state + n)
 						}
 					}),
 					nLessThan5: E.makeUpdater({
 						conditions: { 
 							n: aovnC.wg((value) => value < 5)
 						}, 
-						reducer: ({ state, values: { n } }) => { 
-							return RT.updateState(state - n)
+						reducer: ({ R, values: { n } }) => { 
+							return R.updateState(state => state - n)
 						}
 					}),
 					nEquals5: E.makeUpdater({
 						conditions: { 
 							n: aovnC.wg((value) => value === 5)
 						}, 
-						reducer: ({ state }) => { 
-							return RT.updateState(state === 0 ? 1 : state * 2)
+						reducer: ({ R }) => { 
+							return R.updateState(state => state === 0 ? 1 : state * 2)
 						}
 					})
 				}
@@ -429,7 +427,7 @@ describe('conditions', () => {
 				updaters: {
 					nChanged: E.makeUpdater({ 
 						conditions: { diff: nDiffC }, 
-						reducer: ({ state, values: { diff } }) => RT.updateState(state + diff) 
+						reducer: ({ R, values: { diff } }) => R.updateState(state => state + diff) 
 					})
 				}
 			}),
@@ -461,11 +459,11 @@ describe('conditions', () => {
 				updaters: {
 					nChanged: E.makeUpdater({ 
 						conditions: { a: aC }, 
-						reducer: ({ state }) => RT.updateState({ ...state, flag: true }) 
+						reducer: ({ R }) => R.updateState(state => ({ ...state, flag: true })) 
 					}),
 					e2Changed: E.makeUpdater({ 
 						conditions: { e2: E.makeEpicCondition<number>('e2') }, 
-						reducer: ({ state }) => RT.updateState({ ...state, value: state.value + 1 })
+						reducer: ({ R }) => R.updateState(state => ({ ...state, value: state.value + 1 }))
 					})
 				}
 			}),
@@ -475,7 +473,7 @@ describe('conditions', () => {
 				updaters: {
 					e1Changed: E.makeUpdater({ 
 						conditions: { e1: e1.c.wsk('flag') }, 
-						reducer: ({ state }) => RT.updateState(state + 1)
+						reducer: ({ R }) => R.updateState(state => state + 1)
 					})
 				}
 			}),

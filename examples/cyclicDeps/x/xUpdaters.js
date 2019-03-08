@@ -13,11 +13,11 @@ const
 			zResult: zResultC.tp(), 
 			_xClicked: xClickedC 
 		},
-		reducer: ({ values: { zResult }, state }) => CDE.RT.updateState((isEven(zResult)? incX: decX)(state))
+		reducer: ({ values: { zResult }, R }) => R.updateState(isEven(zResult)? incX : decX)
 	}),
 	zResultChanged: xUpdater = CDE.makeUpdater({
 		conditions: { zResult: zResultC },
-		reducer: ({ values: { zResult }, state }) => CDE.RT.updateState(setXColor(isEven(zResult) ? 'green' : 'red')(state))
+		reducer: ({ values: { zResult }, R }) => R.updateState(setXColor(isEven(zResult) ? 'green' : 'red'))
 	})
     
 export const xUpdaters = {

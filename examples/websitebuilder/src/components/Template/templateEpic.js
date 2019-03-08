@@ -5,18 +5,16 @@ import { type TemplateState, templateInitialState, setTemplateWidth } from './te
 import { wsbE } from '../../wsbE'
 import { componentRightPassiveCondition } from '../Component/componentACAC';
 import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown } from './templateACAC';
-
-const 
-    { makeEpicWithScope, makeUpdater, ResultType } = wsbE,
-    dndInitialState = { type: 'idle' }
-
-type TemplateScope = {| dnd: {| type: 'idle' |} | {| type: 'progress', startWidth: number, mouseStartLeft: number |} |}
+import { templateInitialScope, type TemplateScope, resetTemplateDnd, templateInitDnd } from './templateScope';
 
 const
+  { makeEpicWithScope, makeUpdater } = wsbE,
+
+
   templateEpic = makeEpicWithScope<TemplateState, TemplateScope, empty>({
     vat: 'TEMPLATE',
     initialState: templateInitialState,
-    initialScope: { dnd: dndInitialState },
+    initialScope: templateInitialScope,
     updaters: {
       dnd: makeUpdater({
         conditions: {
@@ -26,16 +24,16 @@ const
           leftDown: templateWidthLeftResizeHandleMouseDown.condition.toOptional(),
           rightDown: templateWidthRightResizeHandleMouseDown.condition.toOptional()
         },
-        reducer: ({ state, scope, values: { mouseLeft, leftDown, rightDown, componentRight }, changedActiveConditionsKeys }) => { 
-          if (!leftDown && !rightDown) return ResultType.doNothing
+        reducer: ({ state, scope, values: { mouseLeft, leftDown, rightDown, componentRight }, changedActiveConditionsKeys, R }) => { 
+          if (!leftDown && !rightDown) return R.doNothing
           
           if (changedActiveConditionsKeys[0] === 'mouseUp') {
-            return ResultType.updateScope({ ...scope, dnd: dndInitialState })
+            return R.updateScope(resetTemplateDnd)
           }
 
           const { dnd } = scope
           if (dnd.type === 'idle') {
-            return ResultType.updateScope({ ...scope, dnd: { type: 'progress', startWidth: state.width, mouseStartLeft: mouseLeft } })
+            return R.updateScope(templateInitDnd({ startWidth: state.width, mouseStartLeft: mouseLeft }))
           }
 
           const 
@@ -43,7 +41,7 @@ const
             leftDiff = mouseStartLeft - mouseLeft,
             nextWidth = Math.max(300, componentRight, leftDown ? startWidth + 2 * leftDiff : startWidth - 2 * leftDiff)
 
-          return ResultType.updateState(setTemplateWidth(nextWidth)(state)) 
+          return R.updateState(setTemplateWidth(nextWidth)) 
         }
       })
     }

@@ -23,7 +23,7 @@ describe('sequence', () => {
 				updaters: {
 					a: E.makeUpdater<State, *, *, *>({ 
 						conditions: { x: xC.wsk('value'), y: yC.wsk('value') }, 
-						reducer: ({ state, values: { x, y } }) => E.RT.updateState({ a: state.a + x + y }) 
+						reducer: ({ R, values: { x, y } }) => R.updateState(state => ({ a: state.a + x + y })) 
 					})
 				}
 			}),
@@ -45,7 +45,7 @@ describe('sequence', () => {
 				updaters: {
 					a: E.makeUpdater<number, *, *, *>({ 
 						conditions: { whatever: aC }, 
-						reducer: ({ state }) => E.RT.updateState(state + 1) 
+						reducer: ({ R }) => R.updateState(state => state + 1) 
 					})
 				} 
 			}),
@@ -55,7 +55,7 @@ describe('sequence', () => {
 				updaters: {
 					a: E.makeUpdater<number, *, *, *>({ 
 						conditions: { whatever: aC }, 
-						reducer: ({ state }) => E.RT.updateState(state + 1) 
+						reducer: ({ R }) => R.updateState(state => state + 1) 
 					})
 				}
 			}),
@@ -65,7 +65,7 @@ describe('sequence', () => {
 				updaters: {
 					e1ORe2Changed: E.makeUpdater<number, *, *, *>({ 
 						conditions: { e1: e1.c, e2: e2.c }, 
-						reducer: ({ state }) => E.RT.updateState(state + 1) 
+						reducer: ({ R }) => R.updateState(state => state + 1) 
 					})
 				}
 			}),
@@ -88,7 +88,7 @@ describe('sequence', () => {
 				updaters: {
 					a: E.makeUpdater<State, *, *, *>({ 
 						conditions: { _a: aC }, 
-						reducer: ({ state }) => E.RT.updateState({ a: state.a + 1, b: state.b - 1 }) 
+						reducer: ({ R }) => R.updateState(state => ({ a: state.a + 1, b: state.b - 1 })) 
 					})
 				}
 			}),
@@ -101,7 +101,7 @@ describe('sequence', () => {
 							_a: e1.c.wsk('a'), 
 							_b: e1.c.wsk('b') 
 						}, 
-						reducer: ({ state }) => E.RT.updateState(state + 1) 
+						reducer: ({ R }) => R.updateState(state => state + 1) 
 					})
 				}
 			}),
@@ -123,7 +123,7 @@ describe('sequence', () => {
 				updaters: {
 					a: E.makeUpdater<{| m: { [string]: {| kind: string |} }, i: string |}, *, *, *>({ 
 						conditions: { whatever: aC }, 
-						reducer: () => E.RT.updateState({ m: { a: { kind: 'text' }, b: { kind: 'button' } }, i: 'a' }) 
+						reducer: ({ R }) => R.updateState(() => ({ m: { a: { kind: 'text' }, b: { kind: 'button' } }, i: 'a' }))
 					})
 				} 
 			}),
@@ -133,7 +133,7 @@ describe('sequence', () => {
 				updaters: {
 					e1m: E.makeUpdater<Array<string>, *, *, *>({ 
 						conditions: { e1m: e1.c.wsk('m') }, 
-						reducer: ({ values: { e1m } }) => E.RT.updateState(Object.keys(e1m)) 
+						reducer: ({ values: { e1m }, R }) => R.updateState(() => Object.keys(e1m)) 
 					})
 				}
 			}),
@@ -143,7 +143,7 @@ describe('sequence', () => {
 				updaters: {
 					e1iORe2Changed: E.makeUpdater<string, *, *, *>({ 
 						conditions: { e1mRO: e1.c.wsk('m').tp(), e1i: e1.c.wsk('i'), e2: e2.c }, 
-						reducer: ({ values: { e1mRO, e1i, e2 }, state }) => E.RT.updateState(state + e1i + e1mRO[e1i].kind + e2.length) 
+						reducer: ({ values: { e1mRO, e1i, e2 }, R }) => R.updateState(state => state + e1i + e1mRO[e1i].kind + e2.length) 
 					})
 				}
 			}),
@@ -165,7 +165,7 @@ describe('sequence', () => {
 				updaters: {
 					a: E.makeUpdater<{| m: { [string]: {| kind: string |} }, i: string |}, *, *, *>({ 
 						conditions: { whatever: aC }, 
-						reducer: () => E.RT.updateState({ m: { a: { kind: 'text' }, b: { kind: 'button' } }, i: 'a' }) 
+						reducer: ({ R }) => R.updateState(() => ({ m: { a: { kind: 'text' }, b: { kind: 'button' } }, i: 'a' }))
 					})
 				} 
 			}),
@@ -175,7 +175,7 @@ describe('sequence', () => {
 				updaters: {
 					e1m: E.makeUpdater<Array<string>, *, *, *>({ 
 						conditions: { e1m: e1.c.wsk('m') }, 
-						reducer: ({ values: { e1m } }) => E.RT.updateState(Object.keys(e1m)) 
+						reducer: ({ values: { e1m }, R }) => R.updateState(() => Object.keys(e1m)) 
 					})
 				}
 			}),
@@ -185,7 +185,7 @@ describe('sequence', () => {
 				updaters: {
 					e1iORe2Changed: E.makeUpdater<string, *, *, *>({ 
 						conditions: { e1mRO: e1.c.wsk('m'), e1i: e1.c.wsk('i'), e2: e2.c }, 
-						reducer: ({ values: { e1mRO, e1i, e2 }, state }) => E.RT.updateState(state + e1i + e1mRO[e1i].kind + e2.length) 
+						reducer: ({ values: { e1mRO, e1i, e2 }, R }) => R.updateState(state => state + e1i + e1mRO[e1i].kind + e2.length) 
 					})
 				}
 			}),

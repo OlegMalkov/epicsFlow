@@ -1,22 +1,20 @@
 // @flow strict
 
 import { type ComponentState, componentInitialState, componentWithinTemplateAdjuster, setComponentPosition } from './componentState';
-import { type LTPosition } from '../../types'
 import { wsbE } from "../../wsbE";
 import { componentVat, componentMouseDown } from './componentACAC';
 import { windowMousePositionCondition, windowMouseUp } from '../../globalACAC.js'
 import { templateWidthPC } from '../Template/templateACAC';
-import { StateContainer } from '../../utils';
+import { SingleTypeContainer } from '../../utils';
+import { componentInitialScope, type ComponentScope, resetComponentDnd, initComponentDnd } from './componentScope';
 
-const { makeEpicWithScope, makeUpdater, ResultType } = wsbE
-type ComponentScope = {| dnd: {| type: 'idle' |} | {| type: 'progress', componentStartPos: LTPosition, mouseStartPos: LTPosition |} |}
+const { makeEpicWithScope, makeUpdater } = wsbE
 
 const
-  dndInitialState = { type: 'idle' },
   componentEpic = makeEpicWithScope<ComponentState, ComponentScope, empty>({
     vat: componentVat,
     initialState: componentInitialState,
-    initialScope: { dnd: dndInitialState },
+    initialScope: componentInitialScope,
     updaters: {
       dnd: makeUpdater({
         conditions: {
@@ -25,25 +23,23 @@ const
           mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
           mouseDown: componentMouseDown.condition,
         },
-        reducer: ({ state, state: { position: { left, top } }, scope, values: { mousePosition, templateWidth }, changedActiveConditionsKeys }) => { 
+        reducer: ({ 
+          state, state: { position }, scope, values: { mousePosition, templateWidth }, changedActiveConditionsKeys, R }) => { 
           if (changedActiveConditionsKeys[0] === 'mouseUp') {
-            return ResultType.updateScope({ ...scope, dnd: dndInitialState })
+            return R.updateScope(resetComponentDnd)
           }
           const { dnd } = scope
           if (dnd.type === 'idle') {
-            return ResultType.updateScope({ ...scope, dnd: { type: 'progress', componentStartPos: { left, top }, mouseStartPos: mousePosition } })
+            return R.updateScope(initComponentDnd({ componentStartPos: position, mouseStartPos: mousePosition }))
           }
           const 
             { componentStartPos, mouseStartPos } = dnd,
             diffLeft = mouseStartPos.left - mousePosition.left,
             diffTop = mouseStartPos.top - mousePosition.top
 
-          return ResultType.updateState(
-            StateContainer(state)
-              .pipe(setComponentPosition({ left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop }))
-              .pipe(componentWithinTemplateAdjuster(templateWidth))
-              .value()
-          ) 
+          return R
+            .updateState(setComponentPosition({ left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop }))
+            .updateState(componentWithinTemplateAdjuster(templateWidth))
         }
       })
     }

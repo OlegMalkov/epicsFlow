@@ -17,18 +17,16 @@ const
 			y: yValueC.tp(),
 			_zClicked: zClickedC 
 		},
-		reducer: ({ values: { x, y }, state }) => {
-			return CDE.RT.updateState(compose2(zComputeResult(x,y), zIncMultiplier, state))
-		}
+		reducer: ({ values: { x, y }, R }) => R
+			.updateState(zIncMultiplier)
+			.updateState(zComputeResult(x,y))
 	}),
 	xOrYChanged: zUpdater = CDE.makeUpdater({
 		conditions: { 
 			x: xValueC, 
 			y: yValueC
 		},
-		reducer: ({ values: { x, y }, state }) => {
-			return CDE.RT.updateState(zComputeResult(x,y)(state))
-		}
+		reducer: ({ values: { x, y }, R }) => R.updateState(zComputeResult(x,y))
 	})
 
 export const zUpdaters = {

@@ -47,6 +47,7 @@ module.exports = {
         "describe": true,
         "it": true,
         "expect": true,
-        "beforeEach": true
+        "beforeEach": true,
+        "__DEV__": true
     }
 };

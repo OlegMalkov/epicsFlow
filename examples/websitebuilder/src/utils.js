@@ -1,7 +1,15 @@
 // @flow strict
+import { deepEqual } from './epics';
 
 type MakeSetter = <S: {}, P: $Keys<S>>(propName: P) => (value: $ElementType<S, P>) => S => S
 export const makeSetter: MakeSetter = propName => value => state => ({ ...state, [propName]: value })
+export const makeSetterOnAnyChangeDeepCompare: MakeSetter = propName => value => state => {
+    if (deepEqual(state[propName], value)) {
+        // $FlowFixMe 
+        return state
+    }
+    return ({ ...state, [propName]: value })
+}
 
 
 // For value transformation
@@ -15,20 +23,20 @@ class $ValueContainer<V> {
 } 
 
 // For state update
-class $StateContainer<S> {
-    #state: S
+class $SingleTypeContainer<S> {
+    _state: S
     constructor(state: S) {
-        this.#state = state
+        this._state = state
     }
-    pipe(updater: S => S): $StateContainer<S> { return new $StateContainer<S>(updater(this.#state)) }
-    value(): S { return this.#state }
+    pipe(updater: S => S): $SingleTypeContainer<S> { return new $SingleTypeContainer<S>(updater(this._state)) }
+    value(): S { return this._state }
 } 
 
 const 
     ValueContainer = <V>(value: V): $ValueContainer<V> => new $ValueContainer(value),
-    StateContainer = <S>(state: S): $StateContainer<S> => new $StateContainer(state)
+    SingleTypeContainer = <S>(state: S): $SingleTypeContainer<S> => new $SingleTypeContainer(state)
 
 export {
     ValueContainer,
-    StateContainer
+    SingleTypeContainer
 }

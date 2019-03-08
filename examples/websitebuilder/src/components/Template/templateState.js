@@ -1,9 +1,9 @@
 // @flow strict
 
-import { makeSetter } from "../../utils";
+import { makeSetterOnAnyChangeDeepCompare } from '../../utils';
 
-export opaque type TemplateState: {| width: number |} = {| width: number |}
+export opaque type TemplateState: {| width: * |} = {| width: number |}
 
 export const 
     templateInitialState: TemplateState = { width: 940 },
-    setTemplateWidth = makeSetter<TemplateState, *>('width')
+    setTemplateWidth = makeSetterOnAnyChangeDeepCompare<TemplateState, *>('width')

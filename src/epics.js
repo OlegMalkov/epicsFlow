@@ -1,5 +1,6 @@
 // @flow
 
+const __DEV__ = process.env !== 'production'
 type AnyValue = number | string | boolean | Object | Array<AnyValue> | null
 
 type CompulsoryConditionFields = {|
@@ -108,52 +109,54 @@ opaque type SendMsgOutsideEpicsEffect = {|
 	msg: any
 |}
 
-type SideEffect<E> = 
-| DispatchActionEffect
-| E
+class ReducerResult<S, SC, SE> {
+	_stateUpdated: boolean;
+	_scopeUpdated: boolean;
+	_state: S;
+	_scope: SC;
+	_sideEffects: Array<SE>;
+	_updateReasons: Array<string>
 
-type SideEffects<E> = Array<SideEffect<E>>
+	constructor(state: S, updateReasons: Array<string>, scope:SC, sideEffects: Array<SE>, stateUpdated, scopeUpdated) {
+		this._state = state
+		this._updateReasons = updateReasons
+		this._scope = scope
+		this._sideEffects = sideEffects
+		this._stateUpdated = stateUpdated
+		this._scopeUpdated = scopeUpdated
+		this.doNothing = this
+	}
 
-const doNothingResultType: 'do_nothing_rt' = 'do_nothing_rt'
-opaque type DoNothingRT = {| type: typeof doNothingResultType |}
-const sideEffectsResultType: 'side_effects_rt' = 'side_effects_rt'
-opaque type SideEffectsRT<E> = {| type: typeof sideEffectsResultType, effects: Array<SideEffect<E>> |}
-const updateStateResultType: 'update_state_rt' = 'update_state_rt'
-opaque type UpdateStateRT<S> = {| type: typeof updateStateResultType, state: S, updateReason?: string |}
-const updateScopeResultType: 'update_scope_rt' = 'update_scope_rt'
-opaque type UpdateScopeRT<SC> = {| type: typeof updateScopeResultType, scope: SC |}
-const updateStateAndScopeResultType: 'update_state_and_scope_rt' = 'update_state_and_scope_rt'
-opaque type UpdateStateAndScopeRT<S, SC> = {| type: typeof updateStateAndScopeResultType, state: S, scope: SC, updateReason?: string |}
-const updateStateWithSideEffectsResultType: 'update_state_with_side_effects_rt' = 'update_state_with_side_effects_rt'
-opaque type UpdateStateWithSideEffectsRT<S, E> = {| type: typeof updateStateWithSideEffectsResultType, state: S, effects: Array<SideEffect<E>>, updateReason?: string |}
-const updateScopeWithSideEffectsResultType: 'update_scope_with_side_effects_rt' = 'update_scope_with_side_effects_rt'
-opaque type UpdateScopeWithSideEffectsRT<SC, E> = {| type: typeof updateScopeWithSideEffectsResultType, scope: SC, effects: Array<SideEffect<E>> |}
-const updateStateAndScopeWithSideEffectsResultType: 'update_state_and_scope_with_side_effects_rt' = 'update_state_and_scope_with_side_effects_rt'
-opaque type UpdateStateAndScopeWithSideEffectsRT<S, SC, E> = {| type: typeof updateStateAndScopeWithSideEffectsResultType, state: S, scope: SC, effects: Array<SideEffect<E>>, updateReason?: string |}
-type EpicUpdaterResult<S, SC, E> = DoNothingRT 
-	| SideEffectsRT<E>
-	| UpdateStateRT<S>
-	| UpdateStateWithSideEffectsRT<S, E> 
-	| UpdateScopeRT<SC>
-	| UpdateScopeWithSideEffectsRT<SC, E>
-	| UpdateStateAndScopeWithSideEffectsRT<S, SC, E>
+	doNothing: ReducerResult<S, SC, SE>
 
-export type AnyEpicUpdaterResultType<S, SC, E> = EpicUpdaterResult<S, SC, E>
+	sideEffect(effect: SE): ReducerResult<S, SC, SE> {
+		return new ReducerResult<S, SC, SE>(this._state, this._updateReasons, this._scope, [...this._sideEffects, effect], this._stateUpdated, this._scopeUpdated)
+	}
 
-const ResultType = { 
-	doNothing: ({ type: doNothingResultType }: DoNothingRT),
-	sideEffects: <E>(effects: SideEffects<E>): SideEffectsRT<E> => ({ type: sideEffectsResultType, effects }),
-	updateState: <S>(state: S, updateReason?: string): UpdateStateRT<S> => ({ type: updateStateResultType, state, updateReason }),
-	updateStateWithSideEffects: <S, E>(state: S, effects: SideEffects<E>, updateReason?: string): UpdateStateWithSideEffectsRT<S, E> => ({ type: updateStateWithSideEffectsResultType, state, effects, updateReason }),
-	updateScope: <SC>(scope: SC): UpdateScopeRT<SC> => ({ type: updateScopeResultType, scope }),
-	updateScopeWithSideEffects: <SC, E>(scope: SC, effects: SideEffects<E>): UpdateScopeWithSideEffectsRT<SC, E> => ({ type: updateScopeWithSideEffectsResultType, scope, effects }),
-	updateStateAndScope: <S, SC>(state: S, scope: SC, updateReason?: string): UpdateStateAndScopeRT<S, SC> => ({ type: updateStateAndScopeResultType, state, scope, updateReason }),
-	updateStateAndScopeWithSideEffectsResultType: <S, SC, E>(state: S, scope: SC, effects: SideEffects<E>, updateReason?: string): UpdateStateAndScopeWithSideEffectsRT<S, SC, E> => ({ type: updateStateAndScopeWithSideEffectsResultType, state, scope, effects, updateReason })
+	// update reason will be taken only if updater returned updated state
+	updateState(updater: S => S, updateReason?: string): ReducerResult<S, SC, SE> {
+		const nextState = updater(this._state)
+		
+		if (__DEV__) {
+			if (nextState !== this._state && deepEqual(nextState, this._state)) {
+				throw new Error('Do not recreate state object if nothing changed. It will unnecessary tell observers that it is changed, when actually there was not any change.')
+			}
+		}
+		return new ReducerResult<S, SC, SE>(nextState, updateReason && (nextState !== this._state) ? [...this._updateReasons, updateReason] : this._updateReasons, this._scope, this._sideEffects, true, this._scopeUpdated)
+	}
+
+	updateScope(updater: SC => SC): ReducerResult<S, SC, SE> {
+		const nextScope = updater(this._scope)
+		if (__DEV__) {
+			if (nextScope !== this._scope && deepEqual(nextScope, this._scope)) {
+				throw new Error('Do not recreate scope object if nothing changed. It will unnecessary tell observers that it is changed, when actually there was not any change.')
+			}
+		}
+		return new ReducerResult<S, SC, SE>(this._state, this._updateReasons, nextScope, this._sideEffects, this._stateUpdated, true)
+	}
 }
 
-const RT = ResultType
-
-export type Reducer<S: AnyValue, SC: Object, CV, E> = ({| values: CV, state: S, scope: SC, changedActiveConditionsKeys: Array<$Keys<CV>>, sourceAction: AA |}) => EpicUpdaterResult<S, SC, E>
+export type Reducer<S: AnyValue, SC: Object, CV, E> = ({| values: CV, state: S, scope: SC, changedActiveConditionsKeys: Array<$Keys<CV>>, sourceAction: AA, R: ReducerResult<S, SC, E> |}) => ReducerResult<S, SC, E>
 
 const extractConditionV =<V>(c: { value: V }): V => c.value
 
@@ -170,7 +173,7 @@ type EpicValueAction<State> = {| type: string, value: State |}
 
 function makeUpdater<S: AnyValue, SC: Object, C: { [string]: Object }, E> ({ conditions, reducer }: {|
 	conditions: C,
-	reducer: ({| values: $Exact<$ObjMap<C, typeof extractConditionV>>, state: S, scope: SC, changedActiveConditionsKeys: Array<$Keys<C>>, sourceAction: AA |}) => EpicUpdaterResult<S, SC, E>
+	reducer: ({| values: $Exact<$ObjMap<C, typeof extractConditionV>>, state: S, scope: SC, changedActiveConditionsKeys: Array<$Keys<C>>, sourceAction: AA, R: ReducerResult<S, SC, E> |}) => ReducerResult<S, SC, E>
 |}): Updater<S, SC, any, E> {
 	let noActiveConditions = true
 	const 
@@ -308,7 +311,7 @@ const
 	keyList = Object.keys,
 	hasProp = Object.prototype.hasOwnProperty
 
-function deepEqual(a, b) {
+export function deepEqual(a: any, b: any) {
 	if (a === b) return true
 
 	if (a && b && typeof a == 'object' && typeof b == 'object') {
@@ -778,7 +781,8 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 						state: prevState,
 						scope: prevScope,
 						sourceAction,
-						changedActiveConditionsKeys
+						changedActiveConditionsKeys,
+						R: new ReducerResult(prevState, [], prevScope, [], false, false)
 					})
 
 				changedActiveConditionsKeys.forEach(cck => {
@@ -790,68 +794,27 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 					}
 				})
 
-				let nextState, nextScope, updateReason, effects
-
-				switch (result.type) {
-				case doNothingResultType:
-					return
-				case sideEffectsResultType:
-					effects = result.effects
-					break
-				case updateStateResultType:
-					nextState = result.state
-					updateReason = result.updateReason
-					break
-				case updateStateWithSideEffectsResultType:
-					nextState = result.state
-					updateReason = result.updateReason
-					effects = result.effects
-					break
-				case updateScopeResultType:
-					nextScope = result.scope
-					break
-				case updateScopeWithSideEffectsResultType:
-					nextScope = result.scope
-					effects = result.effects
-					break
-				case updateStateAndScopeResultType:
-					nextState = result.state
-					updateReason = result.updateReason
-					nextScope = result.scope
-					break
-				case updateStateAndScopeWithSideEffectsResultType:
-					nextState = result.state
-					updateReason = result.updateReason
-					nextScope = result.scope
-					effects = result.effects
-					break
-				default:
-					warn('unsupported result', result)
-					throw new Error('unsupported result type ' + result.type)
-				}
-
 				if (process.env.NODE_ENV !== 'production') { // to eliminate this from production build
 					// TODO devDeepFreeze(result);
 				}
 
-				if (prevScope !== nextScope) {
-					epicStateUpdate.scope = nextScope // eslint-disable-line no-param-reassign
+				if (result._scopeUpdated) {
+					epicStateUpdate.scope = result._scope // eslint-disable-line no-param-reassign
 				}
-				if (nextState !== undefined && prevState !== nextState) {
+				if (result._stateUpdated) {
 					updaterKeysThatChangedState.push(updaterKey)
-					epicStateUpdate.state = nextState // eslint-disable-line no-param-reassign
-					if (updateReason) {
-						updateReasons.push(updateReason)
-					}
+					epicStateUpdate.state = result._state // eslint-disable-line no-param-reassign
+					updateReasons.push(...result._updateReasons)
 					// TODO is this epic has subs to it self, execute them immideately, skipping after update
 				}
 
-				if (effects) {
-					effects.forEach(e => {
+				const { _sideEffects } = result
+				if (_sideEffects.length) {
+					_sideEffects.forEach(e => {
 						e.updaterKey = updaterKey
 					})
 					// TODO if effect is action dispatch that has sub within same epic, execute it immediately, skipping after update
-					allEffects.push(...effects)
+					allEffects.push(..._sideEffects)
 				}
 			})
 
@@ -1489,8 +1452,6 @@ export function initEpics() {
 
 	return {
 		makeCondition,
-		ResultType,
-		RT,
 		makeEpicConditionReceiveFullAction,
 		makeEpicCondition,
 		makeUpdater,

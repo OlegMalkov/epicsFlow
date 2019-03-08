@@ -1,13 +1,13 @@
 // @flow strict
 
 import { type LTPosition, type Dimensions } from '../../types'
-import { makeSetter } from '../../utils';
+import { makeSetterOnAnyChangeDeepCompare } from '../../utils';
 
-export opaque type ComponentState: { position: LTPosition, dimensions: Dimensions } =  {| position: LTPosition, dimensions: Dimensions |}
+export opaque type ComponentState: { position: *, dimensions: * } =  {| position: LTPosition, dimensions: Dimensions |}
 
 export const 
     componentInitialState: ComponentState = { position: { left: 100, top: 100 }, dimensions: { width: 300, height: 200 } },
-    setComponentPosition = makeSetter<ComponentState, *>('position'),
+    setComponentPosition = makeSetterOnAnyChangeDeepCompare<ComponentState, *>('position'),
     componentWithinTemplateAdjuster = (templateWidth: number) => (componentState: ComponentState): ComponentState => {
         const { position: { left, top }, dimensions: { width } } = componentState
         let adjustedLeft
@@ -26,10 +26,10 @@ export const
         }
 
         let nextState = componentState
-        if (adjustedLeft !== undefined) {
+        if (adjustedLeft !== undefined && adjustedLeft !== nextState.position.left) {
             nextState = { ...nextState, position: { ...nextState.position, left: adjustedLeft } }
         }
-        if (adjustedTop !== undefined) {
+        if (adjustedTop !== undefined && adjustedTop !== nextState.position.top) {
             nextState = { ...nextState, position: { ...nextState.position, top: adjustedTop } }
         }
         return nextState
