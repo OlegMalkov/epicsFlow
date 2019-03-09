@@ -42,13 +42,6 @@
   position: relative;
 }
 
-.Component {
-  background-color: #d6bb20;
-  position: absolute;
-  z-index: 1;
-  cursor: move;
-}
-
 .TemplateWidthResizeHandle {
   background-color: #6b83a393;
   width: 11px;

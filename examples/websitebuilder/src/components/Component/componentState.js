@@ -3,11 +3,22 @@
 import { type LTPosition, type Dimensions } from '../../types'
 import { makeSetterOnAnyChangeDeepCompare } from '../../utils';
 
-export opaque type ComponentState: { position: *, dimensions: * } =  {| position: LTPosition, dimensions: Dimensions |}
+export opaque type ComponentState: { position: *, dimensions: *, handles: *, selected: * } =  {|
+    position: LTPosition,
+    dimensions: Dimensions, 
+    handles: Array<{| position: LTPosition, dimensions: Dimensions |}>,
+    selected: boolean
+|}
 
 export const 
-    componentInitialState: ComponentState = { position: { left: 100, top: 100 }, dimensions: { width: 300, height: 200 } },
+    componentInitialState: ComponentState = { 
+        position: { left: 100, top: 100 }, 
+        dimensions: { width: 300, height: 200 },
+        handles: [],
+        selected: false
+    },
     setComponentPosition = makeSetterOnAnyChangeDeepCompare<ComponentState, *>('position'),
+    setComponentSelected = makeSetterOnAnyChangeDeepCompare<ComponentState, *>('selected'),
     componentWithinTemplateAdjuster = (templateWidth: number) => (componentState: ComponentState): ComponentState => {
         const { position: { left, top }, dimensions: { width } } = componentState
         let adjustedLeft

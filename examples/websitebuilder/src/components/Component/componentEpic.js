@@ -1,12 +1,12 @@
 // @flow strict
 
-import { type ComponentState, componentInitialState, componentWithinTemplateAdjuster, setComponentPosition } from './componentState';
+import { type ComponentState, componentInitialState, componentWithinTemplateAdjuster, setComponentPosition, setComponentSelected } from './componentState';
 import { wsbE } from "../../wsbE";
 import { componentVat, componentMouseDown } from './componentACAC';
-import { windowMousePositionCondition, windowMouseUp } from '../../globalACAC.js'
-import { templateWidthPC } from '../Template/templateACAC';
-import { SingleTypeContainer } from '../../utils';
-import { componentInitialScope, type ComponentScope, resetComponentDnd, initComponentDnd } from './componentScope';
+import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC.js'
+import { templateWidthPC, templateAreaMouseDown } from '../Template/templateACAC';
+import { componentInitialScope, type ComponentScope, initComponentMovingDnd, resetComponentMovingDnd } from './componentScope';
+import { dndTypeIdle, dndTypeProgress } from '../shared/dnd';
 
 const { makeEpicWithScope, makeUpdater } = wsbE
 
@@ -16,24 +16,45 @@ const
     initialState: componentInitialState,
     initialScope: componentInitialScope,
     updaters: {
-      dnd: makeUpdater({
+      dndMoveAndSelection: makeUpdater({
         conditions: {
           templateWidth: templateWidthPC,
-          mousePosition: windowMousePositionCondition,
-          mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
           mouseDown: componentMouseDown.condition,
+          mousePosition: windowMousePositionCondition,
+          cancel: keyboardEscDownCondition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
+          mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown'])
         },
         reducer: ({ 
-          state, state: { position }, scope, values: { mousePosition, templateWidth }, changedActiveConditionsKeys, R }) => { 
-          if (changedActiveConditionsKeys[0] === 'mouseUp') {
-            return R.updateScope(resetComponentDnd)
+          state: { position },
+          scope,
+          values: { mousePosition, templateWidth }, 
+          changedActiveConditionsKeysMap, 
+          R 
+        }) => {
+          if (changedActiveConditionsKeysMap.cancel) {
+            if (scope.movingDnd.type === dndTypeProgress) {
+              return R
+                  .updateState(setComponentPosition(scope.movingDnd.componentStartPos))
+                  .updateScope(resetComponentMovingDnd)
+            }
+            return R.doNothing
           }
-          const { dnd } = scope
-          if (dnd.type === 'idle') {
-            return R.updateScope(initComponentDnd({ componentStartPos: position, mouseStartPos: mousePosition }))
+
+          if (changedActiveConditionsKeysMap.mouseUp) {
+            if (scope.movingDnd.type === dndTypeProgress) {
+              return R
+                  .updateState(setComponentSelected(true))
+                  .updateScope(resetComponentMovingDnd)
+            }
+            return R.doNothing
           }
+
+          if (scope.movingDnd.type === dndTypeIdle) {
+            return R.updateScope(initComponentMovingDnd({ componentStartPos: position, mouseStartPos: mousePosition }))
+          }
+
           const 
-            { componentStartPos, mouseStartPos } = dnd,
+            { componentStartPos, mouseStartPos } = scope.movingDnd,
             diffLeft = mouseStartPos.left - mousePosition.left,
             diffTop = mouseStartPos.top - mousePosition.top
 
@@ -41,6 +62,10 @@ const
             .updateState(setComponentPosition({ left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop }))
             .updateState(componentWithinTemplateAdjuster(templateWidth))
         }
+      }),
+      deselection: makeUpdater({
+        conditions: { templateAreaMouseDown: templateAreaMouseDown.condition },
+        reducer: ({ R }) => R.updateState(setComponentSelected(false))
       })
     }
   })

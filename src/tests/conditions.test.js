@@ -119,6 +119,37 @@ describe('conditions', () => {
 		expect(store.getState().e1).toBe(16)
 	})
 
+	it('condition .withGuard + .toOptional works', () => {
+		const
+			e1 = E.makeEpic<number, empty>({
+				vat: 'e1',
+				initialState: 0,
+				updaters: {
+					nChanged: E.makeUpdater({
+						conditions: { 
+							n: aovnC.wg(value => value > 5).toOptional()
+						}, 
+						reducer: ({ R, values: { n } }) => { 
+							return R.updateState(state => state + n)
+						}
+					})
+				}
+			}),
+			store = E.createStore({ epics: { e1 }	})
+			
+		store.dispatch(aAC(5))
+		expect(store.getState().e1).toBe(0)
+
+		store.dispatch(aAC(6))
+		expect(store.getState().e1).toBe(6)
+
+		store.dispatch(aAC(5))
+		expect(store.getState().e1).toBe(6)
+
+		store.dispatch(aAC(10))
+		expect(store.getState().e1).toBe(16)
+	})
+
 	it('condition .withGuard + .withSelector works', () => {
 		const
 			e1 = E.makeEpic<number, empty>({

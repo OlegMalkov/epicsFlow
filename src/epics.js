@@ -26,8 +26,8 @@ export opaque type Condition<V: Object>: {
 	ws: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
     resetConditionsByKey: (Array<string>) => Condition<V>,
     resetConditionsByKeyAfterReducerCall: (Array<string>) => Condition<V>,
-    withGuard: (guard: V => boolean) => Condition<V>,
-    wg: (guard: V => boolean) => Condition<V>,
+    withGuard: <VV: V>(guard: VV => boolean) => Condition<VV>,
+    wg: <VV: V>(guard: VV => boolean) => Condition<VV>,
 	actionType: string
 } = {|
 	valueKey: string,
@@ -42,8 +42,8 @@ export opaque type Condition<V: Object>: {
 	to: () => Condition<V>,
     resetConditionsByKey: (Array<string>) => Condition<V>,
     resetConditionsByKeyAfterReducerCall: (Array<string>) => Condition<V>,
-    withGuard: (guard: V => boolean) => Condition<V>,
-	wg: (guard: V => boolean) => Condition<V>,
+    withGuard: <VV: V>(guard: VV => boolean) => Condition<VV>,
+	wg: <VV: V>(guard: VV => boolean) => Condition<VV>,
 
 	parentCondition?: Condition<AnyValue>,
 
@@ -91,7 +91,7 @@ type makeConditionProps = {|
 
 type AA = { type: $Subtype<string> }
 type Meta = {| targetEpicVats?: string[] |}
-type Dispatch = (AA, meta?: Meta) => void
+export type Dispatch = (AA, meta?: Meta) => void
 
 type ConditionsValues = { [string]: AnyValue }
 
@@ -117,7 +117,7 @@ class ReducerResult<S, SC, SE> {
 	_sideEffects: Array<SE>;
 	_updateReasons: Array<string>
 
-	constructor(state: S, updateReasons: Array<string>, scope:SC, sideEffects: Array<SE>, stateUpdated, scopeUpdated) {
+	constructor(state: S, updateReasons: Array<string>, scope: SC, sideEffects: Array<SE>, stateUpdated, scopeUpdated) {
 		this._state = state
 		this._updateReasons = updateReasons
 		this._scope = scope
@@ -156,7 +156,9 @@ class ReducerResult<S, SC, SE> {
 	}
 }
 
-export type Reducer<S: AnyValue, SC: Object, CV, E> = ({| values: CV, state: S, scope: SC, changedActiveConditionsKeys: Array<$Keys<CV>>, sourceAction: AA, R: ReducerResult<S, SC, E> |}) => ReducerResult<S, SC, E>
+const toTrueV = (): true => true
+
+export type Reducer<S: AnyValue, SC: Object, CV, E> = ({| values: CV, state: S, scope: SC, changedActiveConditionsKeysMap: $ObjMap<CV, typeof toTrueV>, sourceAction: AA, R: ReducerResult<S, SC, E> |}) => ReducerResult<S, SC, E>
 
 const extractConditionV =<V>(c: { value: V }): V => c.value
 
@@ -173,7 +175,7 @@ type EpicValueAction<State> = {| type: string, value: State |}
 
 function makeUpdater<S: AnyValue, SC: Object, C: { [string]: Object }, E> ({ conditions, reducer }: {|
 	conditions: C,
-	reducer: ({| values: $Exact<$ObjMap<C, typeof extractConditionV>>, state: S, scope: SC, changedActiveConditionsKeys: Array<$Keys<C>>, sourceAction: AA, R: ReducerResult<S, SC, E> |}) => ReducerResult<S, SC, E>
+	reducer: ({| values: $Exact<$ObjMap<C, typeof extractConditionV>>, state: S, scope: SC, changedActiveConditionsKeysMap: $ObjMap<C, typeof toTrueV>, sourceAction: AA, R: ReducerResult<S, SC, E> |}) => ReducerResult<S, SC, E>
 |}): Updater<S, SC, any, E> {
 	let noActiveConditions = true
 	const 
@@ -585,10 +587,9 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 			}
 			conditionsValuesUpdate[valueKey] = newChildValue
 			changedConditions.push(childCondition)
-
-			if (childCondition.childrenConditionsWithoutSelectorAndGuard) {
-				changedConditions.push(...childCondition.childrenConditionsWithoutSelectorAndGuard)
-			}
+		}
+		if (childCondition.childrenConditionsWithoutSelectorAndGuard) {
+			changedConditions.push(...childCondition.childrenConditionsWithoutSelectorAndGuard)
 		}
 		if (!childCondition.childrenConditionsWithSelectorOrGuard) return
 
@@ -608,7 +609,7 @@ type ExecuteActionProps = {|
 	messagesToSendOutside: Array<AA>
 |}
 
-const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effectManagers, dispatch, rootConditionsByActionType }) => { 
+const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManagers, dispatch, rootConditionsByActionType }) => { 
 	const effectManagersByRequestType: { [string]: EffectManager<*, *, *> } = Object.keys(effectManagers).reduce((m, emk) => {
 		const effectManager = { ...effectManagers[emk] }
 		effectManager.key = emk
@@ -781,7 +782,7 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, warn, effec
 						state: prevState,
 						scope: prevScope,
 						sourceAction,
-						changedActiveConditionsKeys,
+						changedActiveConditionsKeysMap: changedActiveConditionsKeys.reduce((m, k) => { m[k] = true; return m }, {}),
 						R: new ReducerResult(prevState, [], prevScope, [], false, false)
 					})
 

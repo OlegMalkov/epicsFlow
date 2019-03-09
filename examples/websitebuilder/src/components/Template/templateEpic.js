@@ -10,7 +10,6 @@ import { templateInitialScope, type TemplateScope, resetTemplateDnd, templateIni
 const
   { makeEpicWithScope, makeUpdater } = wsbE,
 
-
   templateEpic = makeEpicWithScope<TemplateState, TemplateScope, empty>({
     vat: 'TEMPLATE',
     initialState: templateInitialState,
@@ -24,10 +23,10 @@ const
           leftDown: templateWidthLeftResizeHandleMouseDown.condition.toOptional(),
           rightDown: templateWidthRightResizeHandleMouseDown.condition.toOptional()
         },
-        reducer: ({ state, scope, values: { mouseLeft, leftDown, rightDown, componentRight }, changedActiveConditionsKeys, R }) => { 
+        reducer: ({ state, scope, values: { mouseLeft, leftDown, rightDown, componentRight }, changedActiveConditionsKeysMap, R }) => { 
           if (!leftDown && !rightDown) return R.doNothing
           
-          if (changedActiveConditionsKeys[0] === 'mouseUp') {
+          if (changedActiveConditionsKeysMap.mouseUp) {
             return R.updateScope(resetTemplateDnd)
           }
 

@@ -1,15 +1,16 @@
 // @flow strict
 
-import { type LTPosition } from "../../types";
-import { makeSetter } from "../../utils";
+import { type LTPosition } from "../../types.js";
+import { makeSetter } from "../../utils.js";
+import { type DndIdle, dndTypeProgress, dndInitialState } from '../shared/dnd.js'
 
-export opaque type ComponentScope: { dnd: * } = {| dnd: {| type: 'idle' |} | {| type: 'progress', componentStartPos: LTPosition, mouseStartPos: LTPosition |} |}
 
-const setDnd = makeSetter<ComponentScope, *>('dnd')
+const setMovingDnd = makeSetter<ComponentScope, *>('movingDnd')    
+
+export opaque type ComponentScope: { movingDnd: * } = {| movingDnd: DndIdle | {| type: typeof dndTypeProgress, componentStartPos: LTPosition, mouseStartPos: LTPosition |} |}
 
 export const 
-    dndInitialState = { type: 'idle' },
-    componentInitialScope: ComponentScope = { dnd: dndInitialState },
-    resetComponentDnd = (s: ComponentScope): ComponentScope => setDnd(dndInitialState)(s),
-    initComponentDnd = ({ componentStartPos, mouseStartPos }: {| componentStartPos: LTPosition, mouseStartPos: LTPosition |}) => 
-        (s: ComponentScope): ComponentScope => setDnd({ type: 'progress', componentStartPos, mouseStartPos })(s)
+    componentInitialScope: ComponentScope = { movingDnd: dndInitialState },
+    resetComponentMovingDnd = (s: ComponentScope): ComponentScope => setMovingDnd(dndInitialState)(s),
+    initComponentMovingDnd = ({ componentStartPos, mouseStartPos }: {| componentStartPos: LTPosition, mouseStartPos: LTPosition |}) => 
+        (s: ComponentScope): ComponentScope => setMovingDnd({ type: dndTypeProgress, componentStartPos, mouseStartPos })(s)
