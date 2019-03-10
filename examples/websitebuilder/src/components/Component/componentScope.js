@@ -1,16 +1,27 @@
 // @flow strict
 
-import { type LTPosition } from "../../types.js";
-import { makeSetter } from "../../utils.js";
+import { type LTPosition, type Dimensions } from "../../types.js";
+import { setProp } from "../../utils.js";
 import { type DndIdle, dndTypeProgress, dndInitialState } from '../shared/dnd.js'
 
 
-const setMovingDnd = makeSetter<ComponentScope, *>('movingDnd')    
+const 
+    setMoveDnd = setProp<ComponentScope, *>('movingDnd'),
+    setResizeDnd = setProp<ComponentScope, *>('resizeDnd')
 
-export opaque type ComponentScope: { movingDnd: * } = {| movingDnd: DndIdle | {| type: typeof dndTypeProgress, componentStartPos: LTPosition, mouseStartPos: LTPosition |} |}
+export opaque type ComponentScope: { movingDnd: *, resizeDnd: * } = {| 
+    movingDnd: DndIdle | {| type: typeof dndTypeProgress, componentStartPos: LTPosition, mouseStartPos: LTPosition |},
+    resizeDnd: DndIdle | {| type: typeof dndTypeProgress, componentStartDimensions: Dimensions, componentStartPosition: LTPosition, mouseStartPos: LTPosition |}
+|}
 
 export const 
-    componentInitialScope: ComponentScope = { movingDnd: dndInitialState },
-    resetComponentMovingDnd = (s: ComponentScope): ComponentScope => setMovingDnd(dndInitialState)(s),
-    initComponentMovingDnd = ({ componentStartPos, mouseStartPos }: {| componentStartPos: LTPosition, mouseStartPos: LTPosition |}) => 
-        (s: ComponentScope): ComponentScope => setMovingDnd({ type: dndTypeProgress, componentStartPos, mouseStartPos })(s)
+    componentInitialScope: ComponentScope = { 
+        movingDnd: dndInitialState,  
+        resizeDnd: dndInitialState
+    },
+    resetComponentMoveDnd = (s: ComponentScope): ComponentScope => setMoveDnd(dndInitialState)(s),
+    resetComponentResizeDnd = (s: ComponentScope): ComponentScope => setResizeDnd(dndInitialState)(s),
+    initComponentMoveDnd = ({ componentStartPos, mouseStartPos }: {| componentStartPos: LTPosition, mouseStartPos: LTPosition |}) => 
+        (s: ComponentScope): ComponentScope => setMoveDnd({ type: dndTypeProgress, componentStartPos, mouseStartPos })(s),
+    initComponentResizeDnd = ({ componentStartDimensions, componentStartPosition, mouseStartPos }: {| componentStartDimensions: Dimensions, componentStartPosition: LTPosition, mouseStartPos: LTPosition |}) => 
+        (s: ComponentScope): ComponentScope => setResizeDnd({ type: dndTypeProgress, componentStartDimensions, componentStartPosition, mouseStartPos })(s)

@@ -17,13 +17,15 @@
 // *14. Componen cursor should be 'resize' when resizing component, irrespectful of what is currently under mouse
 
 import React, { Component } from 'react';
-import './App.css';
+import './app.css';
 import { wsbE } from './wsbE.js';
 import { windowMouseMove, windowMouseUp, keyDown } from './globalACAC.js'
 import { componentEpic } from './components/Component/componentEpic';
 import { templateEpic } from './components/Template/templateEpic';
 import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateAreaMouseDown } from './components/Template/templateACAC';
 import { ComponentView } from './components/Component/componentView';
+import { ResizeDecorationsView } from './components/ResizeDecorations/resizeDecorationsView';
+import { resizeDecorationsEpic } from './components/ResizeDecorations/resizeDecorationsEpic';
 
 declare var window: EventTarget;
 
@@ -31,6 +33,7 @@ const { createStore } = wsbE,
   store = createStore({
     epics: {
       component: componentEpic,
+      resizeDecorations: resizeDecorationsEpic,
       template: templateEpic
     },
     debug: { trace: console.log,/*  devTools: { config: {} } */ }
@@ -42,7 +45,7 @@ const { createStore } = wsbE,
 window.$R = {}
 window.$R.store = store
       
-class App extends Component<{}, typeof initialState> {
+export class App extends Component<{}, typeof initialState> {
   templateAreaRef: any
   constructor(props: {}) {
     super(props)
@@ -91,6 +94,7 @@ class App extends Component<{}, typeof initialState> {
                   onMouseDown={() => dispatch(templateWidthRightResizeHandleMouseDown.actionCreator())}
                 />
                 <ComponentView state={this.state.component} dispatch={dispatch} />
+                <ResizeDecorationsView state={this.state.resizeDecorations} dispatch={dispatch} />
                 <div className="ComponentMainActions" />
               </div>
             </div>
@@ -100,5 +104,3 @@ class App extends Component<{}, typeof initialState> {
     );
   }
 }
-
-export default App;

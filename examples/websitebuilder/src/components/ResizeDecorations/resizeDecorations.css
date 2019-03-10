@@ -1,0 +1,22 @@
+
+
+.ComponentResizeN {
+    background-color: #f5db58;
+    position: absolute;
+    z-index: 2;
+    cursor: ns-resize;
+    display: none;
+}
+
+.ComponentResizeN.active {
+    background-color: #fa741a;
+    display: block;
+}
+
+.ComponentResizeN.visible {
+    display: block;
+}
+
+.ComponentSeletedBorder {
+    border: 1px solid #ff5e00
+}

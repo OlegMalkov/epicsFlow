@@ -1,16 +1,46 @@
-// @flow strict
+// @flow
 import { deepEqual } from './epics';
 
-type MakeSetter = <S: {}, P: $Keys<S>>(propName: P) => (value: $ElementType<S, P>) => S => S
-export const makeSetter: MakeSetter = propName => value => state => ({ ...state, [propName]: value })
-export const makeSetterOnAnyChangeDeepCompare: MakeSetter = propName => value => state => {
-    if (deepEqual(state[propName], value)) {
-        // $FlowFixMe 
-        return state
-    }
-    return ({ ...state, [propName]: value })
-}
+export const 
+    T = () => true,
+    F = () => false
 
+type SetProp = <S: {}, P: $Keys<S>>(propName: P) => (valueUpdater: $ElementType<S, P> | $ElementType<S, P> => $ElementType<S, P>) => S => S
+type SetPath2 = <S: {}, P1: $Keys<S>, P2: $Keys<$ElementType<S, P1>>>(p1: P1, p2: P2) => (value: $ElementType<$ElementType<S, P1>, P2> | $ElementType<$ElementType<S, P1>, P2> => $ElementType<$ElementType<S, P1>, P2>) => S => S
+type SetPath3 = <S: {}, P1: $Keys<S>, P2: $Keys<$ElementType<S, P1>>, P3: $Keys<$ElementType<$ElementType<S, P1>, P2>>>(p1: P1, p2: P2, p3: P3) => (value: $ElementType<$ElementType<$ElementType<S, P1>, P2>, P3> | $ElementType<$ElementType<$ElementType<S, P1>, P2>, P3> => $ElementType<$ElementType<$ElementType<S, P1>, P2>, P3>) => S => S
+
+const 
+    _setPathF: any = <V, S>(valueComparator: (V, V) => bool) => (path: Array<string>) => (valueOrValueUpdater: V | V => V) => (state: S):S => {
+        const 
+            prevValue: V = (path.reduce((v: any, k) => v[k], state): any),
+            nextValue: V = typeof valueOrValueUpdater === "function" ? (valueOrValueUpdater: any)(prevValue) : valueOrValueUpdater
+
+        if (valueComparator(prevValue, nextValue)) {
+            return state
+        }
+        const 
+            newState = { ...state },
+            _path = path.slice(),
+            lastKey = _path.pop()
+
+        let currentPart = newState
+
+        _path.forEach(key => {
+            currentPart[key] = { ...currentPart[key] }
+            currentPart = currentPart[key]
+        })
+
+        currentPart[lastKey] = nextValue
+        return newState
+    },
+    _setPath = _setPathF((x, y) => x === y),
+    _makeDeepCompareSetter = _setPathF(deepEqual),
+    setProp: SetProp = p => _setPath([p]),
+    setPropDeepCompare: SetProp = p => _makeDeepCompareSetter([p]),
+    setPath2: SetPath2 = (p1, p2) => _setPath([p1, p2]),
+    setPathDeepCompare2: SetPath2 = (p1, p2) => _makeDeepCompareSetter([p1, p2]),
+    setPath3: SetPath3 = (p1, p2, p3) => _setPath([p1, p2, p3]),
+    setPathDeepCompare3: SetPath3 = (p1, p2, p3) => _makeDeepCompareSetter([p1, p2, p3])
 
 // For value transformation
 class $ValueContainer<V> {
@@ -38,5 +68,12 @@ const
 
 export {
     ValueContainer,
-    SingleTypeContainer
+    SingleTypeContainer,
+
+    setProp,
+    setPropDeepCompare,
+    setPath2,
+    setPathDeepCompare2,
+    setPath3,
+    setPathDeepCompare3,
 }

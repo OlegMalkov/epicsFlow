@@ -1,41 +1,80 @@
 // @flow strict
 
 import { type LTPosition, type Dimensions } from '../../types'
-import { makeSetterOnAnyChangeDeepCompare } from '../../utils';
+import {
+    setPropDeepCompare,
+    setPathDeepCompare2,
+    T,
+    F,
+    setPathDeepCompare3
+} from '../../utils';
 
 export type ResizeHandles = {|
     n: {| position: LTPosition, dimensions: Dimensions |}
 |}
 
-export opaque type ComponentState: { position: *, dimensions: *, handles: *, selected: * } =  {|
+export opaque type ComponentState: { position: *, dimensions: *, handles: *, selected: *, isMoving: *, isResizing: * } =  {|
     position: LTPosition,
     dimensions: Dimensions, 
     handles: {
-        resize: ResizeHandles | null
+        resize: ResizeHandles
     },
-    selected: boolean
+    selected: boolean,
+    isMoving: boolean,
+    isResizing: boolean
 |}
 
 const 
     ResizeHandleSidePx = 20,
     HalfResizeHandleSidePx = ResizeHandleSidePx / 2
 
-const
-    setComponentHandles = makeSetterOnAnyChangeDeepCompare<ComponentState, *>('handles')
+export const
+    setComponentHandles = setPropDeepCompare<ComponentState, *>('handles'),
+    setComponentIsMoving = setPropDeepCompare<ComponentState, *>('isMoving'),
+    setComponentIsResizing = setPropDeepCompare<ComponentState, *>('isResizing'),
+    setComponentPosition = setPropDeepCompare<ComponentState, *>('position'),
+    setComponentTop = setPathDeepCompare2<ComponentState, *, *>('position', 'top'),
+    setComponentLeft = setPathDeepCompare2<ComponentState, *, *>('position', 'left'),
+    setComponentDimensions = setPropDeepCompare<ComponentState, *>('dimensions'),
+    setComponentWidth = setPathDeepCompare2<ComponentState, *, *>('dimensions', 'width'),
+    setComponentHeight = setPathDeepCompare2<ComponentState, *, *>('dimensions', 'height'),
+    setComponentHeightTo1 = setComponentHeight(1),
+    setComponentSelected = setPropDeepCompare<ComponentState, *>('selected'),
+    setComponentTopToZero = setComponentTop(0),
+    setResizeNHandle = setPathDeepCompare3<ComponentState, *, *, *>('handles', 'resize', 'n'),
 
-export const 
+    handleInitialPosition: LTPosition = { left: 0, top: 0 },
+    handleInitialDimensions: Dimensions = { width: ResizeHandleSidePx, height: ResizeHandleSidePx },
+    initialResizeHandlesState = { n: { position: handleInitialPosition, dimensions: handleInitialDimensions } },
     componentInitialState: ComponentState = { 
         position: { left: 100, top: 100 }, 
         dimensions: { width: 300, height: 200 },
         handles: {
-            resize: null
+            resize: initialResizeHandlesState
         },
-        selected: false
+        selected: false,
+        isMoving: false,
+        isResizing: false
     },
-    setComponentPosition = makeSetterOnAnyChangeDeepCompare<ComponentState, *>('position'),
-    setComponentSelected = makeSetterOnAnyChangeDeepCompare<ComponentState, *>('selected'),
+    resetHandles = setComponentHandles(componentInitialState.handles),
+    setComponentIsMovingTrue = setComponentIsMoving(T),
+    setComponentIsMovingFalse = setComponentIsMoving(F),
+    setComponentIsResizingTrue = setComponentIsResizing(T),
+    setComponentIsResizingFalse = setComponentIsResizing(F),
+    componentTopCanNotBeLessThan0Adjuster = (componentState: ComponentState): ComponentState => {
+        if (componentState.position.top < 0) {
+            return setComponentTopToZero(componentState)
+        }
+        return componentState
+    },
+    componentHeightCanNotBeLessThan1Adjuster = (componentState: ComponentState): ComponentState => {
+        if (componentState.dimensions.height < 1) {
+            return setComponentHeightTo1(componentState)
+        }
+        return componentState
+    },
     componentWithinTemplateAdjuster = (templateWidth: number) => (componentState: ComponentState): ComponentState => {
-        const { position: { left, top }, dimensions: { width } } = componentState
+        const { position: { left }, dimensions: { width } } = componentState
         let adjustedLeft
         if (left < 0) {
             adjustedLeft = 0
@@ -45,31 +84,18 @@ export const
             adjustedLeft = templateWidth - width
         }
 
-        let adjustedTop
-
-        if (top < 0) {
-            adjustedTop = 0
+        if (adjustedLeft !== undefined && adjustedLeft !== componentState.position.left) {
+            return setComponentLeft(adjustedLeft)(componentState)
         }
 
-        let nextState = componentState
-        if (adjustedLeft !== undefined && adjustedLeft !== nextState.position.left) {
-            nextState = { ...nextState, position: { ...nextState.position, left: adjustedLeft } }
-        }
-        if (adjustedTop !== undefined && adjustedTop !== nextState.position.top) {
-            nextState = { ...nextState, position: { ...nextState.position, top: adjustedTop } }
-        }
-        return nextState
+        return componentState
     },
     // Component can be resized using top resizing handle. Top resize handle is 20px above component top if component height > 50px, otherwise 20 + (50 - componentHeight) px.
     verticalResizeHandleTreshold = 50,
-    computeHandles = (state: ComponentState): ComponentState => {
-        if (!state.selected) {
-            return setComponentHandles(componentInitialState.handles)(state)
-        }
-        
+    computeHandlesPosition = (state: ComponentState): ComponentState => {
         const nextResizeNHandle = { 
             position: {
-                left: (state.position.left + state.dimensions.width) / 2 - HalfResizeHandleSidePx,
+                left: state.position.left + state.dimensions.width / 2 - HalfResizeHandleSidePx,
                 top: state.position.top - 20 - Math.max(0, (50 - state.dimensions.height))
             },
             dimensions: {
@@ -78,5 +104,5 @@ export const
             }
         }
 
-        return setComponentHandles({ resize: { n: nextResizeNHandle } })(state)
+        return setResizeNHandle(() => nextResizeNHandle)(state)
     } 

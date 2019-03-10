@@ -1,15 +1,15 @@
 // @flow strict
 
 import React from 'react'
-import './component.css'
-import { type ComponentState } from './componentState'
+import { type ResizeDecorationsState } from './resizeDecorationsEpic'
 import { type Dispatch } from '../../epics'
-import { componentMouseDown } from './componentACAC';
+import { componentResizeNMouseDown } from '../Component/componentACAC'
+import './resizeDecorations.css'
 
-export const ComponentView = ({ state, dispatch }: {| state: ComponentState, dispatch: Dispatch |}) => (
+export const ResizeDecorationsView = ({ state, dispatch }: {| state: ResizeDecorationsState, dispatch: Dispatch |}) => (
     <div 
-        className={`Component${state.selected ? ' ComponentSeletedBorder' : ''}`}
-        style={{ ...state.position, ...state.dimensions }}
-        onMouseDown={() => dispatch(componentMouseDown.ac())}
+        className={`ComponentResizeN${state.activeHandleKey === 'n' ? ' active' : ''}${state.visible ? ' visible' : ''}`}
+        style={{ ...state.handles.n.position, ...state.handles.n.dimensions }}
+        onMouseDown={() => dispatch(componentResizeNMouseDown.ac())}
     />
 )

@@ -1,9 +1,9 @@
 // @flow strict
-import { makeSetter } from '../../utils';
+import { setProp } from '../../utils';
 
 export type TemplateScope = {| dnd: {| type: 'idle' |} | {| type: 'progress', startWidth: number, mouseStartLeft: number |} |}
 
-const setDnd = makeSetter<TemplateScope, *>('dnd')
+const setDnd = setProp<TemplateScope, *>('dnd')
 
 export const
     dndInitialState = { type: 'idle' },
