@@ -1,8 +1,8 @@
 // @flow strict
 
-import { type ComponentState, componentInitialState, componentWithinTemplateAdjuster, setComponentPosition, setComponentSelected } from './componentState';
+import { type ComponentState, componentInitialState, componentWithinTemplateAdjuster, setComponentPosition, setComponentSelected, computeHandles } from './componentState';
 import { wsbE } from "../../wsbE";
-import { componentVat, componentMouseDown } from './componentACAC';
+import { componentVat, componentMouseDown, componentPositionCondition, componentDimensionsCondition } from './componentACAC';
 import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC.js'
 import { templateWidthPC, templateAreaMouseDown } from '../Template/templateACAC';
 import { componentInitialScope, type ComponentScope, initComponentMovingDnd, resetComponentMovingDnd } from './componentScope';
@@ -41,12 +41,9 @@ const
           }
 
           if (changedActiveConditionsKeysMap.mouseUp) {
-            if (scope.movingDnd.type === dndTypeProgress) {
-              return R
-                  .updateState(setComponentSelected(true))
-                  .updateScope(resetComponentMovingDnd)
-            }
-            return R.doNothing
+            return R
+                .updateState(setComponentSelected(true))
+                .updateScope(resetComponentMovingDnd)
           }
 
           if (scope.movingDnd.type === dndTypeIdle) {
@@ -66,6 +63,13 @@ const
       deselection: makeUpdater({
         conditions: { templateAreaMouseDown: templateAreaMouseDown.condition },
         reducer: ({ R }) => R.updateState(setComponentSelected(false))
+      }),
+      computeHandles: makeUpdater({
+        conditions: { 
+          componentPosition: componentPositionCondition,
+          componentDimensions: componentDimensionsCondition
+        },
+        reducer: ({ R }) => R.updateState(computeHandles)
       })
     }
   })

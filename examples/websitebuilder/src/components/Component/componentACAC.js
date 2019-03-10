@@ -10,4 +10,7 @@ export const
   componentMouseDown = makeSACAC('COMPONENT_MOUSE_DOWN'),
   componentCondition = makeEpicCondition<ComponentState>(componentVat),
   componentRightCondition = componentCondition.withSelector<number>(({ position: { left }, dimensions: { width } }) => left + width),
-  componentRightPassiveCondition = componentRightCondition.toPassive()
+  componentRightPassiveCondition = componentRightCondition.toPassive(),
+  componentPositionCondition = componentCondition.withSelectorKey('position'),
+  componentDimensionsCondition = componentCondition.withSelectorKey('dimensions'),
+  componentSelectedCondition = componentCondition.withSelectorKey('selected')
