@@ -2,7 +2,7 @@
 
 import { type LTPosition, type Dimensions } from '../../types'
 import { wsbE } from "../../wsbE";
-import { componentIsMovingCondition, componentSelectedCondition, componentIsResizingCondition, componentResizeNMouseDown, componentPositionCondition, componentDimensionsCondition } from '../Component/componentACAC';
+import { componentIsMovingCondition, componentSelectedCondition, componentIsResizingCondition, componentResizeNMouseDown, componentPositionCondition, componentDimensionsCondition } from '../component/componentACAC';
 import { setProp, setPathDeepCompare3 } from '../../utils';
 
 const { makeUpdater, makeEpic, makeEpicCondition } = wsbE
@@ -11,7 +11,7 @@ type ResizeHandles = {|
     n: {| position: LTPosition, dimensions: Dimensions |}
 |}
 
-export type ResizeDecorationsState = {|
+export type ComponentResizeDecorationsState = {|
     visible: boolean,
     activeHandleKey: $Keys<ResizeHandles> | null,
     handles: ResizeHandles
@@ -21,10 +21,10 @@ const
     ResizeHandleSidePx = 20,
     HalfResizeHandleSidePx = ResizeHandleSidePx / 2,
 
-    setVisible = setProp<ResizeDecorationsState, *>('visible'),
-    setActiveHandleKey = setProp<ResizeDecorationsState, *>('activeHandleKey'),
+    setVisible = setProp<ComponentResizeDecorationsState, *>('visible'),
+    setActiveHandleKey = setProp<ComponentResizeDecorationsState, *>('activeHandleKey'),
     resetActiveHandleKey = setActiveHandleKey(null),
-    setResizeNHandlePosition = setPathDeepCompare3<ResizeDecorationsState, *, *, *>('handles', 'n', 'position'),
+    setResizeNHandlePosition = setPathDeepCompare3<ComponentResizeDecorationsState, *, *, *>('handles', 'n', 'position'),
 
     handleInitialPosition: LTPosition = { left: 0, top: -99999 },
     handleInitialDimensions: Dimensions = { width: ResizeHandleSidePx, height: ResizeHandleSidePx },
@@ -33,13 +33,15 @@ const
     // Component can be resized using top resizing handle. Top resize handle is 20px above component top if component height > 50px, otherwise 20 + (50 - componentHeight) px.
     verticalResizeHandleTreshold = 50
 
-const 
-    resizeDecorationsEpicVat = 'COMPONENT_RESIZE_DECORATIONS',
-    resizeDecorationsCondition = makeEpicCondition<ResizeDecorationsState>(resizeDecorationsEpicVat)
+export const 
+    componentResizeDecorationsEpicVat = 'COMPONENT_RESIZE_DECORATIONS',
+    resizeDecorationsCondition = makeEpicCondition<ComponentResizeDecorationsState>(componentResizeDecorationsEpicVat),
+    componentResizeHandleNTopCondition = resizeDecorationsCondition.wsk('handles').wsk('n').wsk('position').wsk('top'),
+    componentResizeDecorationsVisibleCondition = resizeDecorationsCondition.wsk('visible')
 
 export const
-    resizeDecorationsEpic = makeEpic<ResizeDecorationsState, *>({ 
-        vat: resizeDecorationsEpicVat,
+    componentResizeDecorationsEpic = makeEpic<ComponentResizeDecorationsState, *>({ 
+        vat: componentResizeDecorationsEpicVat,
         initialState: { activeHandleKey: null, handles: initialResizeHandlesState, visible: false },
         updaters: {
             detectActiveHandleKey: makeUpdater({

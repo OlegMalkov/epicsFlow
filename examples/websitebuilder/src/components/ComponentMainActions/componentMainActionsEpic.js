@@ -2,8 +2,9 @@
 
 import { type LTPosition, type Dimensions } from '../../types'
 import { wsbE } from "../../wsbE";
-import { componentIsMovingCondition, componentSelectedCondition, componentIsResizingCondition, componentPositionCondition } from '../Component/componentACAC';
+import { componentPositionCondition } from '../component/componentACAC';
 import { setPropDeepCompare } from '../../utils';
+import { componentResizeHandleNTopCondition, componentResizeDecorationsVisibleCondition } from '../componentResizeDecorations/componentResizeDecorationsEpic';
 
 const { makeUpdater, makeEpic, makeEpicCondition } = wsbE
 
@@ -27,19 +28,14 @@ export const
         initialState: { position: { left: 0, top: -99999 }, dimensions: { width: 500, height: 30 }, visible: false },
         updaters: {
             showHide: makeUpdater({
-                conditions: { 
-                    componentIsMoving: componentIsMovingCondition,
-                    componentIsResizing: componentIsResizingCondition,
-                    componentSelected: componentSelectedCondition
-                },
-                reducer: ({ values: { componentIsMoving, componentIsResizing, componentSelected }, R }) =>
-                    R.updateState(setVisible(componentSelected && !componentIsMoving && !componentIsResizing))
+                conditions: { resizeDecorationsVisible: componentResizeDecorationsVisibleCondition },
+                reducer: ({ values: { resizeDecorationsVisible }, R }) => R.updateState(setVisible(resizeDecorationsVisible))
             }),
             computePosition: makeUpdater({ 
                 conditions: { 
                     componentMainActionsIsVisible: componentMainActionsCondition.withSelectorKey('visible'),
-                    componentPosition: componentPositionCondition,
-                    componentResizeHandleNTop: componentResizeHandleNTopCondition
+                    componentPosition: componentPositionCondition.toPassive(),
+                    componentResizeHandleNTop: componentResizeHandleNTopCondition.toPassive()
                 },
                 reducer: ({ values: { componentMainActionsIsVisible, componentPosition, componentResizeHandleNTop }, R, state }) => {
                     if (componentMainActionsIsVisible) {

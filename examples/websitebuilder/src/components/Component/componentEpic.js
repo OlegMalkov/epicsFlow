@@ -4,7 +4,7 @@ import { type ComponentState, componentInitialState, componentWithinTemplateAdju
 import { wsbE } from "../../wsbE";
 import { componentVat, componentMouseDown, componentResizeNMouseDown } from './componentACAC';
 import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC.js'
-import { templateWidthPC, templateAreaMouseDown } from '../Template/templateACAC';
+import { templateWidthPC, templateAreaMouseDown } from '../template/templateACAC';
 import { componentInitialScope, type ComponentScope, initComponentMoveDnd, resetComponentMoveDnd, resetComponentResizeDnd, initComponentResizeDnd } from './componentScope';
 import { dndTypeIdle, dndTypeProgress } from '../shared/dnd';
 import { T, F } from '../../utils';
@@ -29,10 +29,10 @@ const
           state: { position },
           scope,
           values: { mousePosition, templateWidth }, 
-          changedActiveConditionsKeysMap, 
+          changedActiveConditionsKeysMap: { cancel, mouseUp }, 
           R 
         }) => {
-          if (changedActiveConditionsKeysMap.cancel) {
+          if (cancel) {
             if (scope.movingDnd.type === dndTypeProgress) {
               const { componentStartPos } = scope.movingDnd
               return R
@@ -43,7 +43,7 @@ const
             return R.doNothing
           }
 
-          if (changedActiveConditionsKeysMap.mouseUp) {
+          if (mouseUp) {
             return R
                 .updateState(setComponentIsMovingFalse)
                 .updateState(setComponentSelected(T))
@@ -77,10 +77,11 @@ const
           state,
           scope,
           values: { mousePosition }, 
-          changedActiveConditionsKeysMap, 
+          changedActiveConditionsKeysMap: { cancel, mouseUp }, 
           R
         }) => {
-          if (changedActiveConditionsKeysMap.cancel) {
+
+          if (cancel) {
             if (scope.resizeDnd.type === dndTypeProgress) {
               const { componentStartPosition, componentStartDimensions } = scope.resizeDnd
               return R
@@ -92,7 +93,7 @@ const
             return R.doNothing
           }
 
-          if (changedActiveConditionsKeysMap.mouseUp) {
+          if (mouseUp) {
             return R
                   .updateState(setComponentIsResizingFalse)
                   .updateScope(resetComponentResizeDnd)

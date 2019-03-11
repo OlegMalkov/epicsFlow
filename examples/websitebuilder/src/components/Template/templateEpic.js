@@ -3,7 +3,7 @@
 import { windowMousePositionCondition, windowMouseUp } from '../../globalACAC'
 import { type TemplateState, templateInitialState, setTemplateWidth } from './templateState';
 import { wsbE } from '../../wsbE'
-import { componentRightPassiveCondition } from '../Component/componentACAC';
+import { componentRightPassiveCondition } from '../component/componentACAC';
 import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown } from './templateACAC';
 import { templateInitialScope, type TemplateScope, resetTemplateDnd, templateInitDnd } from './templateScope';
 

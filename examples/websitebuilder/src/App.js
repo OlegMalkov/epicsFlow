@@ -20,14 +20,14 @@ import React, { Component } from 'react';
 import './app.css';
 import { wsbE } from './wsbE.js';
 import { windowMouseMove, windowMouseUp, keyDown } from './globalACAC.js'
-import { componentEpic } from './components/Component/componentEpic.js'
-import { templateEpic } from './components/Template/templateEpic.js'
-import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateAreaMouseDown } from './components/Template/templateACAC.js';
-import { ComponentView } from './components/Component/componentView.js'
-import { ResizeDecorationsView } from './components/ResizeDecorations/resizeDecorationsView.js'
-import { resizeDecorationsEpic } from './components/ResizeDecorations/resizeDecorationsEpic.js'
-import { componentMainActionsEpic } from './components/ComponentMainActions/componentMainActionsEpic.js'
-import { ComponentMainActionsView } from './components/ComponentMainActions/componentMainActionsView.js'
+import { componentEpic } from './components/component/componentEpic.js'
+import { templateEpic } from './components/template/templateEpic.js'
+import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateAreaMouseDown } from './components/template/templateACAC.js';
+import { ComponentView } from './components/component/componentView.js'
+import { ResizeDecorationsView } from './components/componentResizeDecorations/componentResizeDecorationsView.js'
+import { componentResizeDecorationsEpic } from './components/componentResizeDecorations/componentResizeDecorationsEpic.js'
+import { componentMainActionsEpic } from './components/componentMainActions/componentMainActionsEpic.js'
+import { ComponentMainActionsView } from './components/componentMainActions/componentMainActionsView.js'
 
 declare var window: EventTarget;
 
@@ -35,8 +35,8 @@ const { createStore } = wsbE,
   store = createStore({
     epics: {
       component: componentEpic,
-      resizeDecorations: resizeDecorationsEpic,
       componentMainActions: componentMainActionsEpic,
+      resizeDecorations: componentResizeDecorationsEpic,
       template: templateEpic
     },
     debug: { trace: console.log,/*  devTools: { config: {} } */ }
