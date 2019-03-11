@@ -20,12 +20,14 @@ import React, { Component } from 'react';
 import './app.css';
 import { wsbE } from './wsbE.js';
 import { windowMouseMove, windowMouseUp, keyDown } from './globalACAC.js'
-import { componentEpic } from './components/Component/componentEpic';
-import { templateEpic } from './components/Template/templateEpic';
-import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateAreaMouseDown } from './components/Template/templateACAC';
-import { ComponentView } from './components/Component/componentView';
-import { ResizeDecorationsView } from './components/ResizeDecorations/resizeDecorationsView';
-import { resizeDecorationsEpic } from './components/ResizeDecorations/resizeDecorationsEpic';
+import { componentEpic } from './components/Component/componentEpic.js'
+import { templateEpic } from './components/Template/templateEpic.js'
+import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateAreaMouseDown } from './components/Template/templateACAC.js';
+import { ComponentView } from './components/Component/componentView.js'
+import { ResizeDecorationsView } from './components/ResizeDecorations/resizeDecorationsView.js'
+import { resizeDecorationsEpic } from './components/ResizeDecorations/resizeDecorationsEpic.js'
+import { componentMainActionsEpic } from './components/ComponentMainActions/componentMainActionsEpic.js'
+import { ComponentMainActionsView } from './components/ComponentMainActions/componentMainActionsView.js'
 
 declare var window: EventTarget;
 
@@ -34,6 +36,7 @@ const { createStore } = wsbE,
     epics: {
       component: componentEpic,
       resizeDecorations: resizeDecorationsEpic,
+      componentMainActions: componentMainActionsEpic,
       template: templateEpic
     },
     debug: { trace: console.log,/*  devTools: { config: {} } */ }
@@ -95,7 +98,7 @@ export class App extends Component<{}, typeof initialState> {
                 />
                 <ComponentView state={this.state.component} dispatch={dispatch} />
                 <ResizeDecorationsView state={this.state.resizeDecorations} dispatch={dispatch} />
-                <div className="ComponentMainActions" />
+                <ComponentMainActionsView state={this.state.componentMainActions} dispatch={dispatch} />
               </div>
             </div>
             <div className="PropertiesPanel"/>

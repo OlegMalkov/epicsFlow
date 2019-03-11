@@ -5,16 +5,17 @@
     position: absolute;
     z-index: 2;
     cursor: ns-resize;
-    display: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
 }
 
 .ComponentResizeN.active {
     background-color: #fa741a;
-    display: block;
+    opacity: 1;
 }
 
 .ComponentResizeN.visible {
-    display: block;
+    opacity: 1;
 }
 
 .ComponentSeletedBorder {

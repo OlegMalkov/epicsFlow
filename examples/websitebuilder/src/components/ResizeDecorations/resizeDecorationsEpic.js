@@ -21,7 +21,7 @@ const
 
 export const
     resizeDecorationsEpic = makeEpic<ResizeDecorationsState, *>({ 
-        vat: 'RESIZE_DECORATIONS',
+        vat: 'COMPONENT_RESIZE_DECORATIONS',
         initialState: { activeHandleKey: null, handles: initialResizeHandlesState, visible: false },
         updaters: {
             detectActiveHandleKey: makeUpdater({

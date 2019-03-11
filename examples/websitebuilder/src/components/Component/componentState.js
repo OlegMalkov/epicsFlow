@@ -6,7 +6,7 @@ import {
     setPathDeepCompare2,
     T,
     F,
-    setPathDeepCompare3
+    setPathDeepCompare4
 } from '../../utils';
 
 export type ResizeHandles = {|
@@ -41,9 +41,9 @@ export const
     setComponentHeightTo1 = setComponentHeight(1),
     setComponentSelected = setPropDeepCompare<ComponentState, *>('selected'),
     setComponentTopToZero = setComponentTop(0),
-    setResizeNHandle = setPathDeepCompare3<ComponentState, *, *, *>('handles', 'resize', 'n'),
+    setResizeNHandlePosition = setPathDeepCompare4<ComponentState, *, *, *, *>('handles', 'resize', 'n', 'position'),
 
-    handleInitialPosition: LTPosition = { left: 0, top: 0 },
+    handleInitialPosition: LTPosition = { left: 0, top: -99999 },
     handleInitialDimensions: Dimensions = { width: ResizeHandleSidePx, height: ResizeHandleSidePx },
     initialResizeHandlesState = { n: { position: handleInitialPosition, dimensions: handleInitialDimensions } },
     componentInitialState: ComponentState = { 
@@ -93,16 +93,8 @@ export const
     // Component can be resized using top resizing handle. Top resize handle is 20px above component top if component height > 50px, otherwise 20 + (50 - componentHeight) px.
     verticalResizeHandleTreshold = 50,
     computeHandlesPosition = (state: ComponentState): ComponentState => {
-        const nextResizeNHandle = { 
-            position: {
-                left: state.position.left + state.dimensions.width / 2 - HalfResizeHandleSidePx,
-                top: state.position.top - 20 - Math.max(0, (50 - state.dimensions.height))
-            },
-            dimensions: {
-                width: HalfResizeHandleSidePx,
-                height: HalfResizeHandleSidePx
-            }
-        }
-
-        return setResizeNHandle(() => nextResizeNHandle)(state)
+        return setResizeNHandlePosition({
+            left: state.position.left + state.dimensions.width / 2 - HalfResizeHandleSidePx,
+            top: state.position.top - HalfResizeHandleSidePx - Math.max(0, (50 - state.dimensions.height))
+        })(state)
     } 

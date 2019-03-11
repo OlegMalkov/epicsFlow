@@ -8,6 +8,7 @@ export const
 type SetProp = <S: {}, P: $Keys<S>>(propName: P) => (valueUpdater: $ElementType<S, P> | $ElementType<S, P> => $ElementType<S, P>) => S => S
 type SetPath2 = <S: {}, P1: $Keys<S>, P2: $Keys<$ElementType<S, P1>>>(p1: P1, p2: P2) => (value: $ElementType<$ElementType<S, P1>, P2> | $ElementType<$ElementType<S, P1>, P2> => $ElementType<$ElementType<S, P1>, P2>) => S => S
 type SetPath3 = <S: {}, P1: $Keys<S>, P2: $Keys<$ElementType<S, P1>>, P3: $Keys<$ElementType<$ElementType<S, P1>, P2>>>(p1: P1, p2: P2, p3: P3) => (value: $ElementType<$ElementType<$ElementType<S, P1>, P2>, P3> | $ElementType<$ElementType<$ElementType<S, P1>, P2>, P3> => $ElementType<$ElementType<$ElementType<S, P1>, P2>, P3>) => S => S
+type SetPath4 = <S: {}, P1: $Keys<S>, P2: $Keys<$ElementType<S, P1>>, P3: $Keys<$ElementType<$ElementType<S, P1>, P2>>, P4: $Keys<$ElementType<$ElementType<$ElementType<S, P1>, P2>, P3>>>(p1: P1, p2: P2, p3: P3, p4: P4) => (value: $ElementType<$ElementType<$ElementType<$ElementType<S, P1>, P2>, P3>, P4> | $ElementType<$ElementType<$ElementType<$ElementType<S, P1>, P2>, P3>, P4> => $ElementType<$ElementType<$ElementType<$ElementType<S, P1>, P2>, P3>, P4>) => S => S
 
 const 
     _setPathF: any = <V, S>(valueComparator: (V, V) => bool) => (path: Array<string>) => (valueOrValueUpdater: V | V => V) => (state: S):S => {
@@ -40,7 +41,9 @@ const
     setPath2: SetPath2 = (p1, p2) => _setPath([p1, p2]),
     setPathDeepCompare2: SetPath2 = (p1, p2) => _makeDeepCompareSetter([p1, p2]),
     setPath3: SetPath3 = (p1, p2, p3) => _setPath([p1, p2, p3]),
-    setPathDeepCompare3: SetPath3 = (p1, p2, p3) => _makeDeepCompareSetter([p1, p2, p3])
+    setPathDeepCompare3: SetPath3 = (p1, p2, p3) => _makeDeepCompareSetter([p1, p2, p3]),
+    setPath4: SetPath4 = (p1, p2, p3, p4) => _setPath([p1, p2, p3, p4]),
+    setPathDeepCompare4: SetPath4 = (p1, p2, p3, p4) => _makeDeepCompareSetter([p1, p2, p3, p4])
 
 // For value transformation
 class $ValueContainer<V> {
@@ -76,4 +79,6 @@ export {
     setPathDeepCompare2,
     setPath3,
     setPathDeepCompare3,
+    setPath4,
+    setPathDeepCompare4
 }
