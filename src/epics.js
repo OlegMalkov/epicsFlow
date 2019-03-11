@@ -9,7 +9,8 @@ type CompulsoryConditionFields = {|
 	passive: boolean,
 	optional: boolean,
 	resetConditionsByKeyKeys: Array<string> | null,
-	resetConditionsByKeyAfterReducerCallKeys: Array<string> | null
+	resetConditionsByKeyAfterReducerCallKeys: Array<string> | null,
+	isEpicCondition: boolean
 |}
 
 type Subscription = {| epicVat: string, updaterKey: string, conditionKey: string, passive: boolean |}
@@ -30,6 +31,7 @@ export opaque type Condition<V: Object>: {
     wg: <VV: V>(guard: VV => boolean) => Condition<VV>,
 	actionType: string
 } = {|
+	isEpicCondition: boolean,
 	valueKey: string,
 	subscriptions?: Array<Subscription>,
 	guard?: (V, V) => boolean,
@@ -65,7 +67,8 @@ function getFields(condition: Condition<AnyValue>): {| ...CompulsoryConditionFie
 		optional,
 		resetConditionsByKeyKeys,
 		resetConditionsByKeyAfterReducerCallKeys,
-		sealed
+		sealed,
+		isEpicCondition
 	} = condition
 	return {
 		actionType,
@@ -74,7 +77,8 @@ function getFields(condition: Condition<AnyValue>): {| ...CompulsoryConditionFie
 		resetConditionsByKeyKeys,
 		resetConditionsByKeyAfterReducerCallKeys,
 		parentCondition: condition,
-		sealed
+		sealed,
+		isEpicCondition
 	}
 }
 
@@ -606,20 +610,27 @@ type ExecuteActionProps = {|
 	epicsStateUpdate: EpicsStateUpdate,
 	effectManagersState: EffectManagersState<*, *>,
 	effectManagersStateUpdate: EffectManagersStateUpdate,
+	lastReducerValuesByEpicVatUpdaterKey: { [string]: Object },
 	messagesToSendOutside: Array<AA>
 |}
 
 const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManagers, dispatch, rootConditionsByActionType }) => { 
-	const effectManagersByRequestType: { [string]: EffectManager<*, *, *> } = Object.keys(effectManagers).reduce((m, emk) => {
-		const effectManager = { ...effectManagers[emk] }
-		effectManager.key = emk
-		if (!m[effectManager.requestType]) {
-			m[effectManager.requestType] = effectManager
-		} else {
-			throw new Error(`duplicate effect manager request type ${effectManagers[emk].requestType} for [${emk} and ${m[effectManager.requestType].key}]`)
+	const 
+		effectManagersByRequestType: { [string]: EffectManager<*, *, *> } = Object.keys(effectManagers).reduce((m, emk) => {
+			const effectManager = { ...effectManagers[emk] }
+			effectManager.key = emk
+			if (!m[effectManager.requestType]) {
+				m[effectManager.requestType] = effectManager
+			} else {
+				throw new Error(`duplicate effect manager request type ${effectManagers[emk].requestType} for [${emk} and ${m[effectManager.requestType].key}]`)
+			}
+			return m
+		}, {}),
+		orderOfEpicsVat = Object.keys(epicsMapByVat).reduce((r, vat, index) => ({ ...r, [vat]: index }), {}),
+		vatToSortValue = (vat, currentActionType) => {
+			if (vat === currentActionType) return -Infinity
+			return orderOfEpicsVat[vat]
 		}
-		return m
-	}, {})
 
 	function executeAction({
 		actionsChain,
@@ -630,6 +641,7 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 		epicsStateUpdate,
 		effectManagersState,
 		effectManagersStateUpdate,
+		lastReducerValuesByEpicVatUpdaterKey,
 		messagesToSendOutside
 	}: ExecuteActionProps): void {
 		function getEpicStateUpdate(epicVat) {
@@ -722,7 +734,11 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 			return r
 		}, {})
 
-		Object.keys(epicSubs).forEach(subVat => {
+		const
+			actionType = action.type,
+			epicVatsToBeExecuted = Object.keys(epicSubs).sort((vat1, vat2) => vatToSortValue(vat1, actionType) - vatToSortValue(vat2, actionType))
+
+		epicVatsToBeExecuted.forEach(subVat => {
 			// $FlowFixMe
 			if (action.targetEpicVatsMap && !action.targetEpicVatsMap[subVat]) return
 			const 
@@ -758,13 +774,39 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 				
 				if (updater.compulsoryConditionsKeys.some(k => !valuesFullfilled[k])) return
 				
-				const reducerValues: Object = updater.conditionKeysToConditionUpdaterKeys.reduce((v, [conditionKey, conditionUpdaterKey]) => {
-					if (!valuesFullfilled[conditionUpdaterKey]) return v
+				let atLeastOneValueIsDifferent = false
 
-					const valueUpdate = conditionsValuesUpdate[conditionKey]
-					v[conditionUpdaterKey] = valueUpdate === undefined ? conditionsValues[conditionKey] : valueUpdate
-					return v
-				}, {})
+				const 
+					epicUpdaterKey = `${subVat}.${updaterKey}`,
+					lastReducerValues = lastReducerValuesByEpicVatUpdaterKey[epicUpdaterKey],
+					reducerValues: Object = updater.conditionKeysToConditionUpdaterKeys.reduce((v, [conditionKey, conditionUpdaterKey]) => {
+						const shouldLookForDifferentValuesFromLastExecution = lastReducerValues && !atLeastOneValueIsDifferent
+						if (!valuesFullfilled[conditionUpdaterKey]) { 
+							if (shouldLookForDifferentValuesFromLastExecution) {
+								const condition = updater.conditions[conditionUpdaterKey]
+								if (condition.isEpicCondition && lastReducerValues[conditionUpdaterKey] !== undefined) {
+									atLeastOneValueIsDifferent = true
+								}
+							}
+							return v
+						}
+
+						const valueUpdate = conditionsValuesUpdate[conditionKey]
+						const nextValue = v[conditionUpdaterKey] = valueUpdate === undefined ? conditionsValues[conditionKey] : valueUpdate
+
+						if (shouldLookForDifferentValuesFromLastExecution) {
+							const condition = updater.conditions[conditionUpdaterKey]
+							if (condition.isEpicCondition && lastReducerValues[conditionUpdaterKey] !== nextValue) {
+								atLeastOneValueIsDifferent = true
+							}
+						}
+						return v
+					}, {})
+
+				// epic value can be changed multiple times for single user action, this ensures that epic subscribers are called only once if nothing is changed from last call
+				if (lastReducerValues && !atLeastOneValueIsDifferent) return
+
+				lastReducerValuesByEpicVatUpdaterKey[epicUpdaterKey] = reducerValues
 
 				const
 					prevState = epicStateUpdate.state === undefined ? epicState.state : epicStateUpdate.state,
@@ -843,6 +885,7 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 					epicsStateUpdate,
 					effectManagersState,
 					effectManagersStateUpdate,
+					lastReducerValuesByEpicVatUpdaterKey,
 					messagesToSendOutside
 				}) 
 			} else {
@@ -869,7 +912,8 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 							epicsStateUpdate,
 							effectManagersState,
 							effectManagersStateUpdate,
-							messagesToSendOutside
+							lastReducerValuesByEpicVatUpdaterKey,
+							messagesToSendOutside,
 						})
 						break
 					}
@@ -974,6 +1018,7 @@ function computeInitialStates({ epicsArr, warn, executeAction }) {
 				epicsStateUpdate, 
 				effectManagersState: {},
 				effectManagersStateUpdate, 
+				lastReducerValuesByEpicVatUpdaterKey: {},
 				messagesToSendOutside
 			})
 
@@ -1050,6 +1095,26 @@ function validateResetConditions(epics) {
 	})
 }
 
+function validateEpicConditions(epics) {
+	const epicsArray = values(epics)
+	Object.keys(epics).forEach(epicKey => {
+		const epic = epics[epicKey]
+		Object.keys(epic.updaters).forEach(updaterKey => {
+			const updater = epic.updaters[updaterKey]
+			Object.keys(updater.conditions).forEach(conditionKey => {
+				const condition: Condition<AnyValue> = updater.conditions[conditionKey]
+				
+				if (epicsArray.some(e => e.vat === condition.actionType) && !condition.isEpicCondition) {
+					throw new Error(`${epicKey}.${updaterKey}.${conditionKey} has epic valueActionType: ${condition.actionType}, but was created as non epic condition`)
+				}
+				if (!epicsArray.some(e => e.vat === condition.actionType) && condition.isEpicCondition) {
+					throw new Error(`${epicKey}.${updaterKey}.${conditionKey} was created as epic condition, but there is no epic registered with valueActionType: ${condition.actionType}`)
+				}
+			})
+		})
+	})
+}
+
 export type MakeCondition = <V: Object>(actionType: string) => Condition<V>
 export function initEpics() {
 	const rootConditionsByActionType = {}
@@ -1066,7 +1131,8 @@ export function initEpics() {
 		resetConditionsByKeyAfterReducerCallKeys,
 		parentCondition,
 		selector,
-		sealed
+		sealed,
+		isEpicCondition
 	}: makeConditionProps, calledFromRoot) {
 		// skipping parents without selectors or guards, as they are useless during changed conditions computation
 		if (parentCondition && !parentCondition.selectorKey && !parentCondition.selector && !parentCondition.guard && parentCondition.parentCondition) {
@@ -1091,6 +1157,7 @@ export function initEpics() {
 			resetConditionsByKeyKeys,
 			resetConditionsByKeyAfterReducerCallKeys,
 			selector,
+			isEpicCondition,
 			toPassive() {
 				return _makeCondition({ ...getFields(condition), passive: true })
 			},
@@ -1172,7 +1239,7 @@ export function initEpics() {
 		return condition
 	}
 	
-	function makeCondition<V: Object> (actionType: string): Condition<V> {
+	function makeCondition<V: Object> (actionType: string, isEpicCondition?: boolean = false): Condition<V> {
 		if(rootConditionsByActionType[actionType]) {
 			return rootConditionsByActionType[actionType]
 		}
@@ -1182,12 +1249,13 @@ export function initEpics() {
 			optional: false, 
 			resetConditionsByKeyKeys: null,
 			resetConditionsByKeyAfterReducerCallKeys: null,
-			sealed: false
+			sealed: false,
+			isEpicCondition
 		}, true): any)
 	}
 	
 	function makeEpicConditionReceiveFullAction<State>(vat: string): Condition<EpicValueAction<State>> {
-		return makeCondition<EpicValueAction<State>>(vat)
+		return makeCondition<EpicValueAction<State>>(vat, true)
 	}
 	
 	function makeEpicCondition<State>(vat: string): Condition<State> {
@@ -1235,6 +1303,7 @@ export function initEpics() {
 		
 		validateUniqVats(epics)
 		validateResetConditions(epics)
+		validateEpicConditions(epics)
 		setConditionsSubscriptions(epics)
 
 		let devTools
@@ -1302,6 +1371,7 @@ export function initEpics() {
 					epicsStateUpdate,
 					effectManagersState: serviceState.effectManagers,
 					effectManagersStateUpdate,
+					lastReducerValuesByEpicVatUpdaterKey: {},
 					messagesToSendOutside,
 				})
 	

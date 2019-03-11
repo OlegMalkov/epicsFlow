@@ -196,4 +196,49 @@ describe('sequence', () => {
 		// first call is for initial state initialization
 		expect(store.getState().e3).toBe('atext2')
 	})
+
+	it.only('when e1 changes because of change in e1, e2 should be called only once', () => {
+		const 
+			a = 'a',
+			aC = E.makeCondition(a),
+			e1C = E.makeEpicCondition<{| n: number, m: number, i: string |}>('e1'),
+			e1 = E.makeEpic<{| n: number, m: number, i: string |}, empty>({
+				vat: 'e1',
+				initialState: { n: 0, m: 0, i: 'x' },
+				updaters: {
+					a: E.makeUpdater<{| n: number, m: number, i: string |}, *, *, *>({ 
+						conditions: { whatever: aC }, 
+						reducer: ({ R }) => R.updateState(state => ({ ...state, n: state.n + 1 }))
+					}),
+					e1nChanged: E.makeUpdater<{| n: number, m: number, i: string |}, *, *, *>({ 
+						conditions: { e1n: e1C.wsk('n').wg(n => n === 1) }, 
+						reducer: ({ R, values: { e1n } }) => R.updateState(state => ({ ...state, m: state.m + e1n }))
+					}),
+					e1mChanged: E.makeUpdater<{| n: number, m: number, i: string |}, *, *, *>({ 
+						conditions: { e1m: e1C.wsk('m').wg(m => m === 1) }, 
+						reducer: ({ R, values: { e1m } }) => R.updateState(state => ({ ...state, i: state.i + e1m }))
+					})
+				} 
+			}),
+			e2 = E.makeEpic<{| a: string, b: string |}, empty>({ 
+				vat: 'e2', 
+				initialState: { a: '', b: '' },
+				updaters: {
+					e1: E.makeUpdater<{| a: string, b: string |}, *, *, *>({ 
+						conditions: { e1: e1.c }, 
+						reducer: ({ values: { e1 }, R }) => R.updateState(state => ({ ...state, a: state.a + e1.i })) 
+					}),
+					e1n: E.makeUpdater<{| a: string, b: string |}, *, *, *>({ 
+						conditions: { n: e1.c.wsk('n') }, 
+						reducer: ({ values: { n }, R }) => R.updateState(state => ({ ...state, b: state.b + n })) 
+					})
+				}
+			}),
+			store = E.createStore({ epics: { e2, e1 } })
+		
+		store.dispatch({ type: a })
+
+		// first call is for initial state initialization
+		expect(store.getState().e2).toEqual({ a: 'xx1', b: '01' })
+	})
 })
