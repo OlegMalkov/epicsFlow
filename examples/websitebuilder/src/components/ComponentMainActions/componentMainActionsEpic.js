@@ -2,7 +2,7 @@
 
 import { type LTPosition, type Dimensions } from '../../types'
 import { wsbE } from "../../wsbE";
-import { componentIsMovingCondition, componentSelectedCondition, componentIsResizingCondition, componentPositionCondition, componentResizeHandleNTopCondition } from '../Component/componentACAC';
+import { componentIsMovingCondition, componentSelectedCondition, componentIsResizingCondition, componentPositionCondition } from '../Component/componentACAC';
 import { setPropDeepCompare } from '../../utils';
 
 const { makeUpdater, makeEpic, makeEpicCondition } = wsbE

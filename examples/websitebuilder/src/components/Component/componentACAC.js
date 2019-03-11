@@ -16,5 +16,4 @@ export const
   componentDimensionsCondition = componentCondition.withSelectorKey('dimensions'),
   componentSelectedCondition = componentCondition.withSelectorKey('selected'),
   componentIsMovingCondition = componentCondition.withSelectorKey('isMoving'),
-  componentIsResizingCondition = componentCondition.withSelectorKey('isResizing'),
-  componentResizeHandleNTopCondition = componentCondition.wsk('handles').wsk('resize').wsk('n').wsk('position').wsk('top')
+  componentIsResizingCondition = componentCondition.withSelectorKey('isResizing')

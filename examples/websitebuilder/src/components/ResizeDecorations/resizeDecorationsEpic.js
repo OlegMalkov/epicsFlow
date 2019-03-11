@@ -11,7 +11,7 @@ type ResizeHandles = {|
     n: {| position: LTPosition, dimensions: Dimensions |}
 |}
 
-type ResizeDecorationsState = {|
+export type ResizeDecorationsState = {|
     visible: boolean,
     activeHandleKey: $Keys<ResizeHandles> | null,
     handles: ResizeHandles
