@@ -5,31 +5,18 @@ import {
     setPropDeepCompare,
     setPathDeepCompare2,
     T,
-    F,
-    setPathDeepCompare4
+    F
 } from '../../utils';
 
-export type ResizeHandles = {|
-    n: {| position: LTPosition, dimensions: Dimensions |}
-|}
-
-export opaque type ComponentState: { position: *, dimensions: *, handles: *, selected: *, isMoving: *, isResizing: * } =  {|
+export opaque type ComponentState: { position: *, dimensions: *, selected: *, isMoving: *, isResizing: * } =  {|
     position: LTPosition,
     dimensions: Dimensions, 
-    handles: {
-        resize: ResizeHandles
-    },
     selected: boolean,
     isMoving: boolean,
     isResizing: boolean
 |}
 
-const 
-    ResizeHandleSidePx = 20,
-    HalfResizeHandleSidePx = ResizeHandleSidePx / 2
-
 export const
-    setComponentHandles = setPropDeepCompare<ComponentState, *>('handles'),
     setComponentIsMoving = setPropDeepCompare<ComponentState, *>('isMoving'),
     setComponentIsResizing = setPropDeepCompare<ComponentState, *>('isResizing'),
     setComponentPosition = setPropDeepCompare<ComponentState, *>('position'),
@@ -41,22 +28,14 @@ export const
     setComponentHeightTo1 = setComponentHeight(1),
     setComponentSelected = setPropDeepCompare<ComponentState, *>('selected'),
     setComponentTopToZero = setComponentTop(0),
-    setResizeNHandlePosition = setPathDeepCompare4<ComponentState, *, *, *, *>('handles', 'resize', 'n', 'position'),
 
-    handleInitialPosition: LTPosition = { left: 0, top: -99999 },
-    handleInitialDimensions: Dimensions = { width: ResizeHandleSidePx, height: ResizeHandleSidePx },
-    initialResizeHandlesState = { n: { position: handleInitialPosition, dimensions: handleInitialDimensions } },
     componentInitialState: ComponentState = { 
         position: { left: 100, top: 100 }, 
         dimensions: { width: 300, height: 200 },
-        handles: {
-            resize: initialResizeHandlesState
-        },
         selected: false,
         isMoving: false,
         isResizing: false
     },
-    resetHandles = setComponentHandles(componentInitialState.handles),
     setComponentIsMovingTrue = setComponentIsMoving(T),
     setComponentIsMovingFalse = setComponentIsMoving(F),
     setComponentIsResizingTrue = setComponentIsResizing(T),
@@ -89,12 +68,4 @@ export const
         }
 
         return componentState
-    },
-    // Component can be resized using top resizing handle. Top resize handle is 20px above component top if component height > 50px, otherwise 20 + (50 - componentHeight) px.
-    verticalResizeHandleTreshold = 50,
-    computeHandlesPosition = (state: ComponentState): ComponentState => {
-        return setResizeNHandlePosition({
-            left: state.position.left + state.dimensions.width / 2 - HalfResizeHandleSidePx,
-            top: state.position.top - HalfResizeHandleSidePx - Math.max(0, (50 - state.dimensions.height))
-        })(state)
-    } 
+    }

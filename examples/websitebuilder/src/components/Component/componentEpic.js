@@ -1,8 +1,8 @@
 // @flow strict
 
-import { type ComponentState, componentInitialState, componentWithinTemplateAdjuster, setComponentPosition, setComponentSelected, computeHandlesPosition, setComponentIsMovingFalse, setComponentIsMovingTrue, setComponentDimensions, setComponentIsResizingFalse, setComponentTop, setComponentHeight, componentTopCanNotBeLessThan0Adjuster, setComponentIsResizingTrue, componentHeightCanNotBeLessThan1Adjuster } from './componentState';
+import { type ComponentState, componentInitialState, componentWithinTemplateAdjuster, setComponentPosition, setComponentSelected, setComponentIsMovingFalse, setComponentIsMovingTrue, setComponentDimensions, setComponentIsResizingFalse, setComponentTop, setComponentHeight, componentTopCanNotBeLessThan0Adjuster, setComponentIsResizingTrue, componentHeightCanNotBeLessThan1Adjuster } from './componentState';
 import { wsbE } from "../../wsbE";
-import { componentVat, componentMouseDown, componentPositionCondition, componentDimensionsCondition, componentResizeNMouseDown, componentIsMovingCondition, componentIsResizingCondition, componentSelectedCondition } from './componentACAC';
+import { componentVat, componentMouseDown, componentResizeNMouseDown } from './componentACAC';
 import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC.js'
 import { templateWidthPC, templateAreaMouseDown } from '../Template/templateACAC';
 import { componentInitialScope, type ComponentScope, initComponentMoveDnd, resetComponentMoveDnd, resetComponentResizeDnd, initComponentResizeDnd } from './componentScope';
@@ -116,18 +116,6 @@ const
       deselection: makeUpdater({
         conditions: { templateAreaMouseDown: templateAreaMouseDown.condition.toOptional(), escPressed: keyboardEscDownCondition.toOptional() },
         reducer: ({ R }) => R.updateState(setComponentSelected(F))
-      }),
-      computeHandlesPosition: makeUpdater({
-        conditions: { 
-          componentPosition: componentPositionCondition,
-          componentDimensions: componentDimensionsCondition,
-          componentIsMoving: componentIsMovingCondition,
-          componentIsResizing: componentIsResizingCondition,
-          componentIsSelected: componentSelectedCondition
-        },
-        reducer: ({ values: { componentIsMoving, componentIsResizing, componentIsSelected }, R }) => {
-          return !componentIsSelected || componentIsMoving ? R.doNothing : R.updateState(computeHandlesPosition)
-        }
       })
     }
   })

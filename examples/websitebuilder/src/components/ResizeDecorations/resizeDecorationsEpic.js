@@ -1,27 +1,45 @@
 // @flow strict
 
-import { type ResizeHandles, initialResizeHandlesState } from '../Component/componentState'
+import { type LTPosition, type Dimensions } from '../../types'
 import { wsbE } from "../../wsbE";
-import { componentCondition, componentIsMovingCondition, componentSelectedCondition, componentIsResizingCondition, componentResizeNMouseDown } from '../Component/componentACAC';
-import { setProp } from '../../utils';
+import { componentIsMovingCondition, componentSelectedCondition, componentIsResizingCondition, componentResizeNMouseDown, componentPositionCondition, componentDimensionsCondition } from '../Component/componentACAC';
+import { setProp, setPathDeepCompare3 } from '../../utils';
 
-const { makeUpdater, makeEpic } = wsbE
+const { makeUpdater, makeEpic, makeEpicCondition } = wsbE
 
-export type ResizeDecorationsState = {|
+type ResizeHandles = {|
+    n: {| position: LTPosition, dimensions: Dimensions |}
+|}
+
+type ResizeDecorationsState = {|
     visible: boolean,
     activeHandleKey: $Keys<ResizeHandles> | null,
     handles: ResizeHandles
 |}
 
 const 
-    setHandles = setProp<ResizeDecorationsState, *>('handles'),
+    ResizeHandleSidePx = 20,
+    HalfResizeHandleSidePx = ResizeHandleSidePx / 2,
+
     setVisible = setProp<ResizeDecorationsState, *>('visible'),
     setActiveHandleKey = setProp<ResizeDecorationsState, *>('activeHandleKey'),
-    resetActiveHandleKey = setActiveHandleKey(null)
+    resetActiveHandleKey = setActiveHandleKey(null),
+    setResizeNHandlePosition = setPathDeepCompare3<ResizeDecorationsState, *, *, *>('handles', 'n', 'position'),
+
+    handleInitialPosition: LTPosition = { left: 0, top: -99999 },
+    handleInitialDimensions: Dimensions = { width: ResizeHandleSidePx, height: ResizeHandleSidePx },
+    initialResizeHandlesState = { n: { position: handleInitialPosition, dimensions: handleInitialDimensions } },
+
+    // Component can be resized using top resizing handle. Top resize handle is 20px above component top if component height > 50px, otherwise 20 + (50 - componentHeight) px.
+    verticalResizeHandleTreshold = 50
+
+const 
+    resizeDecorationsEpicVat = 'COMPONENT_RESIZE_DECORATIONS',
+    resizeDecorationsCondition = makeEpicCondition<ResizeDecorationsState>(resizeDecorationsEpicVat)
 
 export const
     resizeDecorationsEpic = makeEpic<ResizeDecorationsState, *>({ 
-        vat: 'COMPONENT_RESIZE_DECORATIONS',
+        vat: resizeDecorationsEpicVat,
         initialState: { activeHandleKey: null, handles: initialResizeHandlesState, visible: false },
         updaters: {
             detectActiveHandleKey: makeUpdater({
@@ -41,10 +59,6 @@ export const
                     return R.doNothing
                 }
             }),
-            syncHandlesFromComponent: makeUpdater({
-                conditions: { resizeHandles: componentCondition.withSelectorKey('handles').withSelectorKey('resize') },
-                reducer: ({ values: { resizeHandles }, R }) => R.updateState(setHandles(resizeHandles))
-            }),
             computeVisibile: makeUpdater({
                 conditions: { 
                     componentIsMoving: componentIsMovingCondition,
@@ -53,6 +67,23 @@ export const
                 },
                 reducer: ({ values: { componentIsMoving, componentIsResizing, componentSelected }, R }) =>
                     R.updateState(setVisible(componentSelected && !componentIsMoving && !componentIsResizing))
+            }),
+            computePositionsForHandles: makeUpdater({
+                conditions: { 
+                    componentPosition: componentPositionCondition,
+                    componentDimensions: componentDimensionsCondition,
+                    isVisible: resizeDecorationsCondition.withSelectorKey('visible'),
+                    activeHandleKey: resizeDecorationsCondition.withSelectorKey('activeHandleKey')
+                },
+                reducer: ({ values: { componentPosition, componentDimensions, isVisible, activeHandleKey }, R }) => {
+                    if (isVisible || activeHandleKey === 'n') {
+                        return R.updateState(setResizeNHandlePosition({
+                            left: componentPosition.left + componentDimensions.width / 2 - HalfResizeHandleSidePx,
+                            top: componentPosition.top - HalfResizeHandleSidePx - Math.max(0, (verticalResizeHandleTreshold - componentDimensions.height))
+                        }))
+                    }
+                    return R.doNothing
+                }
             })
         }
     })
