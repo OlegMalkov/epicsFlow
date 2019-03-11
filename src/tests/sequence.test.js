@@ -197,7 +197,7 @@ describe('sequence', () => {
 		expect(store.getState().e3).toBe('atext2')
 	})
 
-	it.only('when e1 changes because of change in e1, e2 should be called only once', () => {
+	it('when e1 changes because of change in e1, e2 should be called only once', () => {
 		const 
 			a = 'a',
 			aC = E.makeCondition(a),
