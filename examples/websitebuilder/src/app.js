@@ -70,11 +70,10 @@ export class App extends Component<{}, typeof initialState> {
     )
     window.addEventListener(
       'keydown',
-      (e: KeyboardEvent) => {
-        console.log('e.keyCode', e.keyCode)
-         dispatch(keyDown.actionCreator({ keyCode: e.keyCode })) }
+      (e: KeyboardEvent) => dispatch(keyDown.actionCreator({ keyCode: e.keyCode }))
     )
   }
+
   render() {
     return (
       <div className="App">
