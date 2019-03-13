@@ -317,17 +317,32 @@ function makeEffectManager<E, S, SC>({
 
 function getInitialState<S>({ initialState }: Epic<S, any, any>): S { return initialState }
 
-// https://github.com/epoberezkin/fast-deep-equal/blob/master/index.js
-const 
+export const 
 	isArray = Array.isArray,
 	keyList = Object.keys,
-	hasProp = Object.prototype.hasOwnProperty
+	hasProp = Object.prototype.hasOwnProperty,
+	isObject = (o: any) => o != null && typeof o === 'object',
+	isEmpty = (o: Object | Array<any>) => keyList((o: any)).length === 0
 
+export function findObjDiff(lhs: Object, rhs: Object) {
+	if (lhs === rhs) return {};
 
-export function findObjDiff(v1: Object, v2: Object) {
-	return {}
+	if (!isObject(lhs) || !isObject(rhs)) return [lhs, '->', rhs];
+
+	return Object.keys(rhs).reduce((acc, key) => {
+		if (lhs.hasOwnProperty(key)) {
+			const difference = findObjDiff(lhs[key], rhs[key]);
+
+			if (isObject(difference) && isEmpty(difference)) return acc;
+
+			return { ...acc, [key]: difference };
+		}
+
+		return acc;
+	}, {});
 }
 
+// only serializible data (no Date/RegEx)
 export function deepEqual(a: any, b: any) {
 	if (a === b) return true
 
@@ -351,18 +366,6 @@ export function deepEqual(a: any, b: any) {
 		}
 
 	if (arrA != arrB) return false; // eslint-disable-line
-
-		var dateA = a instanceof Date
-			, dateB = b instanceof Date
-	if (dateA != dateB) return false; // eslint-disable-line
-		// $FlowFixMe
-	if (dateA && dateB) return a.getTime() == b.getTime(); // eslint-disable-line
-
-		var regexpA = a instanceof RegExp
-			, regexpB = b instanceof RegExp
-	if (regexpA != regexpB) return false; // eslint-disable-line
-	if (regexpA && regexpB) return a.toString() == b.toString(); // eslint-disable-line
-
 		var keys = keyList(a)
 		length = keys.length
 
@@ -622,12 +625,13 @@ type EpicUpdaterExecutionInfo = {|
 	updaterEpicScopeChange?: Object,
 	reducerNotExecutedBecause?: string,
 	updaterReqestedEffects?: Array<Object>,
+	didNothing?: boolean
 |}
 
 type EpicExecutionInfo = {|
 	epicVat: string,
 	updaters?: Array<EpicUpdaterExecutionInfo>,
-	childrenLayers?: Array<ExecutionLevelInfo>,
+	childrenLayers?: Array<ExecutionLevelInfo>, // eslint-disable-line
 	epicNotExecutedBecause?: string
 |}
 
@@ -674,8 +678,28 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 		}, {}),
 		orderOfEpicsVat = Object.keys(epicsMapByVat).reduce((r, vat, index) => ({ ...r, [vat]: index }), {}),
 		vatToSortValue = (vat, currentActionType, initiatedByEpic) => {
-			if (vat === currentActionType || initiatedByEpic && initiatedByEpic.type === vat) return -Infinity
+			if (vat === currentActionType || (initiatedByEpic && initiatedByEpic.type === vat)) return -Infinity
 			return orderOfEpicsVat[vat]
+		},
+		getTraceUpdaters = ({ executionLevelTrace, subVat }) => {
+			let updaters
+			const exsistingEpicTraceInfo = executionLevelTrace.executedEpics.find(t => t.epicVat === subVat)
+			if (exsistingEpicTraceInfo) {
+				if (exsistingEpicTraceInfo.updaters) {
+					updaters = exsistingEpicTraceInfo.updaters
+				} else {
+					updaters = []
+					exsistingEpicTraceInfo.updaters = updaters
+				}
+			} else {
+				updaters = []
+				executionLevelTrace.executedEpics.push({ 
+					epicVat: subVat,
+					updaters,
+				})
+			}
+
+			return updaters
 		}
 
 	function executeAction({
@@ -833,13 +857,10 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 				
 				if (updater.compulsoryConditionsKeys.some(k => !valuesFullfilled[k])) {
 					if (trace && executionLevelTrace) {
-						executionLevelTrace.executedEpics.push({ 
-							epicVat: subVat,
-							updaters: [{ 
-								updaterKey,
-								changedActiveConditionsKeys,
-								reducerNotExecutedBecause: `compulsory conditions keys ${updater.compulsoryConditionsKeys.filter(k => !valuesFullfilled[k]).join(', ')} are not fullifilled`
-							}],
+						getTraceUpdaters({ executionLevelTrace, subVat }).push({
+							updaterKey,
+							changedActiveConditionsKeys,
+							reducerNotExecutedBecause: `compulsory conditions keys ${updater.compulsoryConditionsKeys.filter(k => !valuesFullfilled[k]).join(', ')} are not fullifilled`
 						})
 					}
 					return
@@ -877,14 +898,11 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 				// epic value can be changed multiple times for single user action, this ensures that epic subscribers are called only once if nothing is changed from last call
 				if (lastReducerValues && !atLeastOneValueIsDifferent) {
 					if (trace && executionLevelTrace) {
-						executionLevelTrace.executedEpics.push({ 
-							epicVat: subVat,
-							updaters: [{ 
-								updaterKey, 
-								changedActiveConditionsKeys,
-								reducerValues,
-								reducerNotExecutedBecause: 'It was called before in execution chain and values not changed since then'
-							}],
+						getTraceUpdaters({ executionLevelTrace, subVat }).push({ 
+							updaterKey, 
+							changedActiveConditionsKeys,
+							reducerValues,
+							reducerNotExecutedBecause: 'It was called before in execution chain and values not changed since then'
 						})
 					}
 					
@@ -916,34 +934,26 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 					})
 
 				if (trace && executionLevelTrace) {
-					let updaters
-					const exsistingEpicTraceInfo = executionLevelTrace.executedEpics.find(t => t.epicVat === subVat)
-					if (exsistingEpicTraceInfo) {
-						if (exsistingEpicTraceInfo.updaters) {
-							updaters = exsistingEpicTraceInfo.updaters
-						} else {
-							updaters = []
-							exsistingEpicTraceInfo.updaters = updaters
-						}
-					} else {
-						updaters = []
-						executionLevelTrace.executedEpics.push({ 
-							epicVat: subVat,
-							updaters,
-						})
-					}
+					const updaters = getTraceUpdaters({ executionLevelTrace, subVat })
 					const updaterTraceInfo: EpicUpdaterExecutionInfo = { 
 						updaterKey,
-						changedActiveConditionsKeys,
-						reducerValues,
-						epicState: prevState,
-						epicScope: prevScope
+						changedActiveConditionsKeys
 					}
+
+					if (!result._stateUpdated && !result._scopeUpdated && !result._sideEffects.length) {
+						updaterTraceInfo.didNothing = true
+					} else {
+						updaterTraceInfo.reducerValues = reducerValues
+					}
+
 					if (result._stateUpdated) {
+						updaterTraceInfo.epicState = prevState
 						if (typeof prevState === 'object') {
 							const updaterEpicStateChange = findObjDiff(prevState, result._state)
-							if (Object.keys(updaterEpicStateChange).length > 0) {
+							if (!isEmpty(updaterEpicStateChange)) {
 								updaterTraceInfo.updaterEpicStateChange = updaterEpicStateChange
+							} else {
+								updaterTraceInfo.updaterEpicStateChange = 'WARN: nothing changed, but new objects with same data was created'
 							}
 						} else {
 							updaterTraceInfo.updaterEpicStateChange = result._state
@@ -951,9 +961,12 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 					}
 
 					if (result._scopeUpdated) {
+						updaterTraceInfo.epicScope = prevScope
 						const updaterEpicScopeChange = findObjDiff(prevScope, result._scope)
-						if (Object.keys(updaterEpicScopeChange).length > 0) {
+						if (!isEmpty(updaterEpicScopeChange)) {
 							updaterTraceInfo.updaterEpicScopeChange = updaterEpicScopeChange
+						} else {
+							updaterTraceInfo.updaterEpicScopeChange = 'WARN: nothing changed, but new objects with same data was created'
 						}
 					}
 
