@@ -93,9 +93,9 @@ type makeConditionProps = {|
 	sealed: boolean
 |}
 
-type AA = { type: $Subtype<string> }
+type AnyAction = { type: $Subtype<string> }
 type Meta = {| targetEpicVats?: string[] |}
-export type Dispatch = (AA, meta?: Meta) => void
+export type Dispatch = (AnyAction, meta?: Meta) => void
 
 type ConditionsValues = { [string]: AnyValue }
 
@@ -162,7 +162,7 @@ class ReducerResult<S, SC, SE> {
 
 const toTrueV = (): true => true
 
-export type Reducer<S: AnyValue, SC: Object, CV, E> = ({| values: CV, state: S, scope: SC, changedActiveConditionsKeysMap: $ObjMap<CV, typeof toTrueV>, sourceAction: AA, R: ReducerResult<S, SC, E> |}) => ReducerResult<S, SC, E>
+export type Reducer<S: AnyValue, SC: Object, CV, E> = ({| values: CV, state: S, scope: SC, changedActiveConditionsKeysMap: $ObjMap<CV, typeof toTrueV>, sourceAction: AnyAction, R: ReducerResult<S, SC, E> |}) => ReducerResult<S, SC, E>
 
 const extractConditionV =<V>(c: { value: V }): V => c.value
 
@@ -179,7 +179,7 @@ type EpicValueAction<State> = {| type: string, value: State |}
 
 function makeUpdater<S: AnyValue, SC: Object, C: { [string]: Object }, E> ({ conditions, reducer }: {|
 	conditions: C,
-	reducer: ({| values: $Exact<$ObjMap<C, typeof extractConditionV>>, state: S, scope: SC, changedActiveConditionsKeysMap: $ObjMap<C, typeof toTrueV>, sourceAction: AA, R: ReducerResult<S, SC, E> |}) => ReducerResult<S, SC, E>
+	reducer: ({| values: $Exact<$ObjMap<C, typeof extractConditionV>>, state: S, scope: SC, changedActiveConditionsKeysMap: $ObjMap<C, typeof toTrueV>, sourceAction: AnyAction, R: ReducerResult<S, SC, E> |}) => ReducerResult<S, SC, E>
 |}): Updater<S, SC, any, E> {
 	let noActiveConditions = true
 	const 
@@ -602,7 +602,7 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 }
 
 type ExecuteActionProps = {|
-	actionsChain: Array<AA>,
+	actionsChain: Array<AnyAction>,
 	conditionsValues: ConditonsValues,
 	prevConditionsValues: ConditonsValues,
 	conditionsValuesUpdate: ConditonsValuesUpdate,
@@ -611,7 +611,7 @@ type ExecuteActionProps = {|
 	effectManagersState: EffectManagersState<*, *>,
 	effectManagersStateUpdate: EffectManagersStateUpdate,
 	lastReducerValuesByEpicVatUpdaterKey: { [string]: Object },
-	messagesToSendOutside: Array<AA>
+	messagesToSendOutside: Array<AnyAction>
 |}
 
 const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManagers, dispatch, rootConditionsByActionType }) => { 
@@ -1296,7 +1296,7 @@ export function initEpics() {
 		effectManagers?: { [string]: EffectManager<*, *, *> },
 		onMsg?: Object => any,
 		onStateChanged?: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any,
-		debug?: {| devTools?: { config: DevToolsConfig }, skipTraceActions ?: (Array<AA>) => boolean, trace?: Function, getState?: () => EpicsState, warn?: Function |},
+		debug?: {| devTools?: { config: DevToolsConfig }, skipTraceActions ?: (Array<AnyAction>) => boolean, trace?: Function, getState?: () => EpicsState, warn?: Function |},
 		|}): EpicsStore<Epics> {
 	
 		const { warn = (() => null: Function), skipTraceActions, trace } = debug || {}

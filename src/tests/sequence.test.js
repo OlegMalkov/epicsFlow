@@ -1,5 +1,5 @@
 // @flow strict
-import { initEpics } from '../epics'
+import { initEpics, dispatchActionEffectCreator, type BuiltInEffect } from '../epics'
 
 let	E = initEpics()
 
@@ -217,6 +217,58 @@ describe('sequence', () => {
 					e1mChanged: E.makeUpdater<{| n: number, m: number, i: string |}, *, *, *>({ 
 						conditions: { e1m: e1C.wsk('m').wg(m => m === 1) }, 
 						reducer: ({ R, values: { e1m } }) => R.updateState(state => ({ ...state, i: state.i + e1m }))
+					})
+				} 
+			}),
+			e2 = E.makeEpic<{| a: string, b: string |}, empty>({ 
+				vat: 'e2', 
+				initialState: { a: '', b: '' },
+				updaters: {
+					e1: E.makeUpdater<{| a: string, b: string |}, *, *, *>({ 
+						conditions: { e1: e1.c }, 
+						reducer: ({ values: { e1 }, R }) => R.updateState(state => ({ ...state, a: state.a + e1.i })) 
+					}),
+					e1n: E.makeUpdater<{| a: string, b: string |}, *, *, *>({ 
+						conditions: { n: e1.c.wsk('n') }, 
+						reducer: ({ values: { n }, R }) => R.updateState(state => ({ ...state, b: state.b + n })) 
+					})
+				}
+			}),
+			store = E.createStore({ epics: { e2, e1 } })
+		
+		store.dispatch({ type: a })
+
+		// first call is for initial state initialization
+		expect(store.getState().e2).toEqual({ a: 'xx1', b: '01' })
+	})
+
+	it('when e1 dispatch action and e1 has condition for this action, e2 should be called only once', () => {
+		const 
+			a = 'a',
+			b = 'b',
+			x = 'x',
+			aC = E.makeCondition(a),
+			bC = E.makeCondition(b),
+			xC = E.makeCondition(x),
+			e1 = E.makeEpic<{| n: number, m: number, i: string |}, BuiltInEffect>({
+				vat: 'e1',
+				initialState: { n: 0, m: 0, i: 'x' },
+				updaters: {
+					a: E.makeUpdater<{| n: number, m: number, i: string |}, *, *, *>({ 
+						conditions: { whatever: aC }, 
+						reducer: ({ R }) => R
+							.sideEffect(dispatchActionEffectCreator({ type: b }))
+							.updateState(state => ({ ...state, n: state.n + 1 }))
+					}),
+					b: E.makeUpdater<{| n: number, m: number, i: string |}, *, *, *>({ 
+						conditions: { b: bC }, 
+						reducer: ({ R }) => R
+							.updateState(state => ({ ...state, m: state.m + 1 }))
+							.sideEffect(dispatchActionEffectCreator({ type: x }))
+					}),
+					x: E.makeUpdater<{| n: number, m: number, i: string |}, *, *, *>({ 
+						conditions: { x: xC }, 
+						reducer: ({ R }) => R.updateState(state => ({ ...state, i: state.i + 1 }))
 					})
 				} 
 			}),

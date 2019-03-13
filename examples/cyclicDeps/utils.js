@@ -1,4 +1,5 @@
 // @flow strict
+
 import { initEpics } from '../../src/epics'
 export const isEven = (n: number) => n % 2 == 0
 export const isOdd = (n: number) => !isEven(n)
