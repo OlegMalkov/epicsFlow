@@ -144,6 +144,7 @@ class ReducerResult<S, SC, SE> {
 	// update reason will be taken only if updater returned updated state
 	updateState(updater: S => S, updateReason?: string): ReducerResult<S, SC, SE> {
 		const nextState = updater(this._state)
+		if (nextState === this._state) return this
 		
 		if (__DEV__) {
 			if (nextState !== this._state && deepEqual(nextState, this._state)) {
@@ -155,6 +156,8 @@ class ReducerResult<S, SC, SE> {
 
 	updateScope(updater: SC => SC): ReducerResult<S, SC, SE> {
 		const nextScope = updater(this._scope)
+		if (nextScope === this._scope) return this
+
 		if (__DEV__) {
 			if (nextScope !== this._scope && deepEqual(nextScope, this._scope)) {
 				throw new Error('Do not recreate scope object if nothing changed. It will unnecessary tell observers that it is changed, when actually there was not any change.')
@@ -1513,6 +1516,7 @@ export function initEpics() {
 		let devTools
 
 		function initDevTools(config) {
+			if (!window.__REDUX_DEVTOOLS_EXTENSION__) return
 			devTools = window.__REDUX_DEVTOOLS_EXTENSION__.connect({ ...config, name: 'service' })
 			devTools.subscribe((message) => {
 				if (message.type === 'DISPATCH' && message.state) {

@@ -1,7 +1,7 @@
 // @flow strict
 
-import { type BuiltInEffect, dispatchActionEffectCreator } from '../../epics'
-import { type ComponentState, componentInitialState, componentWithinTemplateAdjuster, setComponentPosition, setComponentSelected, setComponentIsMovingFalse, setComponentIsMovingTrue, setComponentDimensions, setComponentIsResizingFalse, setComponentTop, setComponentHeight, componentTopCanNotBeLessThan0Adjuster, setComponentIsResizingTrue, componentHeightCanNotBeLessThan1Adjuster } from './componentState';
+import { type BuiltInEffect } from '../../epics'
+import { type ComponentState, componentInitialState, updateComponentBBox, setComponentSelected, setComponentIsMovingFalse, setComponentIsMovingTrue, setComponentIsResizingFalse, setComponentIsResizingTrue } from './componentState';
 import { wsbE } from "../../wsbE";
 import { componentVat, componentMouseDown, componentResizeNMouseDown } from './componentACAC';
 import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC.js'
@@ -37,7 +37,7 @@ const
             if (scope.movingDnd.type === dndTypeProgress) {
               const { componentStartPos } = scope.movingDnd
               return R
-                  .updateState(setComponentPosition(componentStartPos))
+                  .updateState(updateComponentBBox({ bboxUpdate: { ...componentStartPos }, templateWidth }))
                   .updateState(setComponentIsMovingFalse)
                   .updateScope(resetComponentMoveDnd)
             }
@@ -62,13 +62,15 @@ const
 
           return R
             .updateState(setComponentIsMovingTrue)
-            .updateState(setComponentPosition({ left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop }))
-            .updateState(componentWithinTemplateAdjuster(templateWidth))
-            .updateState(componentTopCanNotBeLessThan0Adjuster)
+            .updateState(updateComponentBBox({
+              bboxUpdate: { left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop },
+              templateWidth
+            }))
         }
       }),
       dndResize: makeUpdater({
         conditions: { 
+          templateWidth: templateWidthPC,
           resizeNMouseDown: componentResizeNMouseDown.condition,
           mousePosition: windowMousePositionCondition,
           cancel: keyboardEscDownCondition.toOptional().resetConditionsByKeyAfterReducerCall(['resizeNMouseDown']),
@@ -77,7 +79,7 @@ const
         reducer: ({ 
           state,
           scope,
-          values: { mousePosition }, 
+          values: { mousePosition, templateWidth }, 
           changedActiveConditionsKeysMap: { cancel, mouseUp }, 
           R
         }) => {
@@ -86,8 +88,7 @@ const
             if (scope.resizeDnd.type === dndTypeProgress) {
               const { componentStartPosition, componentStartDimensions } = scope.resizeDnd
               return R
-                  .updateState(setComponentPosition(componentStartPosition))
-                  .updateState(setComponentDimensions(componentStartDimensions))
+                  .updateState(updateComponentBBox({ bboxUpdate: { ...componentStartPosition, ...componentStartDimensions }, templateWidth }))
                   .updateState(setComponentIsResizingFalse)
                   .updateScope(resetComponentResizeDnd)
             }
@@ -109,10 +110,8 @@ const
             diffTop = mouseStartPos.top - mousePosition.top
 
           return R
+            .updateState(updateComponentBBox({ bboxUpdate: { top: componentStartPosition.top - diffTop, height: componentStartDimensions.height + diffTop }, templateWidth }))
             .updateState(setComponentIsResizingTrue)
-            .updateState(setComponentTop(componentStartPosition.top - diffTop))
-            .updateState(setComponentHeight(componentStartDimensions.height + diffTop))
-            .updateState(componentHeightCanNotBeLessThan1Adjuster)
         }
       }),
       deselection: makeUpdater({
