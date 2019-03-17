@@ -322,24 +322,29 @@ export const
 	keyList = Object.keys,
 	hasProp = Object.prototype.hasOwnProperty,
 	isObject = (o: any) => o != null && typeof o === 'object',
-	isEmpty = (o: Object | Array<any>) => keyList((o: any)).length === 0
+	isEmpty = (o: Object | Array<any>) => keyList((o: any)).length === 0,
+	unnest = <T>(arr: Array<Array<T> | T>): Array<T> => {
+		const result = arr.reduce((acc, el) => acc.concat(el), [])
+	
+		return result
+	}
 
 export function findObjDiff(lhs: Object, rhs: Object) {
-	if (lhs === rhs) return {};
+	if (lhs === rhs) return {}
 
-	if (!isObject(lhs) || !isObject(rhs)) return [lhs, '->', rhs];
+	if (!isObject(lhs) || !isObject(rhs)) return [lhs, '->', rhs]
 
 	return Object.keys(rhs).reduce((acc, key) => {
 		if (lhs.hasOwnProperty(key)) {
-			const difference = findObjDiff(lhs[key], rhs[key]);
+			const difference = findObjDiff(lhs[key], rhs[key])
 
-			if (isObject(difference) && isEmpty(difference)) return acc;
+			if (isObject(difference) && isEmpty(difference)) return acc
 
-			return { ...acc, [key]: difference };
+			return { ...acc, [key]: difference }
 		}
 
-		return acc;
-	}, {});
+		return acc
+	}, {})
 }
 
 // only serializible data (no Date/RegEx)
@@ -388,7 +393,6 @@ export function deepEqual(a: any, b: any) {
 }
 
 const
-	reverse = (arr: Array<any>) => arr.slice().reverse(),
 	values = o => Object.keys(o).map(k => o[k]),
 	last = arr => arr.slice(-1)[0]
 
@@ -490,15 +494,53 @@ function getEffectManagersInitialState(effectManagers) {
 	}, {})
 }
 
-
 const
-	printOrigin = a =>
-		(a.initiatedByEpic ? `${a.initiatedByEpic.type}[${a.initiatedByEpic.updaterKey}] => ` : ''),
-	actionsChainToStringReverse = actions => 
-		reverse(actions)
-			.map(a => printOrigin(a) + a.type +	(a.updaterKeysThatChangedState !== undefined ? `[${a.updaterKeysThatChangedState.join(',')}]` : '') +
-			(a.updateReasons !== undefined ? `[${a.updateReasons}]` : ''))
-			.join( ' -> ')
+	printUpdater = (u: EpicUpdaterExecutionInfo) => u.updaterKey + `(${[
+		u.updaterEpicStateChange ? (u.updaterEpicStateChange === nothingChangedButObjectRecreatedWarn ? 'SW' : 'S') : '',
+		u.updaterEpicScopeChange ? (u.updaterEpicScopeChange === nothingChangedButObjectRecreatedWarn ? 'SCW' : 'SC') : '',
+		u.updaterReqestedEffects ? 'E' : ''
+	].filter(x => x).join(',')})`,
+	printEpicExecutionInfo = (epicExecutionInfo: EpicExecutionInfo) => {
+		const { updaters, epicKey } = epicExecutionInfo
+
+		if (!updaters) return ''
+
+		const result = updaters.filter(u => u.updaterEpicStateChange || u.updaterEpicScopeChange || u.updaterReqestedEffects).map(printUpdater).join('')
+
+		if (!result.length) return ''
+
+		return `${epicKey}[${result}]`
+	}
+export function traceToString(trace: ExecutionLevelInfo, executedEpicsFilter: EpicExecutionInfo => boolean = () => true, whitespaceLength: number = 0): string {
+	// go till you see > 1 executed epics (after calling filter) or > 1 children layers
+	// measure length of output at this point, an pass it down, so we print white space in following lines
+
+	const executedEpicsOutputs = trace.executedEpics
+		.filter(executedEpicsFilter)
+		.map(epicExecutionInfo => ({
+			output: printEpicExecutionInfo(epicExecutionInfo),
+			epicExecutionInfo
+		}))
+		.filter(({ output }) => output)
+
+	// if executedEpicsOutputs.length > 1 - branching
+
+	if (executedEpicsOutputs.length === 0 && whitespaceLength === 0) {
+		return `${trace.triggerAction.type} does not have any effect`
+	}
+	const branches = executedEpicsOutputs.map(({ output, epicExecutionInfo }) => {
+		const
+			whitespace = new Array(whitespaceLength).join(' '),
+			prevPrefix = `${whitespace}${trace.triggerAction.type} => `,
+			prefix = `${prevPrefix}${output}`
+		
+		if (!epicExecutionInfo.childrenLayers) return prefix
+
+		return [prefix, ...epicExecutionInfo.childrenLayers.map(childLayer => traceToString(childLayer, executedEpicsFilter, prevPrefix.length + 1))]
+	})
+
+	return unnest<string>(branches).filter(x => x).join('\n')
+}
 		
 function mergeUpdaterState(epicUpdaterState: UpdaterState, epicUpdaterStateUpdate: UpdaterStateUpdate) {
 	const result: UpdaterState = {
@@ -630,6 +672,7 @@ type EpicUpdaterExecutionInfo = {|
 
 type EpicExecutionInfo = {|
 	epicVat: string,
+	epicKey: string,
 	updaters?: Array<EpicUpdaterExecutionInfo>,
 	childrenLayers?: Array<ExecutionLevelInfo>, // eslint-disable-line
 	epicNotExecutedBecause?: string
@@ -656,7 +699,7 @@ type ExecuteActionProps = {|
 
 type makeExecuteActionProps = {| 
 	trace: Function,
-	skipTraceActions: void | (Array<AnyAction>) => boolean,
+	epicKeyByVat: { [string]: string },
 	epicsMapByVat: { [string]: Epic<any, any, any> },
 	effectManagers: { [string]: EffectManager<any, any, any> },
 	dispatch: Dispatch,
@@ -664,7 +707,9 @@ type makeExecuteActionProps = {|
 	warn: Function
 |}
 
-const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManagers, dispatch, rootConditionsByActionType }: makeExecuteActionProps) => { 
+const nothingChangedButObjectRecreatedWarn = 'WARN: nothing changed, but new objects with same data was created'
+
+const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers, dispatch, rootConditionsByActionType }: makeExecuteActionProps) => { 
 	const 
 		effectManagersByRequestType: { [string]: EffectManager<*, *, *> } = Object.keys(effectManagers).reduce((m, emk) => {
 			const effectManager = { ...effectManagers[emk] }
@@ -695,11 +740,23 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 				updaters = []
 				executionLevelTrace.executedEpics.push({ 
 					epicVat: subVat,
+					epicKey: epicKeyByVat[subVat],
 					updaters,
 				})
 			}
 
 			return updaters
+		},
+		getNextLevelTrace = ({ executionLevelTrace, subVat, triggerAction }) => {
+			const executedEpic = executionLevelTrace.executedEpics.find(e => e.epicVat === subVat)
+			if (!executedEpic) { throw new Error ('Unexpected trace error, please investigate how this happend.') } // should never happen, but flow can not check it
+			if (!executedEpic.childrenLayers) {
+				executedEpic.childrenLayers = []
+			}
+
+			const nextLevelTrace = { triggerAction, executedEpics: [] }
+			executedEpic.childrenLayers.push(nextLevelTrace)
+			return nextLevelTrace
 		}
 
 	function executeAction({
@@ -782,12 +839,7 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 
 		const activeSubs = subscriptions.filter(s => !s.passive)
 
-		if (!activeSubs.length) {
-			if (trace && (!skipTraceActions || !skipTraceActions(actionsChain))) {
-				trace(actionsChainToStringReverse(actionsChain))
-			}
-			return
-		}
+		if (!activeSubs.length) return
 
 		type EpicSubs = { [epicVat: string]: { [updaterKey: string]: Array<string> } }
 		const epicSubs: EpicSubs = activeSubs.reduce((r: EpicSubs, sub) => {
@@ -817,6 +869,7 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 				if (trace && executionLevelTrace) {
 					executionLevelTrace.executedEpics.push({ 
 						epicVat: subVat,
+						epicKey: epicKeyByVat[subVat],
 						epicNotExecutedBecause: `action.targetEpicVatsMap ${Object.keys(action.targetEpicVatsMap).join(', ')} does not contain ${subVat}`
 					})
 				}
@@ -909,8 +962,6 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 					return
 				}
 
-				
-
 				lastReducerValuesByEpicVatUpdaterKey[epicUpdaterKey] = reducerValues
 
 				const
@@ -953,7 +1004,7 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 							if (!isEmpty(updaterEpicStateChange)) {
 								updaterTraceInfo.updaterEpicStateChange = updaterEpicStateChange
 							} else {
-								updaterTraceInfo.updaterEpicStateChange = 'WARN: nothing changed, but new objects with same data was created'
+								updaterTraceInfo.updaterEpicStateChange = nothingChangedButObjectRecreatedWarn
 							}
 						} else {
 							updaterTraceInfo.updaterEpicStateChange = result._state
@@ -966,7 +1017,7 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 						if (!isEmpty(updaterEpicScopeChange)) {
 							updaterTraceInfo.updaterEpicScopeChange = updaterEpicScopeChange
 						} else {
-							updaterTraceInfo.updaterEpicScopeChange = 'WARN: nothing changed, but new objects with same data was created'
+							updaterTraceInfo.updaterEpicScopeChange = nothingChangedButObjectRecreatedWarn
 						}
 					}
 
@@ -1023,7 +1074,7 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 								effectManagersStateUpdate,
 								lastReducerValuesByEpicVatUpdaterKey,
 								messagesToSendOutside,
-								executionLevelTrace
+								executionLevelTrace: trace && executionLevelTrace ? getNextLevelTrace({ executionLevelTrace, subVat, triggerAction: dispatchActionEffect.action }) : undefined
 							})
 						} else {
 							allEffects.push(e)
@@ -1043,23 +1094,6 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 					epicChangedAction.updateReasons = updateReasons
 				}
 
-				if (trace) {
-					(epicChangedAction: any).updaterKeysThatChangedState = updaterKeysThatChangedState
-				}
-
-				let nextLevelTrace
-
-				if (trace && executionLevelTrace) {
-					const executedEpic = executionLevelTrace.executedEpics.find(e => e.epicVat === subVat)
-					if (!executedEpic) { throw new Error ('Unexpected trace error, please investigate how this happend.') } // should never happen, but flow can not check it
-					if (!executedEpic.childrenLayers) {
-						executedEpic.childrenLayers = []
-					}
-
-					nextLevelTrace = { triggerAction: epicChangedAction, executedEpics: [] }
-					executedEpic.childrenLayers.push(nextLevelTrace)
-				}
-
 				executeAction({
 					actionsChain: [epicChangedAction, ...actionsChain],
 					conditionsValues,
@@ -1071,12 +1105,8 @@ const makeExecuteAction = ({ trace, skipTraceActions, epicsMapByVat, effectManag
 					effectManagersStateUpdate,
 					lastReducerValuesByEpicVatUpdaterKey,
 					messagesToSendOutside,
-					executionLevelTrace: nextLevelTrace
+					executionLevelTrace: trace && executionLevelTrace ? getNextLevelTrace({ executionLevelTrace, subVat, triggerAction: epicChangedAction }) : undefined
 				}) 
-			} else {
-				if (trace && (!skipTraceActions || !skipTraceActions(actionsChain))) {
-					trace(actionsChainToStringReverse(actionsChain))
-				}
 			}
 
 			if (allEffects.length) {
@@ -1193,7 +1223,7 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 			})
 
 			if (trace) {
-				trace(`epic ${epic.vat} init graph`, executionLevelTrace)
+				trace(executionLevelTrace)
 			}
 
 			if (messagesToSendOutside.length) {
@@ -1470,10 +1500,10 @@ export function initEpics() {
 		effectManagers?: { [string]: EffectManager<*, *, *> },
 		onMsg?: Object => any,
 		onStateChanged?: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any,
-		debug?: {| devTools?: { config: DevToolsConfig }, skipTraceActions?: (Array<AnyAction>) => boolean, trace?: Function, getState?: () => EpicsState, warn?: Function |},
+		debug?: {| devTools?: { config: DevToolsConfig }, trace?: Function, getState?: () => EpicsState, warn?: Function |},
 		|}): EpicsStore<Epics> {
 	
-		const { warn = (() => null: Function), skipTraceActions, trace } = debug || {}
+		const { warn = (() => null: Function), trace } = debug || {}
 		
 		validateUniqVats(epics)
 		validateResetConditions(epics)
@@ -1551,9 +1581,7 @@ export function initEpics() {
 					executionLevelTrace
 				})
 
-				if (trace) {
-					trace(`${action.type} executionLevelTrace`, executionLevelTrace)
-				}
+				if (trace) trace(executionLevelTrace)
 	
 				if (Object.keys(conditionsValuesUpdate).length !== 0) {
 					updatedConditionsValues = { ...serviceState.conditions, ...conditionsValuesUpdate }
@@ -1607,13 +1635,14 @@ export function initEpics() {
 			}
 		}
 
-		const
+		const 
+			epicKeyByVat = keyList(epics).reduce((m, epicKey) => ({ ...m, [epics[epicKey].vat]: epicKey }), {}),
 			epicsArr = values(epics),
 			epicsMapByVat = values(epics).reduce((a, e) => ({ ...a, [e.vat]: e }), {}),
 			executeAction = makeExecuteAction({
-				skipTraceActions,
 				trace,
 				epicsMapByVat,
+				epicKeyByVat,
 				warn,
 				effectManagers,
 				dispatch,

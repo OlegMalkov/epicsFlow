@@ -28,6 +28,7 @@ import { ResizeDecorationsView } from './components/componentResizeDecorations/c
 import { componentResizeDecorationsEpic } from './components/componentResizeDecorations/componentResizeDecorationsEpic.js'
 import { componentMainActionsEpic } from './components/componentMainActions/componentMainActionsEpic.js'
 import { ComponentMainActionsView } from './components/componentMainActions/componentMainActionsView.js'
+import { traceToString } from './epics';
 
 declare var window: EventTarget;
 
@@ -39,7 +40,11 @@ const { createStore } = wsbE,
       resizeDecorations: componentResizeDecorationsEpic,
       template: templateEpic
     },
-    debug: { trace: console.log,/*  devTools: { config: {} } */ }
+    debug: { 
+      warn: console.warn,
+      trace: e => console.log(traceToString(e)),
+      /*  devTools: { config: {} } */
+    }
   }),
   initialState = store.getState(),
   dispatch = store.dispatch

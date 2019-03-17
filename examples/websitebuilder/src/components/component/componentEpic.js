@@ -1,8 +1,9 @@
 // @flow strict
 
+import { type BuiltInEffect, dispatchActionEffectCreator } from '../../epics'
 import { type ComponentState, componentInitialState, componentWithinTemplateAdjuster, setComponentPosition, setComponentSelected, setComponentIsMovingFalse, setComponentIsMovingTrue, setComponentDimensions, setComponentIsResizingFalse, setComponentTop, setComponentHeight, componentTopCanNotBeLessThan0Adjuster, setComponentIsResizingTrue, componentHeightCanNotBeLessThan1Adjuster } from './componentState';
 import { wsbE } from "../../wsbE";
-import { componentVat, componentMouseDown, componentResizeNMouseDown } from './componentACAC';
+import { componentVat, componentMouseDown, componentResizeNMouseDown, componentMoved } from './componentACAC';
 import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC.js'
 import { templateWidthPC, templateAreaMouseDown } from '../template/templateACAC';
 import { componentInitialScope, type ComponentScope, initComponentMoveDnd, resetComponentMoveDnd, resetComponentResizeDnd, initComponentResizeDnd } from './componentScope';
@@ -12,7 +13,7 @@ import { T, F } from '../../utils';
 const { makeEpicWithScope, makeUpdater } = wsbE
 
 const
-  componentEpic = makeEpicWithScope<ComponentState, ComponentScope, empty>({
+  componentEpic = makeEpicWithScope<ComponentState, ComponentScope, BuiltInEffect>({
     vat: componentVat,
     initialState: componentInitialState,
     initialScope: componentInitialScope,
@@ -48,6 +49,7 @@ const
                 .updateState(setComponentIsMovingFalse)
                 .updateState(setComponentSelected(T))
                 .updateScope(resetComponentMoveDnd)
+                .sideEffect(dispatchActionEffectCreator(componentMoved.actionCreator()))
           }
 
           if (scope.movingDnd.type === dndTypeIdle) {

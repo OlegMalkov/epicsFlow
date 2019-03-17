@@ -19,7 +19,7 @@ const
     setPosition = setPropDeepCompare<ComponentMainActionsState, *>('position')
 
 const 
-    componentMainActionsEpicVat = 'COMPONENT_MAIN_ACTIONS',
+    componentMainActionsEpicVat = 'COMPONENT_MAIN_ACTIONS_VAT',
     componentMainActionsCondition = makeEpicCondition<ComponentMainActionsState>(componentMainActionsEpicVat)
 
 export const

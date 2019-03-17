@@ -6,7 +6,7 @@ import { wsbE } from "../../wsbE"
 const { makeEpicCondition, makeSACAC } = wsbE
 
 export const 
-    templateVat = 'TEMPLATE',
+    templateVat = 'TEMPLATE_VAT',
     templateCondition = makeEpicCondition<TemplateState>(templateVat),
     // $FlowFixMe
     templateWidthPC = templateCondition.withSelectorKey('width').tp(),

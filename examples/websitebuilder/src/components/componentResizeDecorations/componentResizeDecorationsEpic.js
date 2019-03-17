@@ -34,7 +34,7 @@ const
     verticalResizeHandleTreshold = 50
 
 export const 
-    componentResizeDecorationsEpicVat = 'COMPONENT_RESIZE_DECORATIONS',
+    componentResizeDecorationsEpicVat = 'COMPONENT_RESIZE_DECORATIONS_VAT',
     resizeDecorationsCondition = makeEpicCondition<ComponentResizeDecorationsState>(componentResizeDecorationsEpicVat),
     componentResizeHandleNTopCondition = resizeDecorationsCondition.wsk('handles').wsk('n').wsk('position').wsk('top'),
     componentResizeDecorationsVisibleCondition = resizeDecorationsCondition.wsk('visible')
