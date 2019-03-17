@@ -3,7 +3,7 @@
 import { type BuiltInEffect, dispatchActionEffectCreator } from '../../epics'
 import { type ComponentState, componentInitialState, componentWithinTemplateAdjuster, setComponentPosition, setComponentSelected, setComponentIsMovingFalse, setComponentIsMovingTrue, setComponentDimensions, setComponentIsResizingFalse, setComponentTop, setComponentHeight, componentTopCanNotBeLessThan0Adjuster, setComponentIsResizingTrue, componentHeightCanNotBeLessThan1Adjuster } from './componentState';
 import { wsbE } from "../../wsbE";
-import { componentVat, componentMouseDown, componentResizeNMouseDown, componentMoved } from './componentACAC';
+import { componentVat, componentMouseDown, componentResizeNMouseDown } from './componentACAC';
 import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC.js'
 import { templateWidthPC, templateAreaMouseDown } from '../template/templateACAC';
 import { componentInitialScope, type ComponentScope, initComponentMoveDnd, resetComponentMoveDnd, resetComponentResizeDnd, initComponentResizeDnd } from './componentScope';
@@ -49,7 +49,6 @@ const
                 .updateState(setComponentIsMovingFalse)
                 .updateState(setComponentSelected(T))
                 .updateScope(resetComponentMoveDnd)
-                .sideEffect(dispatchActionEffectCreator(componentMoved.actionCreator()))
           }
 
           if (scope.movingDnd.type === dndTypeIdle) {

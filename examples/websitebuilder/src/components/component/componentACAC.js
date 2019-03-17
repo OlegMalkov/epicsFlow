@@ -16,5 +16,4 @@ export const
   componentDimensionsCondition = componentCondition.withSelectorKey('dimensions'),
   componentSelectedCondition = componentCondition.withSelectorKey('selected'),
   componentIsMovingCondition = componentCondition.withSelectorKey('isMoving'),
-  componentIsResizingCondition = componentCondition.withSelectorKey('isResizing'),
-  componentMoved = makeSACAC('COMPONENT_MOVED')
+  componentIsResizingCondition = componentCondition.withSelectorKey('isResizing')
