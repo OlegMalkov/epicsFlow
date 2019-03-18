@@ -52,13 +52,13 @@ const
           }
 
           if (scope.movingDnd.type === dndTypeIdle) {
-            return R.updateScope(initComponentMoveDnd({ componentStartPos: position, mouseStartPos: mousePosition }))
+            return R.updateScope(initComponentMoveDnd({ componentStartPos: position, mouseStartPosition: mousePosition }))
           }
 
           const 
-            { componentStartPos, mouseStartPos } = scope.movingDnd,
-            diffLeft = mouseStartPos.left - mousePosition.left,
-            diffTop = mouseStartPos.top - mousePosition.top
+            { componentStartPos, mouseStartPosition } = scope.movingDnd,
+            diffLeft = mouseStartPosition.left - mousePosition.left,
+            diffTop = mouseStartPosition.top - mousePosition.top
 
           return R
             .updateState(setComponentIsMovingTrue)
@@ -102,12 +102,12 @@ const
           }
 
           if (scope.resizeDnd.type === dndTypeIdle) {
-            return R.updateScope(initComponentResizeDnd({ componentStartDimensions: state.dimensions, componentStartPosition: state.position, mouseStartPos: mousePosition }))
+            return R.updateScope(initComponentResizeDnd({ componentStartDimensions: state.dimensions, componentStartPosition: state.position, mouseStartPosition: mousePosition }))
           }
 
           const 
-            { componentStartPosition, componentStartDimensions, mouseStartPos } = scope.resizeDnd,
-            diffTop = mouseStartPos.top - mousePosition.top
+            { componentStartPosition, componentStartDimensions, mouseStartPosition } = scope.resizeDnd,
+            diffTop = mouseStartPosition.top - mousePosition.top
 
           return R
             .updateState(updateComponentBBox({ bboxUpdate: { top: componentStartPosition.top - diffTop, height: componentStartDimensions.height + diffTop }, templateWidth }))

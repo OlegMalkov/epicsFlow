@@ -8,7 +8,6 @@ import {
     SingleTypeContainer
 } from '../../utils';
 import './component.css';
-import { deepEqual } from '../../epics';
 
 export opaque type ComponentState: { position: *, dimensions: *, selected: *, isMoving: *, isResizing: * } = {|
     position: LTPosition,

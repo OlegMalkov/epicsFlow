@@ -20,6 +20,9 @@
 // 16. componentsMainActions should not overlap with properties panel if prop panel increase it's height
 // 17. Properties panel appears on component selection
 // 18. Properties panel rendered in workspace viewport, but it is not following workspace scroll. It renders under topbar and left panel
+// 19. Properties panel should never be outside of workspace viewport
+// 20. Components main actions should never be outside of workspace
+// 21. Properties panel should be dragable
 
 import React, { Component } from 'react';
 import './app.css';
@@ -41,6 +44,7 @@ import { browserDimensions } from './components/env/envACAC';
 import { leftPanelEpic } from './components/leftPanel/leftPanelEpic';
 import { leftPanelToggleExpansionButtonPressed } from './components/leftPanel/leftPanelACAC';
 import { workspaceViewportEpic } from './components/workspace/workspaceViewportEpic';
+import { workspaceScroll } from './components/workspace/workspaceACAC';
 
 declare var window: EventTarget;
 
@@ -59,7 +63,7 @@ const { createStore } = wsbE,
     debug: { 
       warn: console.warn,
       trace: e => console.log(traceToString(e)),
-      /*  devTools: { config: {} } */
+      devTools: { config: {} }
     }
   }),
   initialState = store.getState(),
@@ -82,10 +86,12 @@ function getBrowserDimensions() {
 }
 export class App extends Component<{}, typeof initialState> {
   templateAreaRef: any
+  workspaceRef: any
   constructor(props: {}) {
     super(props)
     this.state = initialState
-    this.templateAreaRef = React.createRef();
+    this.templateAreaRef = React.createRef()
+    this.workspaceRef = React.createRef()
   }
   componentDidMount() {
     store.subscribeOnStateChange(appState => this.setState(appState))
@@ -112,6 +118,8 @@ export class App extends Component<{}, typeof initialState> {
       (e: KeyboardEvent) => dispatch(browserDimensions.actionCreator(getBrowserDimensions()))
     )
     
+    this.workspaceRef.current.addEventListener('scroll', e => dispatch(workspaceScroll.actionCreator({ top: this.workspaceRef.current.scrollTop })))
+    dispatch(workspaceScroll.actionCreator({ top: this.workspaceRef.current.scrollTop }))
   }
 
   render() {
@@ -120,24 +128,26 @@ export class App extends Component<{}, typeof initialState> {
         <div className="TopBar" style={{ height: TopBarHeight }} />
         <div className="Body">
             <div className="LeftPanel" style={{ width: this.state.leftPanel.width }} onClick={() => dispatch(leftPanelToggleExpansionButtonPressed.ac())} />
-            <div className="Workspace">
-              <div 
-                ref={this.templateAreaRef}
-                className="TemplateArea" 
-                style={{ width: this.state.template.width }}
-                onMouseDown={(e) => e.target === this.templateAreaRef.current && dispatch(templateAreaMouseDown.actionCreator())}
-              >
+            <div className="Workspace" >
+              <div className="WorkspaceScrollableArea" ref={this.workspaceRef}>
                 <div 
-                  className="TemplateWidthResizeHandle"
-                  onMouseDown={() => dispatch(templateWidthLeftResizeHandleMouseDown.actionCreator())}
-                />
-                <div 
-                  className="TemplateWidthResizeHandle TemplateWidthResizeHandleRight"
-                  onMouseDown={() => dispatch(templateWidthRightResizeHandleMouseDown.actionCreator())}
-                />
-                <ComponentView state={this.state.component} dispatch={dispatch} />
-                <ResizeDecorationsView state={this.state.resizeDecorations} dispatch={dispatch} />
-                <ComponentMainActionsView state={this.state.componentMainActions} dispatch={dispatch} />
+                  ref={this.templateAreaRef}
+                  className="TemplateArea" 
+                  style={{ width: this.state.template.width }}
+                  onMouseDown={(e) => e.target === this.templateAreaRef.current && dispatch(templateAreaMouseDown.actionCreator())}
+                >
+                  <div 
+                    className="TemplateWidthResizeHandle"
+                    onMouseDown={() => dispatch(templateWidthLeftResizeHandleMouseDown.actionCreator())}
+                  />
+                  <div 
+                    className="TemplateWidthResizeHandle TemplateWidthResizeHandleRight"
+                    onMouseDown={() => dispatch(templateWidthRightResizeHandleMouseDown.actionCreator())}
+                  />
+                  <ComponentView state={this.state.component} dispatch={dispatch} />
+                  <ResizeDecorationsView state={this.state.resizeDecorations} dispatch={dispatch} />
+                  <ComponentMainActionsView state={this.state.componentMainActions} dispatch={dispatch} />
+                </div>
               </div>
               <PropertiesPanelView state={this.state.propertiesPanel} dispatch={dispatch} />
             </div>
