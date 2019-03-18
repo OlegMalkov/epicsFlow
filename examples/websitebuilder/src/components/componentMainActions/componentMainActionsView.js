@@ -1,10 +1,10 @@
 // @flow strict
 
 import React from 'react'
-import { type ComponentMainActionsState } from './componentMainActionsEpic.js'
+import { type ComponentMainActionsState } from './componentMainActionsState.js'
 import { type Dispatch } from '../../epics.js'
 import './componentMainActions.css'
-import { componentMainActionsEditButtonPress } from './componentMainActionsACAC';
+import { componentMainActionsEditButtonPress } from './componentMainActionsACAC.js';
 
 export const ComponentMainActionsView = ({ state, dispatch }: {| state: ComponentMainActionsState, dispatch: Dispatch |}) => (
     <div 

@@ -1,4 +1,6 @@
 // @flow
+
+import { type BBox, type LTPosition, type Dimensions } from './types'
 import { deepEqual } from './epics';
 
 export const 
@@ -69,6 +71,23 @@ const
     ValueContainer = <V>(value: V): $ValueContainer<V> => new $ValueContainer(value),
     SingleTypeContainer = <S>(state: S): $SingleTypeContainer<S> => new $SingleTypeContainer(state)
 
+
+function areBBoxIntersect(bbox1: BBox, bbox2: BBox) {
+  return !(bbox2.left > bbox1.right || 
+           bbox2.right < bbox1.left || 
+           bbox2.top > bbox1.bottom ||
+           bbox2.bottom < bbox1.top);
+}
+
+function computeBBoxFromPositionAndDimensions({ left, top }: LTPosition, dimensions: Dimensions): BBox {
+    return {
+        left,
+        top,
+        right: left + dimensions.width,
+        bottom: top + dimensions.height
+    }
+}
+
 export {
     ValueContainer,
     SingleTypeContainer,
@@ -80,5 +99,8 @@ export {
     setPath3,
     setPathDeepCompare3,
     setPath4,
-    setPathDeepCompare4
+    setPathDeepCompare4,
+    
+    areBBoxIntersect,
+    computeBBoxFromPositionAndDimensions
 }

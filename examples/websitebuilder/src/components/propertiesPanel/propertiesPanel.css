@@ -1,0 +1,10 @@
+.PropertiesPanel {
+    background-color: #9c9c9c;
+    position: absolute;
+    z-index: 4;
+    display: none;
+}
+
+.PropertiesPanel.visible {
+    display: block;
+}

@@ -14,6 +14,11 @@ export const
   componentRightPassiveCondition = componentRightCondition.toPassive(),
   componentPositionCondition = componentCondition.withSelectorKey('position'),
   componentDimensionsCondition = componentCondition.withSelectorKey('dimensions'),
+  // $FlowFixMe
+  componentPositionPassiveCondition = componentPositionCondition.toPassive(),
+  // $FlowFixMe
+  componentDimensionsPassiveCondition = componentDimensionsCondition.toPassive(),
+  
   componentSelectedCondition = componentCondition.withSelectorKey('selected'),
   componentIsMovingCondition = componentCondition.withSelectorKey('isMoving'),
   componentIsResizingCondition = componentCondition.withSelectorKey('isResizing')

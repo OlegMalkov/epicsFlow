@@ -10,7 +10,7 @@ import {
 import './component.css';
 import { deepEqual } from '../../epics';
 
-export opaque type ComponentState: { position: *, dimensions: *, selected: *, isMoving: *, isResizing: * } =  {|
+export opaque type ComponentState: { position: *, dimensions: *, selected: *, isMoving: *, isResizing: * } = {|
     position: LTPosition,
     dimensions: Dimensions, 
     selected: boolean,

@@ -1,5 +1,4 @@
 .ComponentMainActions {
-    width: 500px;
     height: 35px;
     background-color: #c9c9c9;
     position: absolute;
@@ -10,7 +9,6 @@
     transition: opacity 0.2s ease;
     display: flex;
     align-items: center;
-    padding-left: 10px;
 }
 
 .ComponentMainActions.visible {
