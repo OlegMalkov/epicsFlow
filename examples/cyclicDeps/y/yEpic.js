@@ -1,12 +1,12 @@
 // @flow strict
 
-import { type yState, initialYState } from './yState'
+import { type YStateType, initialYState } from './yState'
 import { yUpdaters } from './yUpdaters'
 import { yVat } from './yAAC'
-import { CDE } from '../utils'
+import { makeEpic } from '../../../epics'
 
-export const y = CDE.makeEpic<yState, empty>({
+export const y = makeEpic<YStateType, empty>({
 	vat: yVat,
 	initialState: initialYState,
-	updaters: yUpdaters
+	updaters: yUpdaters,
 })

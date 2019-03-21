@@ -1,15 +1,15 @@
-// @flow strict 
-import { type xState } from './xState'
-import { CDE } from '../utils'
+// @flow strict
+import { type XStateType } from './xState'
+import { makeEpicCondition, makeSACAC } from '../../../epics'
 
-export const
-	xVat = 'X',
-	xC = CDE.makeEpicCondition<xState>(xVat),
-	xValueC = xC.wsk('value')
+const xVat = 'X'
+const xCondition = makeEpicCondition<XStateType>(xVat)
+const xValueCondition = xCondition.wsk('value')
+const xClicked = makeSACAC('X_CLICKED')
 
 
-const xClickedAT = 'X_CLICKED'
-export const    
-	xClickedAC = () => ({ type: xClickedAT }),
-	// putting <empty> for condition value type is not true, but in case there is not any useful payload in action it's ok, any way there is nothing you can take from this action
-	xClickedC = CDE.makeCondition<empty>(xClickedAT)
+export {
+	xVat,
+	xClicked,
+	xValueCondition,
+}

@@ -24,135 +24,126 @@
 // 20. Components main actions should never be outside of workspace
 // 21. Properties panel should be dragable
 
-import React, { Component } from 'react';
-import './app.css';
-import { wsbE } from './wsbE.js';
-import { windowMouseMove, windowMouseUp, keyDown } from './globalACAC.js'
-import { componentEpic } from './components/component/componentEpic.js'
-import { templateEpic } from './components/template/templateEpic.js'
-import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateAreaMouseDown } from './components/template/templateACAC.js';
-import { ComponentView } from './components/component/componentView.js'
-import { ResizeDecorationsView } from './components/componentResizeDecorations/componentResizeDecorationsView.js'
-import { componentResizeDecorationsEpic } from './components/componentResizeDecorations/componentResizeDecorationsEpic.js'
-import { componentMainActionsEpic } from './components/componentMainActions/componentMainActionsEpic.js'
-import { ComponentMainActionsView } from './components/componentMainActions/componentMainActionsView.js'
-import { traceToString } from './epics';
-import { propertiesPanelEpic } from './components/propertiesPanel/propertiesPanelEpic';
-import { PropertiesPanelView } from './components/propertiesPanel/propertiesPanelView';
-import { TopBarHeight } from './components/topBar/topBarConstants';
-import { browserDimensions } from './components/env/envACAC';
-import { leftPanelEpic } from './components/leftPanel/leftPanelEpic';
-import { leftPanelToggleExpansionButtonPressed } from './components/leftPanel/leftPanelACAC';
-import { workspaceViewportEpic } from './components/workspace/workspaceViewportEpic';
-import { workspaceScroll } from './components/workspace/workspaceACAC';
+import React, { Component } from 'react'
+import './app.css'
+import { windowMouseMove, windowMouseUp, keyDown } from './globalACAC'
+import { componentEpic } from './components/component/componentEpic'
+import { templateEpic } from './components/template/templateEpic'
+import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateAreaMouseDown } from './components/template/templateACAC'
+import { ComponentView } from './components/component/componentView'
+import { ResizeDecorationsView } from './components/componentResizeDecorations/componentResizeDecorationsView'
+import { componentResizeDecorationsEpic } from './components/componentResizeDecorations/componentResizeDecorationsEpic'
+import { componentMainActionsEpic } from './components/componentMainActions/componentMainActionsEpic'
+import { ComponentMainActionsView } from './components/componentMainActions/componentMainActionsView'
+import { propertiesPanelEpic } from './components/propertiesPanel/propertiesPanelEpic'
+import { PropertiesPanelView } from './components/propertiesPanel/propertiesPanelView'
+import { TopBarHeight } from './components/topBar/topBarConstants'
+import { browserDimensions } from './components/env/envACAC'
+import { leftPanelEpic } from './components/leftPanel/leftPanelEpic'
+import { leftPanelToggleExpansionButtonPressed } from './components/leftPanel/leftPanelACAC'
+import { workspaceViewportEpic } from './components/workspace/workspaceViewportEpic'
+import { workspaceScroll } from './components/workspace/workspaceACAC'
+import { createStore, traceToString } from './epics'
 
 declare var window: EventTarget;
 
-const { createStore } = wsbE,
-  store = createStore({
-    epics: {
-      component: componentEpic,
-      componentMainActions: componentMainActionsEpic,
-      resizeDecorations: componentResizeDecorationsEpic,
-      propertiesPanel: propertiesPanelEpic,
-      template: templateEpic,
-      leftPanel: leftPanelEpic,
-      
-      _workspaceViewport: workspaceViewportEpic
-    },
-    debug: { 
-      warn: console.warn,
-      trace: e => console.log(traceToString(e)),
-      devTools: { config: {} }
-    }
-  }),
-  initialState = store.getState(),
-  dispatch = store.dispatch
+
+const store = createStore({
+	epics: {
+		component: componentEpic,
+		componentMainActions: componentMainActionsEpic,
+		resizeDecorations: componentResizeDecorationsEpic,
+		propertiesPanel: propertiesPanelEpic,
+		template: templateEpic,
+		leftPanel: leftPanelEpic,
+
+		_workspaceViewport: workspaceViewportEpic,
+	},
+	debug: {
+		// eslint-disable-next-line no-console
+		warn: console.warn,
+		// eslint-disable-next-line no-console
+		trace: e => console.log(traceToString(e)),
+		devTools: { config: {} },
+	},
+})
+
+const initialState = store.getState()
+const dispatch = store.dispatch
 
 //$FlowFixMe
 window.$R = {}
 window.$R.store = store
-      
-function getBrowserDimensions() {
-  const
-    // $FlowFixMe
-    { clientWidth, clientHeight } = document.documentElement,
-    { innerWidth, innerHeight } = (window: any)
 
-  return { 
-    width: Math.max(clientWidth, innerWidth || 0),
-    height:  Math.max(clientHeight, innerHeight || 0)
-  }
+function getBrowserDimensions() {
+	// $FlowFixMe
+	const	{ clientWidth, clientHeight } = document.documentElement
+	const { innerWidth, innerHeight } = (window: any)
+
+	return {
+		width: Math.max(clientWidth, innerWidth || 0),
+		height:  Math.max(clientHeight, innerHeight || 0),
+	}
 }
 export class App extends Component<{}, typeof initialState> {
-  templateAreaRef: any
-  workspaceRef: any
-  constructor(props: {}) {
-    super(props)
-    this.state = initialState
-    this.templateAreaRef = React.createRef()
-    this.workspaceRef = React.createRef()
-  }
-  componentDidMount() {
-    store.subscribeOnStateChange(appState => this.setState(appState))
+templateAreaRef: any
+workspaceRef: any
+constructor(props: {}) {
+	super(props)
+	this.state = initialState
+	this.templateAreaRef = React.createRef()
+	this.workspaceRef = React.createRef()
+}
+componentDidMount() {
+	store.subscribeOnStateChange(appState => this.setState(appState))
 
-    window.addEventListener(
-      'mousemove', 
-      (e: MouseEvent) => dispatch(
-        windowMouseMove.actionCreator({ position: { left: e.clientX, top: e.clientY } })
-      )
-    )
-    window.addEventListener(
-      'mouseup',
-      (e: MouseEvent) => dispatch(windowMouseUp.actionCreator())
-    )
-    window.addEventListener(
-      'keydown',
-      (e: KeyboardEvent) => dispatch(keyDown.actionCreator({ keyCode: e.keyCode }))
-    )
-    
-    dispatch(browserDimensions.actionCreator(getBrowserDimensions()))
-    window.addEventListener(
-      // $FlowFixMe
-      'resize',
-      (e: KeyboardEvent) => dispatch(browserDimensions.actionCreator(getBrowserDimensions()))
-    )
-    
-    this.workspaceRef.current.addEventListener('scroll', e => dispatch(workspaceScroll.actionCreator({ top: this.workspaceRef.current.scrollTop })))
-    dispatch(workspaceScroll.actionCreator({ top: this.workspaceRef.current.scrollTop }))
-  }
+	window.addEventListener(
+		'mousemove',
+		(e: MouseEvent) => dispatch(
+			windowMouseMove.actionCreator({ position: { left: e.clientX, top: e.clientY } })
+		)
+	)
+	window.addEventListener('mouseup', () => dispatch(windowMouseUp.actionCreator()))
+	window.addEventListener('keydown', (e: KeyboardEvent) => dispatch(keyDown.actionCreator({ keyCode: e.keyCode })))
 
-  render() {
-    return (
-      <div className="App">
-        <div className="TopBar" style={{ height: TopBarHeight }} />
-        <div className="Body">
-            <div className="LeftPanel" style={{ width: this.state.leftPanel.width }} onClick={() => dispatch(leftPanelToggleExpansionButtonPressed.ac())} />
-            <div className="Workspace" >
-              <div className="WorkspaceScrollableArea" ref={this.workspaceRef}>
-                <div 
-                  ref={this.templateAreaRef}
-                  className="TemplateArea" 
-                  style={{ width: this.state.template.width }}
-                  onMouseDown={(e) => e.target === this.templateAreaRef.current && dispatch(templateAreaMouseDown.actionCreator())}
-                >
-                  <div 
-                    className="TemplateWidthResizeHandle"
-                    onMouseDown={() => dispatch(templateWidthLeftResizeHandleMouseDown.actionCreator())}
-                  />
-                  <div 
-                    className="TemplateWidthResizeHandle TemplateWidthResizeHandleRight"
-                    onMouseDown={() => dispatch(templateWidthRightResizeHandleMouseDown.actionCreator())}
-                  />
-                  <ComponentView state={this.state.component} dispatch={dispatch} />
-                  <ResizeDecorationsView state={this.state.resizeDecorations} dispatch={dispatch} />
-                  <ComponentMainActionsView state={this.state.componentMainActions} dispatch={dispatch} />
-                </div>
-              </div>
-              <PropertiesPanelView state={this.state.propertiesPanel} dispatch={dispatch} />
-            </div>
-        </div>
-      </div>
-    );
-  }
+	dispatch(browserDimensions.actionCreator(getBrowserDimensions()))
+	window.addEventListener('resize', () => dispatch(browserDimensions.actionCreator(getBrowserDimensions())))
+
+	this.workspaceRef.current.addEventListener('scroll', () => dispatch(workspaceScroll.actionCreator({ top: this.workspaceRef.current.scrollTop })))
+	dispatch(workspaceScroll.actionCreator({ top: this.workspaceRef.current.scrollTop }))
+}
+
+render() {
+	return (
+		<div className="App">
+			<div className="TopBar" style={{ height: TopBarHeight }} />
+			<div className="Body">
+				<div className="LeftPanel" style={{ width: this.state.leftPanel.width }} onClick={() => dispatch(leftPanelToggleExpansionButtonPressed.ac())} />
+				<div className="Workspace" >
+					<div className="WorkspaceScrollableArea" ref={this.workspaceRef}>
+						<div
+							ref={this.templateAreaRef}
+							className="TemplateArea"
+							style={{ width: this.state.template.width }}
+							onMouseDown={(e) => e.target === this.templateAreaRef.current && dispatch(templateAreaMouseDown.actionCreator())}
+						>
+							<div
+								className="TemplateWidthResizeHandle"
+								onMouseDown={() => dispatch(templateWidthLeftResizeHandleMouseDown.actionCreator())}
+							/>
+							<div
+								className="TemplateWidthResizeHandle TemplateWidthResizeHandleRight"
+								onMouseDown={() => dispatch(templateWidthRightResizeHandleMouseDown.actionCreator())}
+							/>
+							<ComponentView state={this.state.component} dispatch={dispatch} />
+							<ResizeDecorationsView state={this.state.resizeDecorations} dispatch={dispatch} />
+							<ComponentMainActionsView state={this.state.componentMainActions} dispatch={dispatch} />
+						</div>
+					</div>
+					<PropertiesPanelView state={this.state.propertiesPanel} dispatch={dispatch} />
+				</div>
+			</div>
+		</div>
+	)
+}
 }

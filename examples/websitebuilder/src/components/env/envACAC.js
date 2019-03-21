@@ -1,9 +1,10 @@
 // @flow strict
 
-import { type Dimensions } from '../../types'
-import { wsbE } from "../../wsbE";
+import { type DimensionsType } from '../../types'
+import { makeACAC } from '../../epics'
 
-const { makeACAC } = wsbE
+const browserDimensions = makeACAC<DimensionsType>('BROWSER_DIMENSIONS')
 
-export const
-    browserDimensions = makeACAC<Dimensions>('BROWSER_DIMENSIONS')
+export {
+	browserDimensions,
+}

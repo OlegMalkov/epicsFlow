@@ -1,13 +1,26 @@
 // @flow strict
-import { setProp } from '../../utils';
+import { setProp } from '../../utils'
 
-export type TemplateScope = {| dnd: {| type: 'idle' |} | {| type: 'progress', startWidth: number, mouseStartLeft: number |} |}
+type TemplateScopeType = {| dnd: {| type: 'idle' |} | {| mouseStartLeft: number, startWidth: number, type: 'progress' |} |}
 
-const setDnd = setProp<TemplateScope, *>('dnd')
+const setDnd = setProp<TemplateScopeType, *>('dnd')
+const dndInitialState = { type: 'idle' }
+const templateInitialScope = { dnd: dndInitialState }
+const resetTemplateDnd = setDnd(dndInitialState)
+const templateInitDnd = ({ startWidth, mouseStartLeft }: {| mouseStartLeft: number, startWidth: number |}) =>
+	setDnd({ type: 'progress', startWidth, mouseStartLeft })
 
-export const
-    dndInitialState = { type: 'idle' },
-    templateInitialScope = { dnd: dndInitialState },
-    resetTemplateDnd = setDnd(dndInitialState),
-    templateInitDnd = ({ startWidth, mouseStartLeft }: {| startWidth: number, mouseStartLeft: number |}) => 
-        setDnd({ type: 'progress', startWidth, mouseStartLeft })
+
+// eslint-disable-next-line import/group-exports
+export type {
+	TemplateScopeType,
+}
+
+// eslint-disable-next-line import/group-exports
+export {
+	setDnd,
+	dndInitialState,
+	templateInitialScope,
+	resetTemplateDnd,
+	templateInitDnd,
+}

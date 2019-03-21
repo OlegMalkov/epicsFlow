@@ -1,16 +1,23 @@
 // @flow strict
 
-import { type TemplateState } from './templateState'
-import { wsbE } from "../../wsbE"
+import { type TemplateStateType } from './templateState'
+import { makeEpicCondition, makeSACAC } from '../../epics'
 
-const { makeEpicCondition, makeSACAC } = wsbE
+const templateVat = 'TEMPLATE_VAT'
+const templateCondition = makeEpicCondition<TemplateStateType>(templateVat)
+const templateWidthCondition = templateCondition.withSelectorKey('width')
+// $FlowFixMe
+const templateWidthPC = templateWidthCondition.tp()
+const templateWidthLeftResizeHandleMouseDown = makeSACAC('TEMPLATE_WIDTH_LEFT_RESIZE_HANDLE_MOUSE_DOWN')
+const templateWidthRightResizeHandleMouseDown = makeSACAC('TEMPLATE_WIDTH_RIGHT_RESIZE_HANDLE_MOUSE_DOWN')
+const templateAreaMouseDown = makeSACAC('TEMPLATE_AREA_MOUSE_DOWN')
 
-export const 
-    templateVat = 'TEMPLATE_VAT',
-    templateCondition = makeEpicCondition<TemplateState>(templateVat),
-    templateWidthCondition = templateCondition.withSelectorKey('width'),
-    // $FlowFixMe
-    templateWidthPC = templateWidthCondition.tp(),
-    templateWidthLeftResizeHandleMouseDown = makeSACAC('TEMPLATE_WIDTH_LEFT_RESIZE_HANDLE_MOUSE_DOWN'),
-    templateWidthRightResizeHandleMouseDown = makeSACAC('TEMPLATE_WIDTH_RIGHT_RESIZE_HANDLE_MOUSE_DOWN'),
-    templateAreaMouseDown = makeSACAC('TEMPLATE_AREA_MOUSE_DOWN')
+export {
+	templateVat,
+	templateCondition,
+	templateWidthCondition,
+	templateWidthPC,
+	templateWidthLeftResizeHandleMouseDown,
+	templateWidthRightResizeHandleMouseDown,
+	templateAreaMouseDown,
+}

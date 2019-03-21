@@ -1,13 +1,16 @@
 // @flow strict
 
-import { type xState, initialXState } from './xState'
+import { type XStateType, initialXState } from './xState'
 import { xUpdaters } from './xUpdaters'
 import { xVat } from './xAAC'
-import { CDE } from '../utils'
+import { makeEpic } from '../../../epics'
 
-
-export const x = CDE.makeEpic<xState, empty>({
+const x = makeEpic<XStateType, empty>({
 	vat: xVat,
 	initialState: initialXState,
-	updaters: xUpdaters
+	updaters: xUpdaters,
 })
+
+export {
+	x,
+}

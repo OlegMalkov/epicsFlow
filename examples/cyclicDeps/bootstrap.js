@@ -3,12 +3,12 @@
 import { x } from './x/xEpic'
 import { y } from './y/yEpic'
 import { z } from './z/z'
-import { zClickedAC } from './z/zUpdaters'
-import { xClickedAC } from './x/xAAC'
-import { yClickedAC } from './y/yAAC'
-import { CDE } from './utils'
+import { zClicked } from './z/zUpdaters'
+import { xClicked } from './x/xAAC'
+import { yClicked } from './y/yAAC'
+import { createStore } from '../../epics'
 
-const debug = { 
+const debug = {
 	warn: console.warn, // eslint-disable-line
 	trace: console.log // eslint-disable-line
 }
@@ -16,11 +16,10 @@ const debug = {
 const epics = {
 	x,
 	y,
-	z 
+	z,
 }
 
-debugger
-export const store = CDE.createStore<typeof epics>({
+export const store = createStore<typeof epics>({
 	epics,
 	onStateChanged: (s) => {
 		console.log('state changed', s) // eslint-disable-line
@@ -28,7 +27,7 @@ export const store = CDE.createStore<typeof epics>({
 	onMsg: () => {
 
 	},
-	debug
+	debug,
 })
 
 const red = 'red'
@@ -36,6 +35,7 @@ const green = 'green'
 const assert = (result, xColor, yColor) => {
 	console.log('asserting', result, xColor, yColor) // eslint-disable-line
 	const state = store.getState()
+
 	if (state.z.result !== result) {
 		throw new Error(`Expected ${result} but got ${state.z.result} for result`)
 	}
@@ -46,19 +46,20 @@ const assert = (result, xColor, yColor) => {
 		throw new Error(`Expected ${yColor} but got ${state.y.color} for yColor`)
 	}
 }
-store.dispatch(xClickedAC())
+
+store.dispatch(xClicked.ac())
 assert(7, red, green)
-store.dispatch(xClickedAC())
+store.dispatch(xClicked.ac())
 assert(6, green, red)
-store.dispatch(yClickedAC())
+store.dispatch(yClicked.ac())
 assert(5, red, green)
-store.dispatch(zClickedAC())
+store.dispatch(zClicked.ac())
 assert(10, green, red)
-store.dispatch(zClickedAC())
+store.dispatch(zClicked.ac())
 assert(15, red, green)
-store.dispatch(yClickedAC())
+store.dispatch(yClicked.ac())
 assert(18, green, red)
-store.dispatch(xClickedAC())
+store.dispatch(xClicked.ac())
 assert(21, red, green)
-store.dispatch(xClickedAC())
+store.dispatch(xClicked.ac())
 assert(18, green, red)

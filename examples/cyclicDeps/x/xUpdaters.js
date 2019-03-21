@@ -1,26 +1,27 @@
 // @flow strict
-import { type UpdaterType } from '../../../src/epics'
-import { zResultC } from '../z/zVat'
-import { isEven, CDE } from '../utils'
-import { incX, decX, setXColor, type xState } from './xState'
-import { xClickedC } from './xAAC'
+import { type UpdaterType, makeUpdater } from '../../../epics'
+import { zResultC } from '../z/zVAT'
+import { isEven } from '../utils'
+import { incX, decX, setXColor, type XStateType } from './xState'
+import { xClicked } from './xAAC'
 
-type xUpdater = UpdaterType<xState, *, *, *>
+type XUpdaterType = UpdaterType<XStateType, *, *, *>
 
-const
-	xClicked: xUpdater = CDE.makeUpdater({
-		conditions: { 
-			zResult: zResultC.tp(), 
-			_xClicked: xClickedC 
-		},
-		reducer: ({ values: { zResult }, R }) => R.updateState(isEven(zResult)? incX : decX)
-	}),
-	zResultChanged: xUpdater = CDE.makeUpdater({
-		conditions: { zResult: zResultC },
-		reducer: ({ values: { zResult }, R }) => R.updateState(setXColor(isEven(zResult) ? 'green' : 'red'))
-	})
-    
+const xClickedUpdater: XUpdaterType = makeUpdater({
+	conditions: {
+		zResult: zResultC.tp(),
+		_xClicked: xClicked.condition,
+	},
+	reducer: ({ values: { zResult }, R }) => R.updateState(isEven(zResult)? incX : decX),
+})
+
+
+const zResultChanged: XUpdaterType = makeUpdater({
+	conditions: { zResult: zResultC },
+	reducer: ({ values: { zResult }, R }) => R.updateState(setXColor(isEven(zResult) ? 'green' : 'red')),
+})
+
 export const xUpdaters = {
-	xClicked,
-	zResultChanged
+	xClicked: xClickedUpdater,
+	zResultChanged,
 }

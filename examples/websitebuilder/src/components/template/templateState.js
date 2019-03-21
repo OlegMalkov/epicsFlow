@@ -1,9 +1,19 @@
 // @flow strict
 
-import { setPropDeepCompare } from '../../utils';
+import { setPropDeepCompare } from '../../utils'
 
-export opaque type TemplateState: {| width: * |} = {| width: number |}
+opaque type TemplateStateType: {| width: * |} = {| width: number |}
 
-export const 
-    templateInitialState: TemplateState = { width: 940 },
-    setTemplateWidth = setPropDeepCompare<TemplateState, *>('width')
+const templateInitialState: TemplateStateType = { width: 940 }
+const setTemplateWidth = setPropDeepCompare<TemplateStateType, *>('width')
+
+// eslint-disable-next-line import/group-exports
+export type {
+	TemplateStateType,
+}
+
+// eslint-disable-next-line import/group-exports
+export {
+	templateInitialState,
+	setTemplateWidth,
+}

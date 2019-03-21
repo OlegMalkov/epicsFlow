@@ -1,65 +1,57 @@
 // @flow strict
-import { initEpics } from '../epics'
-import { type RequestAnimationFrameEffect, rafEC, initRequestAnimationFrameEM } from '../effectManagers/requestAnimationFrameEM'
+
+import { makeCondition, makeEpic, makeUpdater, createStore, traceToString } from '../epics'
+import { type RequestAnimationFrameEffectType, rafEC, afC, requestAnimationFrameEM } from '../effectManagers/requestAnimationFrameEM'
 import { waitEffectManagers } from './utils'
 
-const
-	aAT: 'a' = 'a'
+type CustomEpicEffectType = RequestAnimationFrameEffectType
+type AType = {| to: {| v: {| n: number |} |}, type: typeof aAT |}
 
-type A = {| type: typeof aAT, to: {| v: {| n: number |} |} |}
-
-const 
-	aAC = (n): A => ({ type: aAT, to: { v: { n } }})
-	
-let
-	E = initEpics(),
-	raf = initRequestAnimationFrameEM(E),
-	aC = E.makeCondition<A>(aAT)
-
-type CustomEpicEffect = RequestAnimationFrameEffect
+const aAT: 'a' = 'a'
+const aAC = (n): AType => ({ type: aAT, to: { v: { n } }})
+const aC = makeCondition<AType>(aAT)
 
 describe('effectManager', () => {
-	beforeEach(() => {
-		(E = initEpics(), raf = initRequestAnimationFrameEM(E))
-		aC = E.makeCondition<A>(aAT)
-	})
-
 	it('only epic that requested effect can receive response from effect manager (animation frame)', async () => {
-		const 
-			e1 = E.makeEpic<number, CustomEpicEffect>({
+		const
+			e1 = makeEpic<number, CustomEpicEffectType>({
 				vat: 'e1',
 				initialState: 0,
-				updaters: { 
-					af: E.makeUpdater({ 
-						conditions: { _af: raf.afC }, 
-						reducer: ({ R }) => R.updateState(() => 1)
-					})
-				} 
-			}),
-			e2 = E.makeEpic<number, CustomEpicEffect>({
-				vat: 'e2',
-				initialState: 0,
 				updaters: {
-					a: E.makeUpdater({ 
-						conditions: { _a: aC }, 
-						reducer: ({ R }) => R.sideEffect(rafEC())
+					af: makeUpdater({
+						conditions: { _af: afC },
+						reducer: ({ R }) => R.updateState(() => 1),
 					}),
-					af: E.makeUpdater({
-						conditions: { _af: raf.afC },
-						reducer: ({ R }) => R.updateState(state => state + 1)
-					})
-				}
-			}),
-			store = E.createStore({
-				effectManagers: {
-					requestAnimationFrame: raf.requestAnimationFrameEM,
 				},
-				epics: { e1, e2 }
 			})
-				
+
+
+		const e2 = makeEpic<number, CustomEpicEffectType>({
+			vat: 'e2',
+			initialState: 0,
+			updaters: {
+				a: makeUpdater({
+					conditions: { _a: aC },
+					reducer: ({ R }) => R.sideEffect(rafEC()),
+				}),
+				af: makeUpdater({
+					conditions: { _af: afC },
+					reducer: ({ R }) => R.updateState(state => state + 1),
+				}),
+			},
+		})
+
+
+		const store = createStore({
+			effectManagers: {
+				requestAnimationFrame: requestAnimationFrameEM,
+			},
+			epics: { e1, e2 },
+		})
+
 		store.dispatch(aAC(5))
 		await waitEffectManagers(store)
-	
+
 		expect(store.getState().e1).toBe(0)
 		expect(store.getState().e2).toBe(1)
 	})

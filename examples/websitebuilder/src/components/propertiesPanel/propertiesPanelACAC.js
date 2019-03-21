@@ -1,9 +1,10 @@
 // @flow
+import { makeSACAC } from '../../epics'
 
-import { wsbE } from "../../wsbE";
+const propertiesPanelNextPageButtonPress = makeSACAC('PROPERTIES_PANEL_NEXT_PAGE_BUTTON_PRESSED')
+const propertiesPanelDragMouseDown = makeSACAC('PROPERTIES_PANEL_DRAG_MOUSE_DOWN')
 
-const { makeSACAC } = wsbE
-
-export const 
-    propertiesPanelNextPageButtonPress = makeSACAC('PROPERTIES_PANEL_NEXT_PAGE_BUTTON_PRESSED'),
-    propertiesPanelDragMouseDown = makeSACAC('PROPERTIES_PANEL_DRAG_MOUSE_DOWN')
+export {
+	propertiesPanelNextPageButtonPress,
+	propertiesPanelDragMouseDown,
+}

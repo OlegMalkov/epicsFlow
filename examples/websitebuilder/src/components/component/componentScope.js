@@ -1,27 +1,35 @@
 // @flow strict
 
-import { type LTPosition, type Dimensions } from "../../types.js";
-import { setProp } from "../../utils.js";
-import { type DndIdle, dndTypeProgress, dndInitialState } from '../shared/dnd.js'
+import { type LTPositionType, type DimensionsType } from '../../types'
+import { setProp } from '../../utils'
+import { type DndIdleType, dndTypeProgress, dndInitialState } from '../shared/dnd'
 
-
-const 
-    setMoveDnd = setProp<ComponentScope, *>('movingDnd'),
-    setResizeDnd = setProp<ComponentScope, *>('resizeDnd')
-
-export opaque type ComponentScope: { movingDnd: *, resizeDnd: * } = {| 
-    movingDnd: DndIdle | {| type: typeof dndTypeProgress, componentStartPos: LTPosition, mouseStartPosition: LTPosition |},
-    resizeDnd: DndIdle | {| type: typeof dndTypeProgress, componentStartDimensions: Dimensions, componentStartPosition: LTPosition, mouseStartPosition: LTPosition |}
+opaque type ComponentScope: { movingDnd: *, resizeDnd: * } = {|
+    movingDnd: DndIdleType | {| componentStartPos: LTPositionType, mouseStartPosition: LTPositionType, type: typeof dndTypeProgress |},
+    resizeDnd: DndIdleType | {| componentStartDimensions: DimensionsType, componentStartPosition: LTPositionType, mouseStartPosition: LTPositionType, type: typeof dndTypeProgress |},
 |}
 
-export const 
-    componentInitialScope: ComponentScope = { 
-        movingDnd: dndInitialState,  
-        resizeDnd: dndInitialState
-    },
-    resetComponentMoveDnd = (s: ComponentScope): ComponentScope => setMoveDnd(dndInitialState)(s),
-    resetComponentResizeDnd = (s: ComponentScope): ComponentScope => setResizeDnd(dndInitialState)(s),
-    initComponentMoveDnd = ({ componentStartPos, mouseStartPosition }: {| componentStartPos: LTPosition, mouseStartPosition: LTPosition |}) => 
-        (s: ComponentScope): ComponentScope => setMoveDnd({ type: dndTypeProgress, componentStartPos, mouseStartPosition })(s),
-    initComponentResizeDnd = ({ componentStartDimensions, componentStartPosition, mouseStartPosition }: {| componentStartDimensions: Dimensions, componentStartPosition: LTPosition, mouseStartPosition: LTPosition |}) => 
-        (s: ComponentScope): ComponentScope => setResizeDnd({ type: dndTypeProgress, componentStartDimensions, componentStartPosition, mouseStartPosition })(s)
+const setMoveDnd = setProp<ComponentScope, *>('movingDnd')
+const setResizeDnd = setProp<ComponentScope, *>('resizeDnd')
+const componentInitialScope: ComponentScope = {
+	movingDnd: dndInitialState,
+	resizeDnd: dndInitialState,
+}
+const resetComponentMoveDnd = (s: ComponentScope): ComponentScope => setMoveDnd(dndInitialState)(s)
+const resetComponentResizeDnd = (s: ComponentScope): ComponentScope => setResizeDnd(dndInitialState)(s)
+const initComponentMoveDnd = ({ componentStartPos, mouseStartPosition }: {| componentStartPos: LTPositionType, mouseStartPosition: LTPositionType |}) =>
+	(s: ComponentScope): ComponentScope => setMoveDnd({ type: dndTypeProgress, componentStartPos, mouseStartPosition })(s)
+const initComponentResizeDnd = ({ componentStartDimensions, componentStartPosition, mouseStartPosition }: {| componentStartDimensions: DimensionsType, componentStartPosition: LTPositionType, mouseStartPosition: LTPositionType |}) =>
+	(s: ComponentScope): ComponentScope => setResizeDnd({ type: dndTypeProgress, componentStartDimensions, componentStartPosition, mouseStartPosition })(s)
+
+export { // eslint-disable-line import/group-exports
+	componentInitialScope,
+	resetComponentMoveDnd,
+	resetComponentResizeDnd,
+	initComponentMoveDnd,
+	initComponentResizeDnd,
+}
+
+export type { // eslint-disable-line import/group-exports
+	ComponentScope,
+}

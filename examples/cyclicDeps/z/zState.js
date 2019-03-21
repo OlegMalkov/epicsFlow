@@ -1,12 +1,23 @@
 // @flow strict
 import { inc } from '../utils'
 
-type state = {| result: number, multiplier: number |}
-export opaque type zState: state = state
+type StateType = {| multiplier: number, result: number |}
+opaque type ZStateType: StateType = StateType
 
-export const zIncMultiplier = (z: zState): zState => ({ ...z, multiplier: inc(z.multiplier)})
-export const zComputeResult = (x: number, y: number) => (z: zState): zState => { 
+const zIncMultiplier = (z: ZStateType): ZStateType => ({ ...z, multiplier: inc(z.multiplier)})
+const zComputeResult = (x: number, y: number) => (z: ZStateType): ZStateType => {
 	return ({ ...z, result: (x + y) * z.multiplier })
 }
+const initialZState: ZStateType = { result: -1, multiplier: 1 }
 
-export const initialZState: zState = { result: -1, multiplier: 1 }
+// eslint-disable-next-line import/group-exports
+export type {
+	ZStateType,
+}
+
+// eslint-disable-next-line import/group-exports
+export {
+	zIncMultiplier,
+	zComputeResult,
+	initialZState,
+}

@@ -1,14 +1,14 @@
 // @flow strict
 
-import { type zState, initialZState } from './zState'
-import { zCondition } from './zVat'
+import { type ZStateType, initialZState } from './zState'
+import { zCondition } from './zVAT'
 import { zUpdaters } from './zUpdaters'
-import { CDE } from '../utils'
+import { makeEpic } from '../../../epics'
 
-const z = CDE.makeEpic<zState, empty>({
+const z = makeEpic<ZStateType, empty>({
 	vat: zCondition.actionType,
 	initialState: initialZState,
-	updaters: zUpdaters
+	updaters: zUpdaters,
 })
 
 export { z }

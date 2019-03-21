@@ -1,32 +1,44 @@
 // @flow strict
 
-import { type LTPosition, type Dimensions } from '../../types'
-import { setPropDeepCompare } from '../../utils';
+import { type LTPositionType, type DimensionsType } from '../../types'
+import { setPropDeepCompare } from '../../utils'
 
-export opaque type ComponentMainActionsState: {| visible: *, position: *, dimensions: * |} = {|
-    visible: boolean,
-    position: LTPosition,
-    dimensions: Dimensions
+opaque type ComponentMainActionsState: {| dimensions: *, position: *, visible: * |} = {|
+    dimensions: DimensionsType,
+    position: LTPositionType,
+    visible: bool,
 |}
 
 
 const _setPosition = setPropDeepCompare<ComponentMainActionsState, *>('position')
+const componentMainActionsInitialState: ComponentMainActionsState = { position: { left: 0, top: -99999 }, dimensions: { width: 500, height: 30 }, visible: false }
+const componentMainActionsSetVisible = setPropDeepCompare<ComponentMainActionsState, *>('visible')
+const componentMainActionsSetPosition = (position: LTPositionType) => {
+	let { left, top } = position
 
-export const
-    componentMainActionsInitialState: ComponentMainActionsState = { position: { left: 0, top: -99999 }, dimensions: { width: 500, height: 30 }, visible: false },
-    componentMainActionsSetVisible = setPropDeepCompare<ComponentMainActionsState, *>('visible'),
-    componentMainActionsSetPosition = (position: LTPosition) => {
-        let { left, top } = position
+	const minTop = 0
 
-        const minTop = 0
-        if (top < minTop) {
-            top = minTop
-        }
+	if (top < minTop) {
+		top = minTop
+	}
 
-        const minLeft = 0
-        if (left < minLeft) {
-            left = minLeft
-        }
+	const minLeft = 0
 
-        return _setPosition({ top, left })
-    }
+	if (left < minLeft) {
+		left = minLeft
+	}
+
+	return _setPosition({ top, left })
+}
+
+// eslint-disable-next-line import/group-exports
+export type {
+	ComponentMainActionsState,
+}
+
+// eslint-disable-next-line import/group-exports
+export {
+	componentMainActionsInitialState,
+	componentMainActionsSetVisible,
+	componentMainActionsSetPosition,
+}

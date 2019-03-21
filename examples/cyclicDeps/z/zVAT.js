@@ -1,6 +1,11 @@
-// @flow strict 
-import { type zState } from './zState'
-import { CDE } from '../utils'
+// @flow strict
+import { type ZStateType } from './zState'
+import { makeEpicCondition } from '../../../epics'
 
-export const zCondition = CDE.makeEpicCondition<zState>('Z')
-export const zResultC = zCondition.wsk('result')
+const zCondition = makeEpicCondition<ZStateType>('Z')
+const zResultC = zCondition.wsk('result')
+
+export {
+	zCondition,
+	zResultC,
+}

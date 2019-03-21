@@ -2,14 +2,14 @@
 
 import React from 'react'
 import './component.css'
-import { type ComponentState } from './componentState'
+import { type ComponentStateType } from './componentState'
+import { componentMouseDown } from './componentACAC'
 import { type DispatchType } from '../../epics'
-import { componentMouseDown } from './componentACAC';
 
-export const ComponentView = ({ state, dispatch }: {| state: ComponentState, dispatch: DispatchType |}) => (
-    <div 
-        className={`Component${state.selected ? ' ComponentSeletedBorder' : ''}`}
-        style={{ ...state.position, ...state.dimensions }}
-        onMouseDown={() => dispatch(componentMouseDown.ac())}
-    />
+export const ComponentView = ({ state, dispatch }: {| dispatch: DispatchType, state: ComponentStateType |}) => (
+	<div
+		className={`Component${state.selected ? ' ComponentSeletedBorder' : ''}`}
+		style={{ ...state.position, ...state.dimensions }}
+		onMouseDown={() => dispatch(componentMouseDown.ac())}
+	/>
 )

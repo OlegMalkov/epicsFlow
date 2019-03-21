@@ -1,35 +1,40 @@
 // @flow strict
-import { type UpdaterType } from '../../../src/epics'
-import { xValueC } from '../x/xAAC'
+import { type UpdaterType, makeUpdater, makeSACAC } from '../../../epics'
+import { xValueCondition } from '../x/xAAC'
 import { yValueC } from '../y/yAAC'
-import { compose2, CDE } from '../utils'
-import { zComputeResult, zIncMultiplier, type zState } from './zState'
 
-const zClickedAT = 'Z_CLICKED'
-export const zClickedAC = () => ({ type: zClickedAT })
-const zClickedC = CDE.makeCondition(zClickedAT)
+import { zComputeResult, zIncMultiplier, type ZStateType } from './zState'
 
-type zUpdater = UpdaterType<zState, *, *, *>
-const 
-	zClicked: zUpdater = CDE.makeUpdater({
+const zClicked = makeSACAC('Z_CLICKED')
+
+type ZUpdaterType = UpdaterType<ZStateType, *, *, *>
+const
+	zClickedUpdater: ZUpdaterType = makeUpdater({
 		conditions: {
-			x: xValueC.tp(),
+			x: xValueCondition.tp(),
 			y: yValueC.tp(),
-			_zClicked: zClickedC 
+			_zClicked: zClicked.condition,
 		},
 		reducer: ({ values: { x, y }, R }) => R
 			.updateState(zIncMultiplier)
-			.updateState(zComputeResult(x,y))
-	}),
-	xOrYChanged: zUpdater = CDE.makeUpdater({
-		conditions: { 
-			x: xValueC, 
-			y: yValueC
-		},
-		reducer: ({ values: { x, y }, R }) => R.updateState(zComputeResult(x,y))
+			.updateState(zComputeResult(x,y)),
 	})
 
-export const zUpdaters = {
+
+const xOrYChanged: ZUpdaterType = makeUpdater({
+	conditions: {
+		x: xValueCondition,
+		y: yValueC,
+	},
+	reducer: ({ values: { x , y }, R }) => R.updateState(zComputeResult(x,y)),
+})
+
+const zUpdaters = {
+	zClicked: zClickedUpdater,
+	xOrYChanged,
+}
+
+export {
 	zClicked,
-	xOrYChanged
+	zUpdaters,
 }

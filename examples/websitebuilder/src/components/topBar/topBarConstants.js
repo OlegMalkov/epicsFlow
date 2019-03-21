@@ -1,4 +1,7 @@
 // @flow strict
 
-export const
-    TopBarHeight = 50
+const TopBarHeight = 50
+
+export {
+	TopBarHeight,
+}

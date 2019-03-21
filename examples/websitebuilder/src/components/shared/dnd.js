@@ -1,8 +1,19 @@
 // @flow strict
 
-export const
-    dndTypeIdle: 'idle' = 'idle',
-    dndTypeProgress: 'progress' = 'progress',
-    dndInitialState = { type: dndTypeIdle }
+type DndIdleType = {| type: typeof dndTypeIdle |}
 
-export type DndIdle = {| type: typeof dndTypeIdle |}
+const dndTypeIdle: 'idle' = 'idle'
+const dndTypeProgress: 'progress' = 'progress'
+const dndInitialState = { type: dndTypeIdle }
+
+// eslint-disable-next-line import/group-exports
+export type {
+	DndIdleType,
+}
+
+// eslint-disable-next-line import/group-exports
+export {
+	dndTypeIdle,
+	dndTypeProgress,
+	dndInitialState,
+}

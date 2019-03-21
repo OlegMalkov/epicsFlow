@@ -1,4 +1,4 @@
-// @flow strict
+/* // @flow strict
 
 // epics are aggregates for actions
 // if epic is marked as eventSourcingAggregate all actions that it is has conditions to are going to be tracked and persisted
@@ -48,4 +48,4 @@ const eventSourcingDatabase = makeEpicsPlugin(({
         })
         dispatch({ type: 'REHYDRADE_EPIC_AGGREGATES_STATE', epicStatesMap: { 'epicVat': data.epicVat }}
     }))
-})
+}) */
