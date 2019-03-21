@@ -1,5 +1,5 @@
 // @flow strict
-import { type Updater } from '../../../src/epics'
+import { type UpdaterType } from '../../../src/epics'
 import { xValueC } from '../x/xAAC'
 import { yValueC } from '../y/yAAC'
 import { compose2, CDE } from '../utils'
@@ -9,7 +9,7 @@ const zClickedAT = 'Z_CLICKED'
 export const zClickedAC = () => ({ type: zClickedAT })
 const zClickedC = CDE.makeCondition(zClickedAT)
 
-type zUpdater = Updater<zState, *, *, *>
+type zUpdater = UpdaterType<zState, *, *, *>
 const 
 	zClicked: zUpdater = CDE.makeUpdater({
 		conditions: {

@@ -1,6 +1,6 @@
 // @flow strict
 
-import { type MakeCondition, type MakeEffectManager, type EMRTType } from '../epics'
+import { type MakeConditionType, type MakeEffectManagerType, type EMRTType } from '../epics'
 const afAT: 'af' = 'af'
 
 type afA = {| type: typeof afAT, dateNow: number |}
@@ -28,7 +28,7 @@ export const
 	rafEC = requestAnimationFrameEffectCreator,
 	cancelRafEC = cancelAnimationFrameEffectCreator
 
-type Props = { makeCondition: MakeCondition, makeEffectManager: MakeEffectManager, EMRT: EMRTType }
+type Props = { makeCondition: MakeConditionType, makeEffectManager: MakeEffectManagerType, EMRT: EMRTType }
 export function initRequestAnimationFrameEM({ makeCondition, makeEffectManager, EMRT }: Props) {
 	const
 		animationFrameCondition = makeCondition<afA>(afAT),

@@ -1,11 +1,11 @@
 // @flow strict
-import { type Updater } from '../../../src/epics'
+import { type UpdaterType } from '../../../src/epics'
 import { zResultC } from '../z/zVat'
 import { type yState, setYColor, incY, decY } from './yState'
 import { isOdd, CDE } from '../utils'
 import { yClickedC } from './yAAC'
 
-type yUpdater = Updater<yState, *, *, *>
+type yUpdater = UpdaterType<yState, *, *, *>
 
 const
 	yClicked: yUpdater = CDE.makeUpdater({

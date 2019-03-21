@@ -1,6 +1,6 @@
 // @flow strict
 
-import { type BuiltInEffect } from '../../epics'
+import { type BuiltInEffectType } from '../../epics'
 import { type ComponentState, componentInitialState, updateComponentBBox, setComponentSelected, setComponentIsMovingFalse, setComponentIsMovingTrue, setComponentIsResizingFalse, setComponentIsResizingTrue } from './componentState';
 import { wsbE } from "../../wsbE";
 import { componentVat, componentMouseDown, componentResizeNMouseDown } from './componentACAC';
@@ -13,7 +13,7 @@ import { T, F } from '../../utils';
 const { makeEpicWithScope, makeUpdater } = wsbE
 
 const
-  componentEpic = makeEpicWithScope<ComponentState, ComponentScope, BuiltInEffect>({
+  componentEpic = makeEpicWithScope<ComponentState, ComponentScope, BuiltInEffectType>({
     vat: componentVat,
     initialState: componentInitialState,
     initialScope: componentInitialScope,

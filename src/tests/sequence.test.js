@@ -1,5 +1,5 @@
 // @flow strict
-import { initEpics, dispatchActionEffectCreator, type BuiltInEffect } from '../epics'
+import { initEpics, dispatchActionEffectCreator, type BuiltInEffectType } from '../epics'
 
 let	E = initEpics()
 
@@ -250,7 +250,7 @@ describe('sequence', () => {
 			aC = E.makeCondition(a),
 			bC = E.makeCondition(b),
 			xC = E.makeCondition(x),
-			e1 = E.makeEpic<{| n: number, m: number, i: string |}, BuiltInEffect>({
+			e1 = E.makeEpic<{| n: number, m: number, i: string |}, BuiltInEffectType>({
 				vat: 'e1',
 				initialState: { n: 0, m: 0, i: 'x' },
 				updaters: {

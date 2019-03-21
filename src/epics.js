@@ -1,66 +1,67 @@
 // @flow
 
 const __DEV__ = process.env !== 'production'
-type AnyValue = number | string | boolean | Object | Array<AnyValue> | null
+type AnyValueType = number | string | bool | Object | Array<AnyValueType> | null
 
-type CompulsoryConditionFields = {|
-	sealed: boolean,
+type CompulsoryConditionFieldsType = {|
 	actionType: string,
-	passive: boolean,
-	optional: boolean,
-	resetConditionsByKeyKeys: Array<string> | null,
+	isEpicCondition: bool,
+	optional: bool,
+	passive: bool,
 	resetConditionsByKeyAfterReducerCallKeys: Array<string> | null,
-	isEpicCondition: boolean
+	resetConditionsByKeyKeys: Array<string> | null,
+	sealed: bool,
 |}
 
-type Subscription = {| epicVat: string, updaterKey: string, conditionKey: string, passive: boolean |}
+type SubscriptionType = {| conditionKey: string, epicVat: string, passive: bool, updaterKey: string |}
 
 export opaque type Condition<V: Object>: {
-	value: V,
-    toOptional: () => Condition<V>,
+	actionType: string,
+    resetConditionsByKey: (Array<string>) => Condition<V>,
+	resetConditionsByKeyAfterReducerCall: (Array<string>) => Condition<V>,
 	to: () => Condition<V>,
-	toPassive: () => Condition<V>,
+	toOptional: () => Condition<V>,
+    toPassive: () => Condition<V>,
 	tp: () => Condition<V>,
+	value: V,
+	wg: <VV: V>(guard: VV => bool) => Condition<VV>,
+    withGuard: <VV: V>(guard: VV => bool) => Condition<VV>,
+    withSelector: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
     withSelectorKey: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
+    ws: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
 	wsk: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
-	withSelector: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
-	ws: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
-    resetConditionsByKey: (Array<string>) => Condition<V>,
-    resetConditionsByKeyAfterReducerCall: (Array<string>) => Condition<V>,
-    withGuard: <VV: V>(guard: VV => boolean) => Condition<VV>,
-    wg: <VV: V>(guard: VV => boolean) => Condition<VV>,
-	actionType: string
 } = {|
-	isEpicCondition: boolean,
-	valueKey: string,
-	subscriptions?: Array<Subscription>,
-	guard?: (V, V) => boolean,
-	value: V,
-	...CompulsoryConditionFields,
-
-	toPassive: () => Condition<V>,	
-	tp: () => Condition<V>,
-    toOptional: () => Condition<V>,
-	to: () => Condition<V>,
-    resetConditionsByKey: (Array<string>) => Condition<V>,
-    resetConditionsByKeyAfterReducerCall: (Array<string>) => Condition<V>,
-    withGuard: <VV: V>(guard: VV => boolean) => Condition<VV>,
-	wg: <VV: V>(guard: VV => boolean) => Condition<VV>,
-
-	parentCondition?: Condition<AnyValue>,
-
+	...CompulsoryConditionFieldsType,
+	childrenConditionsWithSelectorOrGuard?: Array<AnyConditionType>,
 	childrenConditionsWithoutSelectorAndGuard?: Array<Condition<V>>,
-	childrenConditionsWithSelectorOrGuard?: Array<Condition<AnyValue>>,
+	guard?: (V, V) => bool,
+	isEpicCondition: bool,
+	parentCondition?: AnyConditionType,
 
-	withSelector: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
-	ws: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
-	withSelectorKey: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
-    wsk: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
+	resetConditionsByKey: (Array<string>) => Condition<V>,	
+	resetConditionsByKeyAfterReducerCall: (Array<string>) => Condition<V>,
+    selector?: (V, V) => AnyValueType,
 	selectorKey?: string,
-	selector?: (V, V) => AnyValue
+    subscriptions?: Array<SubscriptionType>,
+    to: () => Condition<V>,
+    toOptional: () => Condition<V>,
+	toPassive: () => Condition<V>,
+
+	tp: () => Condition<V>,
+
+	value: V,
+	valueKey: string,
+
+	wg: <VV: V>(guard: VV => bool) => Condition<VV>,
+	withGuard: <VV: V>(guard: VV => bool) => Condition<VV>,
+	withSelector: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
+    withSelectorKey: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
+	ws: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
+	wsk: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
 |}
 
-function getFields(condition: Condition<AnyValue>): {| ...CompulsoryConditionFields, parentCondition: Condition<AnyValue> |} {
+type AnyConditionType = Condition<AnyValueType>
+function getFields(condition: AnyConditionType): {| ...CompulsoryConditionFieldsType, parentCondition: AnyConditionType |} {
 	const {
 		actionType,
 		passive,
@@ -68,7 +69,7 @@ function getFields(condition: Condition<AnyValue>): {| ...CompulsoryConditionFie
 		resetConditionsByKeyKeys,
 		resetConditionsByKeyAfterReducerCallKeys,
 		sealed,
-		isEpicCondition
+		isEpicCondition,
 	} = condition
 	return {
 		actionType,
@@ -78,48 +79,48 @@ function getFields(condition: Condition<AnyValue>): {| ...CompulsoryConditionFie
 		resetConditionsByKeyAfterReducerCallKeys,
 		parentCondition: condition,
 		sealed,
-		isEpicCondition
+		isEpicCondition,
 	}
 }
 
-type makeConditionProps = {|
-	...CompulsoryConditionFields,
-	selectorKey?: string,
-	guard?: AnyValue => boolean,
-	parentCondition?: Condition<AnyValue>,
-	resetConditionsByKeyKeys: Array<string> | null,
+type MakeConditionPropsType = {|
+	...CompulsoryConditionFieldsType,
+	guard?: AnyValueType => bool,
+	parentCondition?: AnyConditionType,
 	resetConditionsByKeyAfterReducerCallKeys: Array<string> | null,
-	selector?: AnyValue => AnyValue,
-	sealed: boolean
+	resetConditionsByKeyKeys: Array<string> | null,
+	sealed: bool,
+	selector?: AnyValueType => AnyValueType,
+	selectorKey?: string,
 |}
 
-type AnyAction = { type: $Subtype<string> }
-type Meta = {| targetEpicVats?: string[] |}
-export type Dispatch = (AnyAction, meta?: Meta) => void
+type AnyActionType = { type: $Subtype<string> } // eslint-disable-line flowtype/require-exact-type
+type MetaType = {| targetEpicVats?: string[] |}
+export type DispatchType = (AnyActionType, meta?: MetaType) => void
 
-type ConditionsValues = { [string]: AnyValue }
+type ConditionsValuesType = { [string]: AnyValueType }
 
 const dispatchActionEffectType: 'dispatch_action' = 'dispatch_action'
 const sendMsgOutsideEpicsEffectType: 'send_msg_outside_of_epics' = 'send_msg_outside_of_epics'
 export const
-	dispatchActionEffectCreator = (action: AnyAction): DispatchActionEffect => ({ type: dispatchActionEffectType, action }),
+	dispatchActionEffectCreator = (action: AnyActionType): DispatchActionEffect => ({ type: dispatchActionEffectType, action }),
 	daEC = dispatchActionEffectCreator,
 	sendMessageOutsideEpicsEffectCreator = (msg: any): SendMsgOutsideEpicsEffect => ({ type: sendMsgOutsideEpicsEffectType, msg }),
 	smoeEC = sendMessageOutsideEpicsEffectCreator
 
 opaque type DispatchActionEffect = {| 
+	action: { type: string },
 	type: typeof dispatchActionEffectType,
-	action: { type: string }
 |}
 
 opaque type SendMsgOutsideEpicsEffect = {| 
+	msg: any,
 	type: typeof sendMsgOutsideEpicsEffectType,
-	msg: any
 |}
 
 class ReducerResult<S, SC, SE> {
-	_stateUpdated: boolean;
-	_scopeUpdated: boolean;
+	_stateUpdated: bool;
+	_scopeUpdated: bool;
 	_state: S;
 	_scope: SC;
 	_sideEffects: Array<SE>;
@@ -166,34 +167,34 @@ class ReducerResult<S, SC, SE> {
 
 const toTrueV = (): true => true
 
-export type Reducer<S: AnyValue, SC: Object, CV, E> = ({| values: CV, state: S, scope: SC, changedActiveConditionsKeysMap: $ObjMap<CV, typeof toTrueV>, sourceAction: AnyAction, R: ReducerResult<S, SC, E> |}) => ReducerResult<S, SC, E>
+export type ReducerType<S: AnyValueType, SC: Object, CV, E> = ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<CV, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: CV |}) => ReducerResult<S, SC, E>
 
 const extractConditionV =<V>(c: { value: V }): V => c.value
 
-export type BuiltInEffect = DispatchActionEffect | SendMsgOutsideEpicsEffect
+export type BuiltInEffectType = DispatchActionEffect | SendMsgOutsideEpicsEffect
 
-export type Updater<S, SC, C, E> = {| 
+export type UpdaterType<S, SC, C, E> = {| 
+	compulsoryConditionsKeys: Array<$Keys<C>>, 
+	conditionKeysToConditionUpdaterKeys: Array<[string, $Keys<C>]>,
 	conditions: C, 
 	conditionsKeys: Array<$Keys<C>>,
-	conditionKeysToConditionUpdaterKeys: Array<[string, $Keys<C>]>, 
-	compulsoryConditionsKeys: Array<$Keys<C>>,
-	reducer: Reducer<S, SC, $Exact<$ObjMap<C, typeof extractConditionV>>, E>
-|};
+	reducer: ReducerType<S, SC, $Exact<$ObjMap<C, typeof extractConditionV>>, E>,
+|}
 
-type EpicValueAction<State> = {| type: string, value: State |}
+type EpicValueActionType<State> = {| type: string, value: State |}
 
 
-function makeUpdater<S: AnyValue, SC: Object, C: { [string]: Object }, E> ({ conditions, reducer }: {|
+function makeUpdater<S: AnyValueType, SC: Object, C: { [string]: Object }, E> ({ conditions, reducer }: {|
 	conditions: C,
-	reducer: ({| values: $Exact<$ObjMap<C, typeof extractConditionV>>, state: S, scope: SC, changedActiveConditionsKeysMap: $ObjMap<C, typeof toTrueV>, sourceAction: AnyAction, R: ReducerResult<S, SC, E> |}) => ReducerResult<S, SC, E>
-|}): Updater<S, SC, any, E> {
+	reducer: ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<C, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: $Exact<$ObjMap<C, typeof extractConditionV>> |}) => ReducerResult<S, SC, E>,
+|}): UpdaterType<S, SC, any, E> {
 	let noActiveConditions = true
 	const 
 		conditionKeysToConditionUpdaterKeys = [],
 		compulsoryConditionsKeys = []
 
 	Object.keys(conditions).forEach(conditionKey => {
-		const condition: Condition<AnyValue> = conditions[conditionKey]
+		const condition: AnyConditionType = conditions[conditionKey]
 
 		conditionKeysToConditionUpdaterKeys.push([condition.valueKey, conditionKey])
 
@@ -220,25 +221,25 @@ function makeUpdater<S: AnyValue, SC: Object, C: { [string]: Object }, E> ({ con
 }
 
 opaque type Epic<S, SC, E>: { c: Condition<S>, condition: Condition<S>, initialState: S } = {|
-	vat: string,
-	updaters: { [string]: Updater<S, SC, *, E> },
-	initialState: S,
-	initialScope: SC,
 	c: Condition<S>,
-	condition: Condition<S>
-|}
-
-type MakeEpicWithScopeProps<S, SC, E> = {|
-	vat: string,
-	updaters: { [string]: Updater<S, SC, *, E> },
-	initialState: S,
+	condition: Condition<S>,
 	initialScope: SC,
+	initialState: S,
+	updaters: { [string]: UpdaterType<S, SC, *, E> },
+	vat: string,
 |}
 
-type MakeEpicProps<S, E> = {|
+type MakeEpicWithScopePropsType<S, SC, E> = {|
+	initialScope: SC,
+	initialState: S,
+	updaters: { [string]: UpdaterType<S, SC, *, E> },
 	vat: string,
-	updaters: { [string]: Updater<S, void, *, E> },
-	initialState: S
+|}
+
+type MakeEpicPropsType<S, E> = {|
+	initialState: S,
+	updaters: { [string]: UpdaterType<S, void, *, E> },
+	vat: string,
 |}
 
 const 
@@ -247,9 +248,9 @@ const
 	update_state_with_effect_promise_emrt: 'update_state_with_effect_promise_emrt' = 'update_state_with_effect_promise_emrt'
 
 opaque type DoNothingEMRT = {| type: typeof do_nothing_emrt |}
-opaque type UpdateStateEMRT<S> = {| type: typeof update_state_emrt, state: S |}
-opaque type UpdateStateWithEffectPromiseRT<S> = {| type: typeof update_state_with_effect_promise_emrt, state: S, promise: Promise<void> |}
-type EffectManagerResultTypeT<State> =
+opaque type UpdateStateEMRT<S> = {| state: S, type: typeof update_state_emrt |}
+opaque type UpdateStateWithEffectPromiseRT<S> = {| promise: Promise<void>, state: S, type: typeof update_state_with_effect_promise_emrt |}
+type EffectManagerResultTypeType<State> =
 | DoNothingEMRT
 | UpdateStateEMRT<State>
 | UpdateStateWithEffectPromiseRT<State>
@@ -258,8 +259,8 @@ const EffectManagerResultType = {
 	doNothing: ({ type: do_nothing_emrt }: DoNothingEMRT),
 	updateState: <S>({ state }: {| state: S |}): UpdateStateEMRT<S> =>
 		({ type: update_state_emrt, state }),
-	updateStateWithEffectPromise: <S>({ state, promise }: {| state: S, promise: Promise<void> |}): UpdateStateWithEffectPromiseRT<S> =>
-		({ type: update_state_with_effect_promise_emrt, state, promise })
+	updateStateWithEffectPromise: <S>({ state, promise }: {| promise: Promise<void>, state: S |}): UpdateStateWithEffectPromiseRT<S> =>
+		({ type: update_state_with_effect_promise_emrt, state, promise }),
 }
 
 const EMRT = EffectManagerResultType
@@ -267,53 +268,64 @@ const EMRT = EffectManagerResultType
 export type EMRTType = typeof EMRT
 
 opaque type EffectManager<S, SC, E> = {|
-	key?: string,
-	requestType: string,
 	_effect: E,
-	initialState?: S,
 	initialScope?: SC,
-	onEffectRequest: ({ effect: $ReadOnly<E>, requesterEpicVat: string, state: $ReadOnly<S>, scope: SC, dispatch: Dispatch }) => EffectManagerResultTypeT<S>
-|}
-
-type PendingEffect<E> = {| effect: E, promise: Promise<any> |}
-type EffectManagerState<S, E> = {|
-	state: S,
-	scope: Object,
-	pendingEffects: Array<PendingEffect<E>>
-|}
-type EffectManagersState<S, E> = { [string]: EffectManagerState<S, E> }
-type EffectManagerStateUpdate = {| state?: AnyValue, pendingEffects?: Array<PendingEffect<any>> |}
-type EffectManagersStateUpdate = { [string]: EffectManagerStateUpdate }
-
-type MakeEffectManagerProps<E, S, SC> = {|
+	initialState?: S,
+	key?: string,
+	onEffectRequest: ({ dispatch: DispatchType, effect: $ReadOnly<E>, requesterEpicVat: string, scope: SC, state: $ReadOnly<S> }) => EffectManagerResultTypeType<S>,
 	requestType: string,
-	initialState?: S,
-	initialScope?: SC,
-	onEffectRequest: ({ 
-		effect: $ReadOnly<E>, 
-		requesterEpicVat: string, 
-		state: $ReadOnly<S>,
-		scope: SC, 
-		dispatch: Dispatch
-	}) => EffectManagerResultTypeT<S>
 |}
 
-export type MakeEffectManager = <E, S, SC>(MakeEffectManagerProps<E, S, SC>) => EffectManager<S, SC, E>
+type PendingEffectType<E> = {| effect: E, promise: Promise<any> |}
+type EffectManagerStateType<S, E> = {|
+	pendingEffects: Array<PendingEffectType<E>>,
+	scope: Object,
+	state: S,
+|}
+type EffectManagersStateType<S, E> = { [string]: EffectManagerStateType<S, E> }
+type EffectManagerStateUpdateType = {| pendingEffects?: Array<PendingEffectType<any>>, state?: AnyValueType |}
+type EffectManagersStateUpdateType = { [string]: EffectManagerStateUpdateType }
+
+type MakeEffectManagerPropsType<E, S, SC> = {|
+	initialScope?: SC,
+	initialState?: S,
+	onEffectRequest: ({ 
+		dispatch: DispatchType, 
+		effect: $ReadOnly<E>, 
+		requesterEpicVat: string,
+		scope: SC, 
+		state: $ReadOnly<S>,
+	}) => EffectManagerResultTypeType<S>,
+	requestType: string,
+|}
+
+export type MakeEffectManagerType = <E, S, SC>(MakeEffectManagerPropsType<E, S, SC>) => EffectManager<S, SC, E>
 
 function makeEffectManager<E, S, SC>({ 
 	initialState,
 	initialScope,
 	onEffectRequest,
-	requestType
-}: MakeEffectManagerProps<E, S, SC>): EffectManager<S, SC, E> {
+	requestType,
+}: MakeEffectManagerPropsType<E, S, SC>): EffectManager<S, SC, E> {
 	return {
 		requestType,
 		initialState,
 		initialScope,
 		onEffectRequest,
-		_effect: (null: any)
+		_effect: (null: any),
 	}
 }
+
+export type PluginPropsType = {|
+    dispatch: DispatchType,
+    dispatchBatchActionsIntoEpic: ({| actions: Array<AnyActionType>, targetEpicVat: string |}) => void,
+    getEpics: () => { [string]: Epic<any, any, any> },
+    injectUpdaters: <S, SC, E>(Epic<S, SC, E>) => Array<UpdaterType<S, SC, *, E>>,
+    onConditionChanged: (subscriber: { action: AnyActionType, condition: AnyConditionType } => void) => void,
+    subscribeOnAction: (subscriber: AnyActionType => void) => void, // dispatch multiple action into epic, but notify everybody only
+|}
+
+type PluginType = PluginPropsType => void
 
 function getInitialState<S>({ initialState }: Epic<S, any, any>): S { return initialState }
 
@@ -328,6 +340,21 @@ export const
 	
 		return result
 	}
+
+export function deepFreeze <O: Object | Array<any>>(o: O): O {
+	Object.freeze(o)
+	
+	Object.getOwnPropertyNames((o: any)).forEach(function (prop) {
+		if (o.hasOwnProperty(prop)
+		&& (o: any)[prop] !== null
+		&& (typeof (o: any)[prop] === 'object' || typeof (o: any)[prop] === 'function')
+		&& !Object.isFrozen((o: any)[prop])) {
+			deepFreeze((o: any)[prop])
+		}
+	})
+	
+	return o
+}
 
 export function findObjDiff(lhs: Object, rhs: Object) {
 	if (lhs === rhs) return {}
@@ -398,68 +425,68 @@ const
 
 const MatchAnyActionType: '*' = '*'
 
-type UpdaterStateValuesFullfilled = { [string]: boolean }
+type UpdaterStateValuesFullfilledType = { [string]: bool }
 
-type UpdaterState = {|
-	valuesFullfilled: UpdaterStateValuesFullfilled
+type UpdaterStateType = {|
+	valuesFullfilled: UpdaterStateValuesFullfilledType,
 |}
 
-type UpdaterStateUpdate = {|
-	valuesFullfilled: UpdaterStateValuesFullfilled
+type UpdaterStateUpdateType = {|
+	valuesFullfilled: UpdaterStateValuesFullfilledType,
 |}
 
-type EpicUpdatersState = { [string]: UpdaterState }
-type EpicUpdatersStateUpdate = { [string]: UpdaterStateUpdate }
+type EpicUpdatersStateType = { [string]: UpdaterStateType }
+type EpicUpdatersStateUpdateType = { [string]: UpdaterStateUpdateType }
 
-type EpicState = {|
-	updatersState: EpicUpdatersState,
-	state: AnyValue,
-	scope: AnyValue
+type EpicStateType = {|
+	scope: AnyValueType,
+	state: AnyValueType,
+	updatersState: EpicUpdatersStateType,
 |}
 
-type EpicsState = {
-	[key: string]: EpicState
+type EpicsStateType = {
+	[key: string]: EpicStateType,
 }
 
-type EpicStateUpdate = {|
-	updatersState: EpicUpdatersStateUpdate,
-	state ?: AnyValue,
-	scope ?: AnyValue
+type EpicStateUpdateType = {|
+	scope?: AnyValueType,
+	state?: AnyValueType,
+	updatersState: EpicUpdatersStateUpdateType,
 |}
 
-type EpicsStateUpdate = {
-	[key: string]: EpicStateUpdate
+type EpicsStateUpdateType = {
+	[key: string]: EpicStateUpdateType,
 }
 
-type EpicStateChangedAction = {|
+type EpicStateChangedActionType = {|
 	type: string,
-	value: AnyValue,
-	updateReasons?: Array<string>
+	updateReasons?: Array<string>,
+	value: AnyValueType,
 |}
 
-type ConditonsValues = { [string]: AnyValue }
-type ConditonsValuesUpdate = { [string]: AnyValue }
+type ConditonsValuesType = { [string]: AnyValueType }
+type ConditonsValuesUpdateType = { [string]: AnyValueType }
 
 const I = x => x
 
-type PendingEffectPromise = {| requestEffectType: string, effect: {||}, promise: Promise<void> |}
-type PendingEffectPromises = Array<PendingEffectPromise>
+type PendingEffectPromiseType = {| effect: {||}, promise: Promise<void>, requestEffectType: string |}
+type PendingEffectPromisesType = Array<PendingEffectPromiseType>
 export opaque type EpicsStore<Epics: Object>: {| 
-	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>, 
-	getServiceState: () => { epics: EpicsState, effectManagers: EffectManagersState<*, *>, conditions: ConditionsValues },
-	dispatch: Dispatch,
-	getAllPendingEffectsPromises: () => PendingEffectPromises,
-	warn: Function,
+	dispatch: DispatchType, 
+	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
+	getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
+	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
+	subscribeOnMessage: any => any,
 	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
-	subscribeOnMessage: any => any
+	warn: Function,
 |} = {| 
-	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>, 
-	getServiceState: () => { epics: EpicsState, effectManagers: EffectManagersState<*, *>, conditions: ConditionsValues },
-	dispatch: Dispatch,
-	getAllPendingEffectsPromises: () => PendingEffectPromises,
-	warn: Function,
+	dispatch: DispatchType, 
+	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
+	getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
+	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
+	subscribeOnMessage: any => any,
 	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
-	subscribeOnMessage: any => any
+	warn: Function,
 |} 
 
 function validateUniqVats(epics) {
@@ -488,19 +515,19 @@ function getEffectManagersInitialState(effectManagers) {
 		state[config.requestType] = {
 			state: config.initialState,
 			scope: config.initialScope,
-			pendingEffects: []
+			pendingEffects: [],
 		}
 		return state
 	}, {})
 }
 
 const
-	printUpdater = (u: EpicUpdaterExecutionInfo) => u.updaterKey + `(${[
+	printUpdater = (u: EpicUpdaterExecutionInfoType) => u.updaterKey + `(${[
 		u.updaterEpicStateChange ? (u.updaterEpicStateChange === nothingChangedButObjectRecreatedWarn ? 'SW' : 'S') : '',
 		u.updaterEpicScopeChange ? (u.updaterEpicScopeChange === nothingChangedButObjectRecreatedWarn ? 'SCW' : 'SC') : '',
-		u.updaterReqestedEffects ? 'E' : ''
+		u.updaterReqestedEffects ? 'E' : '',
 	].filter(x => x).join(',')})`,
-	printEpicExecutionInfo = (epicExecutionInfo: EpicExecutionInfo) => {
+	printEpicExecutionInfo = (epicExecutionInfo: EpicExecutionInfoType) => {
 		const { updaters, epicKey } = epicExecutionInfo
 
 		if (!updaters) return ''
@@ -511,7 +538,7 @@ const
 
 		return `${epicKey}[${result}]`
 	}
-export function traceToString(trace: ExecutionLevelInfo, executedEpicsFilter: EpicExecutionInfo => boolean = () => true, whitespaceLength: number = 0): string {
+export function traceToString(trace: ExecutionLevelInfoType, executedEpicsFilter: EpicExecutionInfoType => bool = () => true, whitespaceLength: number = 0): string {
 	// go till you see > 1 executed epics (after calling filter) or > 1 children layers
 	// measure length of output at this point, an pass it down, so we print white space in following lines
 
@@ -519,7 +546,7 @@ export function traceToString(trace: ExecutionLevelInfo, executedEpicsFilter: Ep
 		.filter(executedEpicsFilter)
 		.map(epicExecutionInfo => ({
 			output: printEpicExecutionInfo(epicExecutionInfo),
-			epicExecutionInfo
+			epicExecutionInfo,
 		}))
 		.filter(({ output }) => output)
 
@@ -542,15 +569,15 @@ export function traceToString(trace: ExecutionLevelInfo, executedEpicsFilter: Ep
 	return unnest<string>(branches).filter(x => x).join('\n')
 }
 		
-function mergeUpdaterState(epicUpdaterState: UpdaterState, epicUpdaterStateUpdate: UpdaterStateUpdate) {
-	const result: UpdaterState = {
-		valuesFullfilled: epicUpdaterStateUpdate.valuesFullfilled
+function mergeUpdaterState(epicUpdaterState: UpdaterStateType, epicUpdaterStateUpdate: UpdaterStateUpdateType) {
+	const result: UpdaterStateType = {
+		valuesFullfilled: epicUpdaterStateUpdate.valuesFullfilled,
 	}
 		
 	return result
 }
 		
-function mergeUpdatersState(epicUpdatersState: EpicUpdatersState, epicUpdatersStateUpdate: EpicUpdatersStateUpdate): EpicUpdatersState { // eslint-disable-line max-len
+function mergeUpdatersState(epicUpdatersState: EpicUpdatersStateType, epicUpdatersStateUpdate: EpicUpdatersStateUpdateType): EpicUpdatersStateType { // eslint-disable-line max-len
 	return Object.keys(epicUpdatersState).reduce((s, updaterKey) => {
 		const
 			epicUpdterState = epicUpdatersState[updaterKey],
@@ -565,15 +592,15 @@ function mergeUpdatersState(epicUpdatersState: EpicUpdatersState, epicUpdatersSt
 	}, {})
 }
 		
-function mergeEpic(epicState: EpicState, epicStateUpdate: EpicStateUpdate): EpicState {
+function mergeEpic(epicState: EpicStateType, epicStateUpdate: EpicStateUpdateType): EpicStateType {
 	return {
 		updatersState: mergeUpdatersState(epicState.updatersState, epicStateUpdate.updatersState),
 		state: epicStateUpdate.state === undefined ? epicState.state : epicStateUpdate.state,
-		scope: epicStateUpdate.scope === undefined ? epicState.scope : epicStateUpdate.scope
+		scope: epicStateUpdate.scope === undefined ? epicState.scope : epicStateUpdate.scope,
 	}
 }
 		
-function mergeEpicsStateWithUpdate(epicsState: EpicsState, epicsStateUpdate: EpicsStateUpdate) {
+function mergeEpicsStateWithUpdate(epicsState: EpicsStateType, epicsStateUpdate: EpicsStateUpdateType) {
 	const resultEpicsState = {}
 	for (const key in epicsState) { // eslint-disable-line
 		const 
@@ -586,15 +613,15 @@ function mergeEpicsStateWithUpdate(epicsState: EpicsState, epicsStateUpdate: Epi
 	return resultEpicsState
 }
 
-function mergeEffectManagerStateWithUpdate(emState: EffectManagerState<*, *>, update: EffectManagerStateUpdate): EffectManagerState<*, *> {
+function mergeEffectManagerStateWithUpdate(emState: EffectManagerStateType<*, *>, update: EffectManagerStateUpdateType): EffectManagerStateType<*, *> {
 	return {
 		state: update.state === undefined ? emState.state : update.state,
 		pendingEffects: update.pendingEffects === undefined ? emState.pendingEffects : update.pendingEffects,
-		scope: emState.scope
+		scope: emState.scope,
 	}
 }
 
-function mergeEffectManagersStateWithUpdate(effectManagersState: EffectManagersState<*, *>, effectManagersStateUpdate: EffectManagersStateUpdate) {
+function mergeEffectManagersStateWithUpdate(effectManagersState: EffectManagersStateType<*, *>, effectManagersStateUpdate: EffectManagersStateUpdateType) {
 	const result = {}
 	for (const key in effectManagersState) { // eslint-disable-line
 		const 
@@ -657,59 +684,59 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 	})
 }
 
-type EpicUpdaterExecutionInfo = {|
-	updaterKey: string,
+type EpicUpdaterExecutionInfoType = {|
 	changedActiveConditionsKeys: Array<string>,
-	reducerValues?: Object,
-	epicState?: AnyValue,
+	didNothing?: bool,
 	epicScope?: Object,
-	updaterEpicStateChange?: Object,
-	updaterEpicScopeChange?: Object,
+	epicState?: AnyValueType,
 	reducerNotExecutedBecause?: string,
+	reducerValues?: Object,
+	updaterEpicScopeChange?: Object,
+	updaterEpicStateChange?: Object,
+	updaterKey: string,
 	updaterReqestedEffects?: Array<Object>,
-	didNothing?: boolean
 |}
 
-type EpicExecutionInfo = {|
-	epicVat: string,
+type EpicExecutionInfoType = {|
+	childrenLayers?: Array<ExecutionLevelInfoType>,
 	epicKey: string,
-	updaters?: Array<EpicUpdaterExecutionInfo>,
-	childrenLayers?: Array<ExecutionLevelInfo>, // eslint-disable-line
-	epicNotExecutedBecause?: string
+	epicNotExecutedBecause?: string,
+	epicVat: string, // eslint-disable-line
+	updaters?: Array<EpicUpdaterExecutionInfoType>,
 |}
 
-type ExecutionLevelInfo = {|
-	triggerAction: AnyAction,
-	executedEpics: Array<EpicExecutionInfo>
+type ExecutionLevelInfoType = {|
+	executedEpics: Array<EpicExecutionInfoType>,
+	triggerAction: AnyActionType,
 |}
 
-type ExecuteActionProps = {|
-	actionsChain: Array<AnyAction>,
-	conditionsValues: ConditonsValues,
-	prevConditionsValues: ConditonsValues,
-	conditionsValuesUpdate: ConditonsValuesUpdate,
-	epicsState: EpicsState,
-	epicsStateUpdate: EpicsStateUpdate,
-	effectManagersState: EffectManagersState<*, *>,
-	effectManagersStateUpdate: EffectManagersStateUpdate,
+type ExecuteActionPropsType = {|
+	actionsChain: Array<AnyActionType>,
+	conditionsValues: ConditonsValuesType,
+	conditionsValuesUpdate: ConditonsValuesUpdateType,
+	effectManagersState: EffectManagersStateType<*, *>,
+	effectManagersStateUpdate: EffectManagersStateUpdateType,
+	epicsState: EpicsStateType,
+	epicsStateUpdate: EpicsStateUpdateType,
+	executionLevelTrace: ExecutionLevelInfoType | void,
 	lastReducerValuesByEpicVatUpdaterKey: { [string]: Object },
-	messagesToSendOutside: Array<AnyAction>,
-	executionLevelTrace: ExecutionLevelInfo | void
+	messagesToSendOutside: Array<AnyActionType>,
+	prevConditionsValues: ConditonsValuesType,
 |}
 
-type makeExecuteActionProps = {| 
-	trace: Function,
+type MakeExecuteActionPropsType = {| 
+	dispatch: DispatchType,
+	effectManagers: { [string]: EffectManager<any, any, any> },
 	epicKeyByVat: { [string]: string },
 	epicsMapByVat: { [string]: Epic<any, any, any> },
-	effectManagers: { [string]: EffectManager<any, any, any> },
-	dispatch: Dispatch,
-	rootConditionsByActionType: { [string]: Condition<AnyValue> },
-	warn: Function
+	rootConditionsByActionType: { [string]: AnyConditionType },
+	trace: Function,
+	warn: Function,
 |}
 
 const nothingChangedButObjectRecreatedWarn = 'WARN: nothing changed, but new objects with same data was created'
 
-const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers, dispatch, rootConditionsByActionType }: makeExecuteActionProps) => { 
+const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers, dispatch, rootConditionsByActionType }: MakeExecuteActionPropsType) => { 
 	const 
 		effectManagersByRequestType: { [string]: EffectManager<*, *, *> } = Object.keys(effectManagers).reduce((m, emk) => {
 			const effectManager = { ...effectManagers[emk] }
@@ -770,13 +797,13 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 		effectManagersStateUpdate,
 		lastReducerValuesByEpicVatUpdaterKey,
 		messagesToSendOutside,
-		executionLevelTrace
-	}: ExecuteActionProps): void {
+		executionLevelTrace,
+	}: ExecuteActionPropsType): void {
 		function getEpicStateUpdate(epicVat) {
-			let epicStateUpdate: EpicStateUpdate = epicsStateUpdate[epicVat]
+			let epicStateUpdate: EpicStateUpdateType = epicsStateUpdate[epicVat]
 
 			if (!epicStateUpdate) {
-				epicStateUpdate = ({ updatersState: {} }: EpicStateUpdate)
+				epicStateUpdate = ({ updatersState: {} }: EpicStateUpdateType)
 				epicsStateUpdate[epicVat] = epicStateUpdate // eslint-disable-line no-param-reassign
 			}
 
@@ -784,10 +811,10 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 		}
 
 		function getUpdaterStateUpdate(epicStateUpdate, updaterState, updaterKey) {
-			let updaterStateUpdate: UpdaterStateUpdate = epicStateUpdate.updatersState[updaterKey]
+			let updaterStateUpdate: UpdaterStateUpdateType = epicStateUpdate.updatersState[updaterKey]
 
 			if (!updaterStateUpdate) {
-				epicStateUpdate.updatersState[updaterKey] = updaterStateUpdate = ({ valuesFullfilled: {...updaterState.valuesFullfilled} }: UpdaterStateUpdate)
+				epicStateUpdate.updatersState[updaterKey] = updaterStateUpdate = ({ valuesFullfilled: {...updaterState.valuesFullfilled} }: UpdaterStateUpdateType)
 			}
 
 			return updaterStateUpdate
@@ -796,8 +823,8 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 		const
 			sourceAction = last(actionsChain),
 			action = actionsChain[0],
-			rootCondition: Condition<AnyValue> = rootConditionsByActionType[action.type],
-			subscriptions: Array<Subscription> = []
+			rootCondition: AnyConditionType = rootConditionsByActionType[action.type],
+			subscriptions: Array<SubscriptionType> = []
 
 		conditionsValuesUpdate[rootCondition.valueKey] = action
 
@@ -830,7 +857,7 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 			const
 				{ epicVat, updaterKey, conditionKey } = sub, 
 				epicStateUpdate = getEpicStateUpdate(epicVat),
-				epicState: EpicState = epicsState[epicVat],
+				epicState: EpicStateType = epicsState[epicVat],
 				updaterState = epicState.updatersState[updaterKey],
 				updaterStateUpdate = getUpdaterStateUpdate(epicStateUpdate, updaterState, updaterKey)
 
@@ -841,8 +868,8 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 
 		if (!activeSubs.length) return
 
-		type EpicSubs = { [epicVat: string]: { [updaterKey: string]: Array<string> } }
-		const epicSubs: EpicSubs = activeSubs.reduce((r: EpicSubs, sub) => {
+		type EpicSubsType = { [epicVat: string]: { [updaterKey: string]: Array<string> } }
+		const epicSubs: EpicSubsType = activeSubs.reduce((r: EpicSubsType, sub) => {
 			const { updaterKey, epicVat } = sub
 			let updatersByVat: { [updaterKey: string]: Array<string> } | void = r[epicVat]
 			if (!updatersByVat) {
@@ -870,7 +897,7 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 					executionLevelTrace.executedEpics.push({ 
 						epicVat: subVat,
 						epicKey: epicKeyByVat[subVat],
-						epicNotExecutedBecause: `action.targetEpicVatsMap ${Object.keys(action.targetEpicVatsMap).join(', ')} does not contain ${subVat}`
+						epicNotExecutedBecause: `action.targetEpicVatsMap ${Object.keys(action.targetEpicVatsMap).join(', ')} does not contain ${subVat}`,
 					})
 				}
 
@@ -879,7 +906,7 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 			const 
 				updaterSubs = epicSubs[subVat],
 				epic: Epic<any, any, any> = epicsMapByVat[subVat],
-				epicState: EpicState = epicsState[subVat],
+				epicState: EpicStateType = epicsState[subVat],
 				updateReasons = [],
 				allEffects = [],
 				updaterKeysThatChangedState = []
@@ -889,8 +916,8 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 			Object.keys(updaterSubs).forEach(updaterKey => {
 				const 
 					changedActiveConditionsKeys: Array<string> = updaterSubs[updaterKey],
-					updater: Updater<*, *, *, *> = epic.updaters[updaterKey],
-					conditions: { [string]: Condition<AnyValue> } = updater.conditions,
+					updater: UpdaterType<*, *, *, *> = epic.updaters[updaterKey],
+					conditions: { [string]: AnyConditionType } = updater.conditions,
 					updaterState = epicState.updatersState[updaterKey]
 
 				let updaterStateUpdate = getUpdaterStateUpdate(epicStateUpdate, updaterState, updaterKey)
@@ -913,7 +940,7 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 						getTraceUpdaters({ executionLevelTrace, subVat }).push({
 							updaterKey,
 							changedActiveConditionsKeys,
-							reducerNotExecutedBecause: `compulsory conditions keys ${updater.compulsoryConditionsKeys.filter(k => !valuesFullfilled[k]).join(', ')} are not fullifilled`
+							reducerNotExecutedBecause: `compulsory conditions keys ${updater.compulsoryConditionsKeys.filter(k => !valuesFullfilled[k]).join(', ')} are not fullifilled`,
 						})
 					}
 					return
@@ -955,7 +982,7 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 							updaterKey, 
 							changedActiveConditionsKeys,
 							reducerValues,
-							reducerNotExecutedBecause: 'It was called before in execution chain and values not changed since then'
+							reducerNotExecutedBecause: 'It was called before in execution chain and values not changed since then',
 						})
 					}
 					
@@ -968,10 +995,10 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 					prevState = epicStateUpdate.state === undefined ? epicState.state : epicStateUpdate.state,
 					prevScope = epicStateUpdate.scope === undefined ? epicState.scope : epicStateUpdate.scope
 
-				if (process.env.NODE_ENV !== 'production') { // to eliminate this from production build
-					// TODO devDeepFreeze(reducerValues);
-					// TODO devDeepFreeze(prevState);
-					// TODO devDeepFreeze(prevScope);
+				if (__DEV__) {
+					deepFreeze(reducerValues)
+					deepFreeze(prevState)
+					deepFreeze(prevScope)
 				}
 
 				const
@@ -981,14 +1008,18 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 						scope: prevScope,
 						sourceAction,
 						changedActiveConditionsKeysMap: changedActiveConditionsKeys.reduce((m, k) => { m[k] = true; return m }, {}),
-						R: new ReducerResult(prevState, [], prevScope, [], false, false)
+						R: new ReducerResult(prevState, [], prevScope, [], false, false),
 					})
+
+				if (__DEV__) {
+					deepFreeze(result)
+				}
 
 				if (trace && executionLevelTrace) {
 					const updaters = getTraceUpdaters({ executionLevelTrace, subVat })
-					const updaterTraceInfo: EpicUpdaterExecutionInfo = { 
+					const updaterTraceInfo: EpicUpdaterExecutionInfoType = { 
 						updaterKey,
-						changedActiveConditionsKeys
+						changedActiveConditionsKeys,
 					}
 
 					if (!result._stateUpdated && !result._scopeUpdated && !result._sideEffects.length) {
@@ -1037,8 +1068,8 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 					}
 				})
 
-				if (process.env.NODE_ENV !== 'production') { // to eliminate this from production build
-					// TODO devDeepFreeze(result);
+				if (__DEV__) {
+					deepFreeze(result)
 				}
 
 				if (result._scopeUpdated) {
@@ -1074,7 +1105,7 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 								effectManagersStateUpdate,
 								lastReducerValuesByEpicVatUpdaterKey,
 								messagesToSendOutside,
-								executionLevelTrace: trace && executionLevelTrace ? getNextLevelTrace({ executionLevelTrace, subVat, triggerAction: dispatchActionEffect.action }) : undefined
+								executionLevelTrace: trace && executionLevelTrace ? getNextLevelTrace({ executionLevelTrace, subVat, triggerAction: dispatchActionEffect.action }) : undefined,
 							})
 						} else {
 							allEffects.push(e)
@@ -1085,9 +1116,9 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 
 			if (updaterKeysThatChangedState.length) {
 				const
-					epicChangedAction: EpicStateChangedAction = {
+					epicChangedAction: EpicStateChangedActionType = {
 						type: subVat,
-						value: epicStateUpdate.state
+						value: epicStateUpdate.state,
 					}
 
 				if (updateReasons.length) {
@@ -1105,7 +1136,7 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 					effectManagersStateUpdate,
 					lastReducerValuesByEpicVatUpdaterKey,
 					messagesToSendOutside,
-					executionLevelTrace: trace && executionLevelTrace ? getNextLevelTrace({ executionLevelTrace, subVat, triggerAction: epicChangedAction }) : undefined
+					executionLevelTrace: trace && executionLevelTrace ? getNextLevelTrace({ executionLevelTrace, subVat, triggerAction: epicChangedAction }) : undefined,
 				}) 
 			}
 
@@ -1129,7 +1160,7 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 							requesterEpicVat: subVat,
 							state: (effectManagerStateUpdate && effectManagerStateUpdate.state) ? effectManagerStateUpdate.state : effectManagerState.state, 
 							scope: effectManagerState.scope,
-							dispatch 
+							dispatch, 
 						})
 
 						switch(result.type) {
@@ -1150,8 +1181,8 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 								state,
 								pendingEffects: [
 									...((effectManagerStateUpdate && effectManagerStateUpdate.pendingEffects) || []),
-									{ effect, promise } 
-								]
+									{ effect, promise }, 
+								],
 							}
 							promise
 								.then(() => dispatch({ type: effectPromiseCompleteAT, effect, effectRequestType }))
@@ -1172,7 +1203,7 @@ const makeExecuteAction = ({ trace, epicsMapByVat, epicKeyByVat, effectManagers,
 }
 
 function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
-	const epicsState: EpicsState = epicsArr.reduce((state, epic) => {
+	const epicsState: EpicsStateType = epicsArr.reduce((state, epic) => {
 		return {
 			...state,
 			[epic.vat]: {
@@ -1180,14 +1211,14 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 					(s, updaterKey) => ({ 
 						...s,
 						[updaterKey]: {
-							valuesFullfilled: Object.keys(epic.updaters[updaterKey].conditions).reduce((a, ck) => ({...a, [ck]: false }) ,{})
-						}
+							valuesFullfilled: Object.keys(epic.updaters[updaterKey].conditions).reduce((a, ck) => ({...a, [ck]: false }) ,{}),
+						},
 					}), 
 					{}
 				),
 				state: epic.initialState,
-				scope: epic.initialScope
-			}
+				scope: epic.initialScope,
+			},
 		}
 	}, {})
 	
@@ -1197,7 +1228,7 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 		conditionsValuesUpdate = {},
 		effectManagersStateUpdate = {}
 
-	const initialEpicsState: EpicsState = epicsArr
+	const initialEpicsState: EpicsStateType = epicsArr
 		.filter(epic => epic.initialState !== undefined)
 		.reduce((epicsState: any, epic) => {
 			if(epicsStateUpdate[epic.vat] && epicsStateUpdate[epic.vat].state) {
@@ -1209,7 +1240,7 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 				executionLevelTrace = { triggerAction: action, executedEpics: [] }
 
 			executeAction({ 
-				actionsChain: [(action: EpicStateChangedAction)], 
+				actionsChain: [(action: EpicStateChangedActionType)], 
 				conditionsValues, 
 				prevConditionsValues: {},
 				conditionsValuesUpdate,
@@ -1219,7 +1250,7 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 				effectManagersStateUpdate, 
 				lastReducerValuesByEpicVatUpdaterKey: {},
 				messagesToSendOutside,
-				executionLevelTrace
+				executionLevelTrace,
 			})
 
 			if (trace) {
@@ -1243,7 +1274,7 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 
 	return {
 		initialEpicsState,
-		initialCondtionsValues: { ...conditionsValues, ...conditionsValuesUpdate }
+		initialCondtionsValues: { ...conditionsValues, ...conditionsValuesUpdate },
 	}
 }
 
@@ -1258,7 +1289,7 @@ function setConditionsSubscriptions(epics) {
 		Object.keys(epic.updaters).forEach(updaterKey => {
 			const updater = epic.updaters[updaterKey]
 			Object.keys(updater.conditions).forEach(conditionKey => {
-				const condition: Condition<AnyValue> = updater.conditions[conditionKey]
+				const condition: AnyConditionType = updater.conditions[conditionKey]
 				if (!condition.subscriptions) {
 					condition.subscriptions = []
 				}
@@ -1266,7 +1297,7 @@ function setConditionsSubscriptions(epics) {
 					epicVat: epic.vat,
 					updaterKey, 
 					conditionKey,
-					passive: condition.passive
+					passive: condition.passive,
 				})
 			})
 		})
@@ -1279,7 +1310,7 @@ function validateResetConditions(epics) {
 		Object.keys(epic.updaters).forEach(updaterKey => {
 			const updater = epic.updaters[updaterKey]
 			Object.keys(updater.conditions).forEach(conditionKey => {
-				const condition: Condition<AnyValue> = updater.conditions[conditionKey]
+				const condition: AnyConditionType = updater.conditions[conditionKey]
 				if (condition.resetConditionsByKeyKeys) {
 					condition.resetConditionsByKeyKeys.forEach(conditionKeyToReset => {
 						if (!updater.conditions[conditionKeyToReset]) {
@@ -1306,7 +1337,7 @@ function validateEpicConditions(epics) {
 		Object.keys(epic.updaters).forEach(updaterKey => {
 			const updater = epic.updaters[updaterKey]
 			Object.keys(updater.conditions).forEach(conditionKey => {
-				const condition: Condition<AnyValue> = updater.conditions[conditionKey]
+				const condition: AnyConditionType = updater.conditions[conditionKey]
 				
 				if (epicsArray.some(e => e.vat === condition.actionType) && !condition.isEpicCondition) {
 					throw new Error(`${epicKey}.${updaterKey}.${conditionKey} has epic valueActionType: ${condition.actionType}, but was created as non epic condition`)
@@ -1319,7 +1350,7 @@ function validateEpicConditions(epics) {
 	})
 }
 
-export type MakeCondition = <V: Object>(actionType: string) => Condition<V>
+export type MakeConditionType = <V: Object>(actionType: string) => Condition<V>
 export function initEpics() {
 	const rootConditionsByActionType = {}
 	const selectorsInUse = []
@@ -1336,8 +1367,8 @@ export function initEpics() {
 		parentCondition,
 		selector,
 		sealed,
-		isEpicCondition
-	}: makeConditionProps, calledFromRoot) {
+		isEpicCondition,
+	}: MakeConditionPropsType, calledFromRoot) {
 		// skipping parents without selectors or guards, as they are useless during changed conditions computation
 		if (parentCondition && !parentCondition.selectorKey && !parentCondition.selector && !parentCondition.guard && parentCondition.parentCondition) {
 			parentCondition = parentCondition.parentCondition
@@ -1351,7 +1382,7 @@ export function initEpics() {
 			guardsInUse.push(guard)
 		}
 	
-		const condition: Condition<AnyValue> = ({
+		const condition: AnyConditionType = ({
 			valueKey: `${parentCondition ? parentCondition.valueKey : actionType}${selectorKey ? `.${selectorKey}` : ''}${selector ? ('.$$selector' + selectorsInUse.indexOf(selector)) : ''}${guard ? '.$$guard' + guardsInUse.indexOf(guard) : ''}`,
 			parentCondition,
 			actionType,
@@ -1386,7 +1417,7 @@ export function initEpics() {
 				}
 				const newCondition = _makeCondition({ ...getFields(condition), guard })
 				return newCondition
-			}
+			},
 		}: any)
 
 		condition.tp = condition.toPassive
@@ -1394,7 +1425,7 @@ export function initEpics() {
 		condition.wg = condition.withGuard
 	
 		if (!sealed) {
-			const withSelectorKey = (selectorKey: string): Condition<AnyValue> => {
+			const withSelectorKey = (selectorKey: string): AnyConditionType => {
 				const { childrenConditionsWithSelectorOrGuard } = condition
 				if (childrenConditionsWithSelectorOrGuard) {
 					const existingCondition = childrenConditionsWithSelectorOrGuard.find(c => c.selectorKey === selectorKey)
@@ -1443,7 +1474,7 @@ export function initEpics() {
 		return condition
 	}
 	
-	function makeCondition<V: Object> (actionType: string, isEpicCondition?: boolean = false): Condition<V> {
+	function makeCondition<V: Object> (actionType: string, isEpicCondition?: bool = false): Condition<V> {
 		if(rootConditionsByActionType[actionType]) {
 			return rootConditionsByActionType[actionType]
 		}
@@ -1454,19 +1485,19 @@ export function initEpics() {
 			resetConditionsByKeyKeys: null,
 			resetConditionsByKeyAfterReducerCallKeys: null,
 			sealed: false,
-			isEpicCondition
+			isEpicCondition,
 		}, true): any)
 	}
 	
-	function makeEpicConditionReceiveFullAction<State>(vat: string): Condition<EpicValueAction<State>> {
-		return makeCondition<EpicValueAction<State>>(vat, true)
+	function makeEpicConditionReceiveFullAction<State>(vat: string): Condition<EpicValueActionType<State>> {
+		return makeCondition<EpicValueActionType<State>>(vat, true)
 	}
 	
 	function makeEpicCondition<State>(vat: string): Condition<State> {
 		return makeEpicConditionReceiveFullAction(vat).withSelectorKey('value')
 	}
 
-	function makeEpicWithScope<S, SC, E>({ vat, updaters, initialState, initialScope }: MakeEpicWithScopeProps<S, SC, E>): Epic<S, SC, E> {
+	function makeEpicWithScope<S, SC, E>({ vat, updaters, initialState, initialScope }: MakeEpicWithScopePropsType<S, SC, E>): Epic<S, SC, E> {
 		const c = makeEpicCondition<S>(vat)
 
 		return ({
@@ -1475,41 +1506,40 @@ export function initEpics() {
 			initialState,
 			initialScope,
 			c,
-			condition: c
+			condition: c,
 		})
 	}
 
 
-	function makeEpic<S, E>({ vat, updaters, initialState }: MakeEpicProps<S, E>): Epic<S, void, E> {
+	function makeEpic<S, E>({ vat, updaters, initialState }: MakeEpicPropsType<S, E>): Epic<S, void, E> {
 		return makeEpicWithScope({ vat, updaters, initialState, initialScope: undefined })
 	}
 
 	const matchAnyActionCondition: Condition<typeof MatchAnyActionType> = makeCondition(MatchAnyActionType)
 	
 	// TODO put correct annotation
-	type DevToolsConfig = Object
+	type DevToolsConfigType = Object
 
 	function createStore<Epics: { [string]: Epic<*, *, *> }> ({
 		epics,
 		effectManagers = {},
+		plugins = {},
 		onMsg = I,
 		onStateChanged = I,
-		debug
+		debug,
 	}: {|
-		epics: Epics,
+		debug?: {| devTools?: { config: DevToolsConfigType }, getState?: () => EpicsStateType, trace?: Function, warn?: Function |},
 		effectManagers?: { [string]: EffectManager<*, *, *> },
+		epics: Epics,
 		onMsg?: Object => any,
 		onStateChanged?: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any,
-		debug?: {| devTools?: { config: DevToolsConfig }, trace?: Function, getState?: () => EpicsState, warn?: Function |},
+		plugins: { [string]: PluginType },
 		|}): EpicsStore<Epics> {
 	
 		const { warn = (() => null: Function), trace } = debug || {}
 		
 		validateUniqVats(epics)
-		validateResetConditions(epics)
-		validateEpicConditions(epics)
-		setConditionsSubscriptions(epics)
-
+		
 		let devTools
 
 		function initDevTools(config) {
@@ -1528,7 +1558,7 @@ export function initEpics() {
 			onStateChanged((outsideState: any))
 			stateChangedSubscribers.forEach(sub => sub((outsideState: any)))
 		}
-		function dispatch(action: { type: any }, meta?: Meta = ({}: any)) {
+		function dispatch(action: { type: any }, meta?: MetaType = ({}: any)) {
 			const 
 				messagesToSendOutside = [],
 				epicsStateUpdate = {},
@@ -1556,7 +1586,7 @@ export function initEpics() {
 	
 				effectManagersStateUpdate[effectRequestType] = { 
 					...effectManagersStateUpdate[effectRequestType],
-					pendingEffects: effectManagerState.pendingEffects.filter(pe => pe.effect !== effect)
+					pendingEffects: effectManagerState.pendingEffects.filter(pe => pe.effect !== effect),
 				}
 	
 				if (error) {
@@ -1578,7 +1608,7 @@ export function initEpics() {
 					effectManagersStateUpdate,
 					lastReducerValuesByEpicVatUpdaterKey: {},
 					messagesToSendOutside,
-					executionLevelTrace
+					executionLevelTrace,
 				})
 
 				if (trace) trace(executionLevelTrace)
@@ -1591,7 +1621,11 @@ export function initEpics() {
 
 				if (updatedEpicsTypes.length !== 0) {
 					updatedEpicsState = mergeEpicsStateWithUpdate(serviceState.epics, epicsStateUpdate)
-					// todo deepFreeze state
+					
+					if (__DEV__) {
+						deepFreeze(updatedEpicsState)
+					}
+
 					onEpicsStateChange(updatedEpicsState)
 				}
 
@@ -1609,7 +1643,7 @@ export function initEpics() {
 				const nextServiceState = {
 					epics: updatedEpicsState || serviceState.epics,
 					conditions: updatedConditionsValues || serviceState.conditions,
-					effectManagers: updatedEffectManagersState || serviceState.effectManagers
+					effectManagers: updatedEffectManagersState || serviceState.effectManagers,
 				}
 				if (devTools && Object.keys(epicsStateUpdate).length) {
 					let atLeastOneChange = false
@@ -1635,6 +1669,44 @@ export function initEpics() {
 			}
 		}
 
+		const
+			pluginActionSubscribers: Array<AnyActionType => void> = [],
+			conditionChangedSubscribers: Array<({ action: AnyActionType, condition: AnyConditionType }) => void> = []
+
+		let pluginInitializationComplete = false
+		keyList(plugins).forEach(pluginKey => {
+			const plugin: PluginType = plugins[pluginKey]
+			plugin({
+				subscribeOnAction: subscriber => { pluginActionSubscribers.push(subscriber) },
+				onConditionChanged: subscriber => { conditionChangedSubscribers.push(subscriber) },
+				injectUpdaters: injector => keyList(epics).forEach(epic => {
+					const updatersToInject = injector(epic)
+					if (updatersToInject) {
+						epic.updaters.push(...updatersToInject)
+					}
+				}),
+				getEpics: () => { 
+					if (!pluginInitializationComplete) throw new Error('getEpics can not be used during plugin initialization because they are not in the final state yet.')
+					
+					return epics
+				},
+				dispatch,
+				dispatchBatchActionsIntoEpic: ({ actions, targetEpicVat }) => {
+					// do batch dispatch
+				},
+			})
+		})
+
+		validateResetConditions(epics)
+		validateEpicConditions(epics)
+		setConditionsSubscriptions(epics)
+
+		if (__DEV__) {
+			deepFreeze(epics)
+			deepFreeze(effectManagers)
+			deepFreeze(plugins)
+		}
+
 		const 
 			epicKeyByVat = keyList(epics).reduce((m, epicKey) => ({ ...m, [epics[epicKey].vat]: epicKey }), {}),
 			epicsArr = values(epics),
@@ -1646,7 +1718,7 @@ export function initEpics() {
 				warn,
 				effectManagers,
 				dispatch,
-				rootConditionsByActionType
+				rootConditionsByActionType,
 			}),
 			epicsVatToStateKeyMap = Object.keys(epics).reduce((r, epicStateKey) => {
 				r[epics[epicStateKey].vat] = epicStateKey
@@ -1660,7 +1732,7 @@ export function initEpics() {
 			serviceState = {
 				conditions: initialCondtionsValues,
 				epics: initialEpicsState,
-				effectManagers: getEffectManagersInitialState(effectManagers)
+				effectManagers: getEffectManagersInitialState(effectManagers),
 			},
 			outsideState = computeOutsideState(serviceState.epics)
 	
@@ -1690,15 +1762,15 @@ export function initEpics() {
 			getAllPendingEffectsPromises,
 			warn,
 			subscribeOnStateChange: subscriber => stateChangedSubscribers.push(subscriber),
-			subscribeOnMessage: sub => msgSubscribers.push(sub)
+			subscribeOnMessage: sub => msgSubscribers.push(sub),
 		}
 	}
 
 	function makeACAC<ActionExtraFields>(actionType: string): {|
-		actionCreator: ActionExtraFields => {| ...ActionExtraFields, type: string |},
-		condition: Condition<{| ...ActionExtraFields, type: string |}>,
 		ac: ActionExtraFields => {| ...ActionExtraFields, type: string |},
-		c: Condition<{| ...ActionExtraFields, type: string |}>
+		actionCreator: ActionExtraFields => {| ...ActionExtraFields, type: string |},
+		c: Condition<{| ...ActionExtraFields, type: string |}>,
+		condition: Condition<{| ...ActionExtraFields, type: string |}>,
 	|} { 
 		const 
 			actionCreator = extraFields => ({ type: actionType, ...extraFields }),
@@ -1713,10 +1785,10 @@ export function initEpics() {
 	}
 
 	function makeSACAC(actionType: string): {|
-		actionCreator: () => {| type: string |},
-		condition: Condition<{| type: string |}>,
 		ac: () => {| type: string |},
-		c: Condition<{| type: string |}>
+		actionCreator: () => {| type: string |},
+		c: Condition<{| type: string |}>,
+		condition: Condition<{| type: string |}>,
 	|} { 
 		const 
 			actionCreator = () => ({ type: actionType }),
@@ -1744,6 +1816,6 @@ export function initEpics() {
 		makeActionCreatorAndCondition: makeACAC,
 		makeSimpleActionCreatorAndCondition: makeSACAC, // simple means that action is consist only of type field
 		makeACAC,
-		makeSACAC
+		makeSACAC,
 	}
 }

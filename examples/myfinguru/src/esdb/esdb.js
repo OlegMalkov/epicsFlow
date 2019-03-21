@@ -10,10 +10,9 @@ const eventSourcingDatabase = makeEpicsPlugin(({
     subscribeOnAction,
     onConditionChanged,
     injectUpdaters,
-    epics,
+    getEpics,
     dispatch,
-    dispatchBatchActionsIntoEpic,
-    getState,
+    dispatchBatchActionsIntoEpic, // dispatch multiple action into epic, but notify everybody only
     injectCustomEpicValidations
 }) => {
     const 
