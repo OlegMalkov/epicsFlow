@@ -1,23 +1,16 @@
 // @flow strict
 
-import { makeCondition, makeEffectManager, EMRT } from '../epics'
+import { makeACAC, makeEffectManager, EMRT } from '../epics'
 
-type AfAType = {| dateNow: number, type: typeof afAT |}
 type StateType = {| requestsByEpicVat: { [vat: string]: Request } |}
 type ScopeType = {| resolvePromiseByEpicVat: { [vat: string]: () => void } |}
 type RequestAnimationFrameEffectType = {| cmd: 'REQUEST' | 'CANCEL', type: typeof requestType |}
 
-const afAT: 'af' = 'af'
-const afAC = (dateNow: number): AfAType => ({ type: afAT, dateNow })
+const animationFrame = makeACAC<{| dateNow: number |}>('ANIMATION_FRAME')
 const requestType: 'request_animation_frame_effect' = 'request_animation_frame_effect'
-const requestAnimationFrameEffectCreator = (): RequestAnimationFrameEffectType => ({ type: requestType, cmd: 'REQUEST' })
-const cancelAnimationFrameEffectCreator = (): RequestAnimationFrameEffectType => ({	type: requestType, cmd: 'CANCEL' })
-const rafEC = requestAnimationFrameEffectCreator
-const cancelRafEC = cancelAnimationFrameEffectCreator
+const requestAnimationFrameEC = (): RequestAnimationFrameEffectType => ({ type: requestType, cmd: 'REQUEST' })
+const cancelAnimationFrameEC = (): RequestAnimationFrameEffectType => ({	type: requestType, cmd: 'CANCEL' })
 
-
-const animationFrameCondition = makeCondition<AfAType>(afAT)
-const afC = animationFrameCondition
 const requestAnimationFrameEM = makeEffectManager<RequestAnimationFrameEffectType, StateType, ScopeType>({
 	requestType,
 	initialState: { requestsByEpicVat: {} },
@@ -32,7 +25,7 @@ const requestAnimationFrameEM = makeEffectManager<RequestAnimationFrameEffectTyp
 				}
 
 				rafId = window.requestAnimationFrame(() => {
-					dispatch(afAC(Date.now()), { targetEpicVats: [requesterEpicVat] })
+					dispatch(animationFrame.ac({ dateNow: Date.now() }), { targetEpicVats: [requesterEpicVat] })
 					resolvePromise()
 				})
 				scope.resolvePromiseByEpicVat[requesterEpicVat] = resolvePromise
@@ -53,12 +46,10 @@ const requestAnimationFrameEM = makeEffectManager<RequestAnimationFrameEffectTyp
 			scope.resolvePromiseByEpicVat[requesterEpicVat]()
 
 			return EMRT.updateState({
-				state:{
-					...state,
-					requestsByEpicVat: {
-						...state.requestsByEpicVat,
-						[requesterEpicVat]: null,
-					},
+				...state,
+				requestsByEpicVat: {
+					...state.requestsByEpicVat,
+					[requesterEpicVat]: null,
 				},
 			})
 		}
@@ -72,10 +63,8 @@ export type { // eslint-disable-line import/group-exports
 }
 
 export { // eslint-disable-line import/group-exports
-	requestAnimationFrameEffectCreator,
-	cancelAnimationFrameEffectCreator,
-	rafEC,
-	cancelRafEC,
-	afC,
+	requestAnimationFrameEC,
+	cancelAnimationFrameEC,
+	animationFrame,
 	requestAnimationFrameEM,
 }

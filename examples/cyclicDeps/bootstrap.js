@@ -6,7 +6,7 @@ import { z } from './z/z'
 import { zClicked } from './z/zUpdaters'
 import { xClicked } from './x/xAAC'
 import { yClicked } from './y/yAAC'
-import { createStore } from '../../epics'
+import { createStore } from '../../src/epics'
 
 const debug = {
 	warn: console.warn, // eslint-disable-line
@@ -21,12 +21,6 @@ const epics = {
 
 export const store = createStore<typeof epics>({
 	epics,
-	onStateChanged: (s) => {
-		console.log('state changed', s) // eslint-disable-line
-	},
-	onMsg: () => {
-
-	},
 	debug,
 })
 

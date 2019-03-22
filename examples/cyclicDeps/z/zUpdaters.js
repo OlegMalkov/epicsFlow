@@ -1,5 +1,5 @@
 // @flow strict
-import { type UpdaterType, makeUpdater, makeSACAC } from '../../../epics'
+import { type UpdaterType, makeUpdater, makeSACAC } from '../../../src/epics'
 import { xValueCondition } from '../x/xAAC'
 import { yValueC } from '../y/yAAC'
 

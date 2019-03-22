@@ -1,6 +1,6 @@
 // @flow strict
 import { type YStateType } from './yState'
-import { makeSACAC, makeEpicCondition } from '../../../epics'
+import { makeSACAC, makeEpicCondition } from '../../../src/epics'
 
 const yVat = 'Y'
 const yC = makeEpicCondition<YStateType>(yVat)

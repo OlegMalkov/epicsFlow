@@ -226,18 +226,19 @@ type MakeExecuteActionPropsType = {|
 	trace: Function,
 	warn: Function,
 |}
-opaque type EpicsStore<Epics: Object>: {|
+opaque type EpicsStore<Epics: Object>: {
+	dispatch: *,
+	getAllPendingEffectsPromises: *,
+	getState: *,
+	subscribeOnMessage: *,
+	subscribeOnStateChange: *,
+	warn: *,
+} = {|
+	_getNextStateForActionWithoutUpdatingStoreState: (AnyActionType) => $Exact<$ObjMap<Epics, typeof getInitialState>>,
+	_getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
+	_setState: ServiceStateType => void,
 	dispatch: DispatchType,
 	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
-	getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
-	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
-	subscribeOnMessage: any => any,
-	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
-	warn: Function,
-|} = {|
-	dispatch: DispatchType,
-	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
-	getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	subscribeOnMessage: any => any,
 	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
@@ -373,10 +374,10 @@ function makeEffectManager<E, S, SC>({
 function getInitialState<S>({ initialState }: Epic<S, any, any>): S { return initialState }
 
 const isArray = Array.isArray
-const keyList = Object.keys
+const getObjectKeys = Object.keys
 const hasProp = Object.prototype.hasOwnProperty
 const isObject = (o: any) => o != null && typeof o === 'object'
-const isEmpty = (o: Object | Array<any>) => keyList((o: any)).length === 0
+const isEmpty = (o: Object | Array<any>) => getObjectKeys((o: any)).length === 0
 const unnest = <T>(arr: Array<Array<T> | T>): Array<T> => arr.reduce((acc, el) => acc.concat(el), [])
 
 function deepFreeze <O: Object | Array<any>>(o: O): O {
@@ -434,10 +435,10 @@ function deepEqual(a: any, b: any) {
 			return true
 		}
 		if (arrA != arrB) return false; // eslint-disable-line
-		const keys = keyList(a)
+		const keys = getObjectKeys(a)
 
 		length = keys.length
-		if (length !== keyList(b).length) return false
+		if (length !== getObjectKeys(b).length) return false
 		for (i = length; i-- !== 0;) {
 			if (!hasProp.call(b, keys[i])) return false
 		}
@@ -499,15 +500,10 @@ function deepCopy<T: Object | Array<any>>(src: T, _visited?: Array<Object | Arra
 const values = o => Object.keys(o).map(k => o[k])
 const last = arr => arr.slice(-1)[0]
 const MatchAnyActionType: '*' = '*'
-const I = x => x
 
 function validateUniqVats(epics) {
 	const allEpicsKeys = Object.keys(epics)
-
-
 	const allVats = allEpicsKeys.map(k => epics[k].vat)
-
-
 	const vatsCountMap = allVats.reduce((r, v) => {
 		if (r[v]) {
 			r[v]++
@@ -516,7 +512,6 @@ function validateUniqVats(epics) {
 		}
 		return r
 	}, {})
-
 	const duplicatedVats = Object.keys(vatsCountMap)
 		.filter(v => vatsCountMap[v] > 1)
 
@@ -1160,16 +1155,9 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 			if (epicsStateUpdate[epic.vat] && epicsStateUpdate[epic.vat].state) {
 				return epicsState
 			}
-			const
-				messagesToSendOutside = []
-
-
-			const action = { type: epic.vat,
-				value: epic.initialState }
-
-
-			const executionLevelTrace = { triggerAction: action,
-				executedEpics: [] }
+			const messagesToSendOutside = []
+			const action = { type: epic.vat, value: epic.initialState }
+			const executionLevelTrace = { triggerAction: action, executedEpics: [] }
 
 			executeAction({
 				actionsChain: [(action: EpicStateChangedActionType)],
@@ -1462,20 +1450,33 @@ function makeEpic<S, E>({ vat, updaters, initialState }: MakeEpicPropsType<S, E>
 }
 const matchAnyActionCondition: Condition<typeof MatchAnyActionType> = makeCondition(MatchAnyActionType)// TODO put correct annotation
 
+const epicSubStoreStateKey = 'value'
+
+function createEpicsSubStoresByVat(epics: { [string]: Epic<*, *, *> }): { [epicKey: string]: EpicsStore<any> } {
+	return getObjectKeys(epics).reduce((result, epicKey) => {
+		const epic = epics[epicKey]
+
+		result[epic.vat] = createStore({ epics: { [epicSubStoreStateKey]: epics[epic.vat] } })
+		return result
+	}, {})
+}
+
+type ServiceStateType = {|
+	conditions: ConditionsValuesType,
+	effectManagers: EffectManagersStateType<AnyValueType, any>,
+	epics: EpicsStateType,
+|}
+
 type DevToolsConfigType = Object
 function createStore<Epics: { [string]: Epic<*, *, *> }> ({
 	epics,
 	effectManagers = {},
 	plugins = {},
-	onMsg = I,
-	onStateChanged = I,
 	debug,
 }: {|
 	debug?: {| devTools?: { config: DevToolsConfigType }, getState?: () => EpicsStateType, trace?: Function, warn?: Function |},
 	effectManagers?: { [string]: EffectManager<*, *, *> },
 	epics: Epics,
-	onMsg?: Object => any,
-	onStateChanged?: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any,
 	plugins?: { [string]: PluginType },
 |}): EpicsStore<Epics> {
 	epics = deepCopy(epics) // eslint-disable-line no-param-reassign
@@ -1495,11 +1496,15 @@ function createStore<Epics: { [string]: Epic<*, *, *> }> ({
 		})
 		devTools.init(serviceState)
 	}
-	function onEpicsStateChange(epicsState) {
+	function onEpicsStateChange(epicsState: EpicsStateType) {
 		outsideState = computeOutsideState(epicsState)
-		onStateChanged((outsideState: any))
 		stateChangedSubscribers.forEach(sub => sub((outsideState: any)))
 	}
+
+	let batchDispatchIsInProgress: bool = false
+	let messagesAccumulatedDuringBatchDispatch: Array<any> = []
+	let epicsStateChangedCallbackAfterBatchDispatchComplete: () => void = () => undefined
+
 	function dispatch(action: { type: any }, meta?: MetaType = ({}: any)) {
 		const messagesToSendOutside = []
 		const epicsStateUpdate = {}
@@ -1548,19 +1553,24 @@ function createStore<Epics: { [string]: Epic<*, *, *> }> ({
 			})
 			if (trace) trace(executionLevelTrace)
 			if (Object.keys(conditionsValuesUpdate).length !== 0) {
-				updatedConditionsValues = { ...serviceState.conditions,
-					...conditionsValuesUpdate }
+				updatedConditionsValues = { ...serviceState.conditions,	...conditionsValuesUpdate }
 			}
 			const updatedEpicsTypes = Object.keys(epicsStateUpdate)
 
 			if (updatedEpicsTypes.length !== 0) {
-				updatedEpicsState = mergeEpicsStateWithUpdate(serviceState.epics, epicsStateUpdate)
-				onEpicsStateChange(updatedEpicsState)
+				const ues = updatedEpicsState = mergeEpicsStateWithUpdate(serviceState.epics, epicsStateUpdate)
+
+				if (batchDispatchIsInProgress) {
+					epicsStateChangedCallbackAfterBatchDispatchComplete = () => onEpicsStateChange(ues)
+				} else {
+					onEpicsStateChange(ues)
+				}
 			}
-			messagesToSendOutside.forEach(m => {
-				onMsg(m)
-				msgSubscribers.forEach(sub => sub(m))
-			})
+			if (batchDispatchIsInProgress) {
+				messagesAccumulatedDuringBatchDispatch.push(...messagesToSendOutside)
+			} else {
+				messagesToSendOutside.forEach(m => msgSubscribers.forEach(sub => sub(m)))
+			}
 		}
 		if (Object.keys(effectManagersStateUpdate).length) {
 			updatedEffectManagersState = mergeEffectManagersStateWithUpdate(serviceState.effectManagers, effectManagersStateUpdate)
@@ -1598,20 +1608,20 @@ function createStore<Epics: { [string]: Epic<*, *, *> }> ({
 	const pluginActionSubscribers: Array<AnyActionType => void> = []
 	const conditionChangedSubscribers: Array<({ action: AnyActionType, condition: AnyConditionType }) => void> = []
 	const pluginInitializationComplete = false
+	const epicsSubStoresByVat = createEpicsSubStoresByVat(epics)
 
-	keyList(plugins).forEach(pluginKey => {
+	getObjectKeys(plugins).forEach(pluginKey => {
 		const plugin: PluginType = plugins[pluginKey]
 
 		plugin({
 			subscribeOnAction: subscriber => { pluginActionSubscribers.push(subscriber) },
 			onConditionChanged: subscriber => { conditionChangedSubscribers.push(subscriber) },
-			injectUpdaters: injector => keyList(epics).forEach(epicKey => {
+			injectUpdaters: injector => getObjectKeys(epics).forEach(epicKey => {
 				const epic = epics[epicKey]
 				const updatersMapToInject = injector(epic)
 
-				if (keyList(updatersMapToInject).length) {
-					epic.updaters = { ...epic.updaters,
-						...updatersMapToInject }
+				if (getObjectKeys(updatersMapToInject).length) {
+					epic.updaters = { ...epic.updaters,	...updatersMapToInject }
 				}
 			}),
 			getEpics: () => {
@@ -1620,9 +1630,26 @@ function createStore<Epics: { [string]: Epic<*, *, *> }> ({
 			},
 			dispatch,
 			dispatchBatchActionsIntoEpics: (batches) => {
-				const updatedEpicVatStatesTuples = batches.map(({ actions, targetEpicVat }) => {
+				batchDispatchIsInProgress = true
+				batches.forEach(({ actions, targetEpicVat }) => {
+					const epicSubStore = epicsSubStoresByVat[targetEpicVat]
+
+					epicSubStore._setState({
+						epics: { [epicSubStoreStateKey]: serviceState.epics[targetEpicVat] },
+						conditions: {},
+						effectManagers: {},
+					})
+					actions.forEach(a => epicSubStore.dispatch(a))
+
+					dispatch({ type: targetEpicVat, value: epicSubStore.getState()[epicSubStoreStateKey] })
 				})
-				// do batch dispatch
+
+				messagesAccumulatedDuringBatchDispatch.forEach(m => msgSubscribers.forEach(sub => sub(m)))
+				epicsStateChangedCallbackAfterBatchDispatchComplete()
+
+				batchDispatchIsInProgress = false
+				messagesAccumulatedDuringBatchDispatch = []
+				epicsStateChangedCallbackAfterBatchDispatchComplete = () => undefined
 			},
 		})
 	})
@@ -1635,7 +1662,7 @@ function createStore<Epics: { [string]: Epic<*, *, *> }> ({
 		deepFreeze(effectManagers)
 		deepFreeze(plugins)
 	}
-	const epicKeyByVat = keyList(epics).reduce((m, epicKey) => ({ ...m, [epics[epicKey].vat]: epicKey }), {})
+	const epicKeyByVat = getObjectKeys(epics).reduce((m, epicKey) => ({ ...m, [epics[epicKey].vat]: epicKey }), {})
 	const epicsArr = values(epics)
 	const epicsMapByVat = values(epics).reduce((a, e) => ({ ...a, [e.vat]: e }), {})
 	const executeAction = makeExecuteAction({
@@ -1659,7 +1686,7 @@ function createStore<Epics: { [string]: Epic<*, *, *> }> ({
 		trace,
 	})
 
-	let	serviceState = {
+	let	serviceState: ServiceStateType = {
 		conditions: initialCondtionsValues,
 		epics: initialEpicsState,
 		effectManagers: getEffectManagersInitialState(effectManagers),
@@ -1682,15 +1709,48 @@ function createStore<Epics: { [string]: Epic<*, *, *> }> ({
 		initDevTools(debug.devTools.config)
 	}
 	return {
+		_getServiceState: () => serviceState,
+		_getNextStateForActionWithoutUpdatingStoreState: (action) => {
+			const epicsStateUpdate = {}
+			const conditionsValuesUpdate = {}
+			const effectManagersStateUpdate = {}
+
+			executeAction({
+				actionsChain: [action],
+				conditionsValues: serviceState.conditions,
+				prevConditionsValues: {},
+				conditionsValuesUpdate,
+				epicsState: serviceState.epics,
+				epicsStateUpdate,
+				effectManagersState: serviceState.effectManagers,
+				effectManagersStateUpdate,
+				lastReducerValuesByEpicVatUpdaterKey: {},
+				messagesToSendOutside: [],
+				executionLevelTrace: undefined,
+			})
+			const updatedEpicsTypes = Object.keys(epicsStateUpdate)
+
+			if (updatedEpicsTypes.length !== 0) {
+				const updatedEpicsState = mergeEpicsStateWithUpdate(serviceState.epics, epicsStateUpdate)
+
+				computeOutsideState(updatedEpicsState)
+			}
+
+			return (computeOutsideState(serviceState.epics): any)
+		},
+		_setState(_serviceState: ServiceStateType): void {
+			serviceState = _serviceState
+		},
+
 		dispatch,
 		getState() {
 			return (outsideState: any)
 		},
-		getServiceState: () => serviceState,
 		getAllPendingEffectsPromises,
 		warn,
 		subscribeOnStateChange: subscriber => stateChangedSubscribers.push(subscriber),
 		subscribeOnMessage: sub => msgSubscribers.push(sub),
+
 	}
 }
 function makeACAC<ActionExtraFields>(actionType: string): {|
@@ -1755,4 +1815,5 @@ export { // eslint-disable-line import/group-exports
 	traceToString,
 	dispatchActionEffectCreator,
 	EMRT,
+	getObjectKeys
 }

@@ -1,5 +1,5 @@
 // @flow strict
-import { type UpdaterType, makeUpdater } from '../../../epics'
+import { type UpdaterType, makeUpdater } from '../../../src/epics'
 import { zResultC } from '../z/zVAT'
 import { isEven } from '../utils'
 import { incX, decX, setXColor, type XStateType } from './xState'

@@ -1,15 +1,12 @@
 // @flow strict
 
-import { makeCondition, makeEpic, makeUpdater, createStore, traceToString } from '../epics'
-import { type RequestAnimationFrameEffectType, rafEC, afC, requestAnimationFrameEM } from '../effectManagers/requestAnimationFrameEM'
+import { makeEpic, makeUpdater, createStore, makeSACAC } from '../epics'
+import { type RequestAnimationFrameEffectType, animationFrame, requestAnimationFrameEM, requestAnimationFrameEC } from '../effectManagers/requestAnimationFrameEM'
 import { waitEffectManagers } from './utils'
 
 type CustomEpicEffectType = RequestAnimationFrameEffectType
-type AType = {| to: {| v: {| n: number |} |}, type: typeof aAT |}
 
-const aAT: 'a' = 'a'
-const aAC = (n): AType => ({ type: aAT, to: { v: { n } }})
-const aC = makeCondition<AType>(aAT)
+const a = makeSACAC('A')
 
 describe('effectManager', () => {
 	it('only epic that requested effect can receive response from effect manager (animation frame)', async () => {
@@ -19,7 +16,7 @@ describe('effectManager', () => {
 				initialState: 0,
 				updaters: {
 					af: makeUpdater({
-						conditions: { _af: afC },
+						conditions: { _af: animationFrame.condition },
 						reducer: ({ R }) => R.updateState(() => 1),
 					}),
 				},
@@ -31,11 +28,11 @@ describe('effectManager', () => {
 			initialState: 0,
 			updaters: {
 				a: makeUpdater({
-					conditions: { _a: aC },
-					reducer: ({ R }) => R.sideEffect(rafEC()),
+					conditions: { _a: a.c },
+					reducer: ({ R }) => R.sideEffect(requestAnimationFrameEC()),
 				}),
 				af: makeUpdater({
-					conditions: { _af: afC },
+					conditions: { _af: animationFrame.condition },
 					reducer: ({ R }) => R.updateState(state => state + 1),
 				}),
 			},
@@ -49,7 +46,7 @@ describe('effectManager', () => {
 			epics: { e1, e2 },
 		})
 
-		store.dispatch(aAC(5))
+		store.dispatch(a.ac())
 		await waitEffectManagers(store)
 
 		expect(store.getState().e1).toBe(0)
