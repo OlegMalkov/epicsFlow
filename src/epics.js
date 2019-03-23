@@ -1487,14 +1487,13 @@ function makeEpic<S, E>({ vat, updaters, initialState, pluginConfig }: MakeEpicP
 }
 const matchAnyActionCondition: Condition<typeof MatchAnyActionType> = makeCondition(MatchAnyActionType)// TODO put correct annotation
 
-const epicSubStoreStateKey = 'value'
 const makePluginStateKey = (key: string) => `plugin/${key}`
 
 function createEpicsSubStoresByVat(epics: { [string]: EpicType<*, *, *> }): { [epicKey: string]: EpicsStoreType<any> } {
 	return getObjectKeys(epics).reduce((result, epicKey) => {
 		const epic = epics[epicKey]
 
-		result[epic.vat] = createStore({ epics: { [epicSubStoreStateKey]: epic }, isSubStore: true })
+		result[epic.vat] = createStore({ epics: { [epicKey]: epic }, isSubStore: true })
 		return result
 	}, {})
 }
@@ -1550,6 +1549,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *> }> ({
 		let	updatedConditionsValues
 		let updatedEpicsState
 		let updatedEffectManagersState
+		const batchedDispatchBatches = []
 
 		if (action.type === effectPromiseCompleteAT) {
 			const { effect, error, effectRequestType } = ((action: any): {| effect: {||}, effectRequestType: string, error: Error |})
@@ -1565,7 +1565,6 @@ function createStore<Epics: { [string]: EpicType<*, *, *> }> ({
 		} else {
 			const conditionsValuesUpdate = {}
 			const executionLevelTrace = { triggerAction: action, executedEpics: [] }
-			const batchedDispatchBatches = []
 
 			executeAction({
 				actionsChain: [action],
@@ -1586,23 +1585,20 @@ function createStore<Epics: { [string]: EpicType<*, *, *> }> ({
 				updatedConditionsValues = { ...serviceState.conditions,	...conditionsValuesUpdate }
 			}
 			const updatedEpicsTypes = Object.keys(epicsStateUpdate)
+			const noBatchDispatchBatches = batchedDispatchBatches.length === 0
 
 			if (updatedEpicsTypes.length !== 0) {
-				const ues = updatedEpicsState = mergeEpicsStateWithUpdate(serviceState.epics, epicsStateUpdate)
+				updatedEpicsState = mergeEpicsStateWithUpdate(serviceState.epics, epicsStateUpdate)
 
-				if (batchDispatchIsInProgress) {
-					epicsStateChangedCallbackAfterBatchDispatchComplete = () => onEpicsStateChange(ues)
-				} else {
-					onEpicsStateChange(ues)
+				if (!batchDispatchIsInProgress && noBatchDispatchBatches) {
+					onEpicsStateChange(updatedEpicsState)
 				}
 			}
-			if (batchDispatchIsInProgress) {
+			if (batchDispatchIsInProgress || !noBatchDispatchBatches) {
 				messagesAccumulatedDuringBatchDispatch.push(...messagesToSendOutside)
 			} else {
 				messagesToSendOutside.forEach(m => msgSubscribers.forEach(sub => sub(m)))
 			}
-
-			if (batchedDispatchBatches.length) dispatchBatchedActions(batchedDispatchBatches)
 		}
 		if (Object.keys(effectManagersStateUpdate).length) {
 			updatedEffectManagersState = mergeEffectManagersStateWithUpdate(serviceState.effectManagers, effectManagersStateUpdate)
@@ -1635,31 +1631,47 @@ function createStore<Epics: { [string]: EpicType<*, *, *> }> ({
 				}
 			}
 			serviceState = nextServiceState
+
+			if (batchedDispatchBatches.length) {
+				batchDispatchIsInProgress = true
+
+				let atLeastOneChange = false
+
+				batchedDispatchBatches.forEach(({ actions, targetEpicVat }) => {
+					const epicSubStore = epicsSubStoresByVat[targetEpicVat]
+
+					epicSubStore._setState({
+						epics: { [targetEpicVat]: serviceState.epics[targetEpicVat] },
+						conditions: {},
+						effectManagers: {},
+					})
+					actions.forEach(a => epicSubStore.dispatch(a))
+
+					const currentEpicState = serviceState.epics[targetEpicVat]
+					const newEpicStateState = epicSubStore.getState()[targetEpicVat]
+
+					dispatch({ type: targetEpicVat, value: newEpicStateState })
+
+					if (currentEpicState.state !== newEpicStateState) {
+						serviceState.epics = { ...serviceState.epics, [targetEpicVat]: { ...currentEpicState, state: newEpicStateState } }
+						atLeastOneChange = true
+					}
+				})
+				if (atLeastOneChange || updatedEpicsState) {
+					onEpicsStateChange(serviceState.epics)
+				}
+
+				messagesAccumulatedDuringBatchDispatch.forEach(m => msgSubscribers.forEach(sub => sub(m)))
+				epicsStateChangedCallbackAfterBatchDispatchComplete()
+
+				batchDispatchIsInProgress = false
+				messagesAccumulatedDuringBatchDispatch = []
+				epicsStateChangedCallbackAfterBatchDispatchComplete = () => undefined
+			}
 		}
 	}
 
-	function dispatchBatchedActions(batches: DispatchActionsBatchesType) {
-		batchDispatchIsInProgress = true
-		batches.forEach(({ actions, targetEpicVat }) => {
-			const epicSubStore = epicsSubStoresByVat[targetEpicVat]
 
-			epicSubStore._setState({
-				epics: { [epicSubStoreStateKey]: serviceState.epics[targetEpicVat] },
-				conditions: {},
-				effectManagers: {},
-			})
-			actions.forEach(a => epicSubStore.dispatch(a))
-
-			dispatch({ type: targetEpicVat, value: epicSubStore.getState()[epicSubStoreStateKey] })
-		})
-
-		messagesAccumulatedDuringBatchDispatch.forEach(m => msgSubscribers.forEach(sub => sub(m)))
-		epicsStateChangedCallbackAfterBatchDispatchComplete()
-
-		batchDispatchIsInProgress = false
-		messagesAccumulatedDuringBatchDispatch = []
-		epicsStateChangedCallbackAfterBatchDispatchComplete = () => undefined
-	}
 	const pluginInitializationComplete = false
 
 	getObjectKeys(plugins).forEach(pluginKey => {
@@ -1758,7 +1770,9 @@ function createStore<Epics: { [string]: EpicType<*, *, *> }> ({
 		})
 		devTools.init(serviceState)
 	}
-	dispatch(storeCreated.ac())
+	if (!isSubStore) {
+		dispatch(storeCreated.ac())
+	}
 
 	return {
 		_getServiceState: () => serviceState,
