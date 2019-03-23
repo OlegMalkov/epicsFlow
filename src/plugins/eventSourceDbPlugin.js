@@ -6,7 +6,7 @@ const rehydrate = makeSACAC('REHYDRADE')
 
 const esdbPlugin: PluginType = ({ injectEpics }) => {
 	injectEpics({
-		esdb: makeEpic<{| localStorageKeys: Array<string> | null |}, LocalStorageEffectType>({
+		esdb: makeEpic<{| localStorageKeys: Array<string> | null |}, LocalStorageEffectType, empty>({
 			vat: 'ESDB_VAT',
 			initialState: {
 				localStorageKeys: null,

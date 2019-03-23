@@ -5,7 +5,7 @@ import { yUpdaters } from './yUpdaters'
 import { yVat } from './yAAC'
 import { makeEpic } from '../../../src/epics'
 
-export const y = makeEpic<YStateType, empty>({
+export const y = makeEpic<YStateType, empty, empty>({
 	vat: yVat,
 	initialState: initialYState,
 	updaters: yUpdaters,

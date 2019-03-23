@@ -7,7 +7,7 @@ import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleM
 import { templateInitialScope, type TemplateScopeType, resetTemplateDnd, templateInitDnd } from './templateScope'
 import { makeEpicWithScope, makeUpdater } from '../../epics'
 
-const templateEpic = makeEpicWithScope<TemplateStateType, TemplateScopeType, empty>({
+const templateEpic = makeEpicWithScope<TemplateStateType, TemplateScopeType, empty, empty>({
 	vat: templateVat,
 	initialState: templateInitialState,
 	initialScope: templateInitialScope,

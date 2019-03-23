@@ -93,25 +93,25 @@ type UpdaterType<S, SC, C, E> = {|
 	reducer: ReducerType<S, SC, $Exact<$ObjMap<C, typeof extractConditionV>>, E>,
 |}
 type EpicValueActionType<State> = {| type: string, value: State |}
-opaque type EpicType<S, SC, E>: { c: Condition<S>, condition: Condition<S>, initialState: S, pluginConfig: * } = {|
+opaque type EpicType<S, SC, E, PC>: { c: Condition<S>, condition: Condition<S>, initialState: S, pluginConfig: PC | void } = {|
 	c: Condition<S>,
 	condition: Condition<S>,
 	initialScope: SC,
 	initialState: S,
-	pluginConfig: Object | void,
+	pluginConfig: PC | void,
 	updaters: { [string]: UpdaterType<S, SC, *, E> },
 	vat: string,
 |}
-type MakeEpicWithScopePropsType<S, SC, E> = {|
+type MakeEpicWithScopePropsType<S, SC, E, PC> = {|
 	initialScope: SC,
 	initialState: S,
-	pluginConfig?: Object,
+	pluginConfig?: PC,
 	updaters: { [string]: UpdaterType<S, SC, *, E> },
 	vat: string,
 |}
-type MakeEpicPropsType<S, E> = {|
+type MakeEpicPropsType<S, E, PC> = {|
 	initialState: S,
-	pluginConfig?: Object,
+	pluginConfig?: PC,
 	updaters: { [string]: UpdaterType<S, void, *, E> },
 	vat: string,
 |}
@@ -154,9 +154,9 @@ type MakeEffectManagerPropsType<E, S, SC> = {|
 |}
 type MakeEffectManagerType = <E, S, SC>(MakeEffectManagerPropsType<E, S, SC>) => EffectManager<S, SC, E>
 type PluginPropsType = {|
-	getEpics: () => { [string]: EpicType<any, any, any> },
-	injectEpics: (epicsMapToInject: { [epicKey: string]: EpicType<any, any, any> }) => void,
-	injectUpdaters: <S, SC, E>(EpicType<S, SC, E> => void | { [updaterKey: string]: UpdaterType<S, SC, *, E> }) => void,
+	getEpics: () => { [string]: EpicType<any, any, any, any> },
+	injectEpics: (epicsMapToInject: { [epicKey: string]: EpicType<any, any, any, any> }) => void,
+	injectUpdaters: <S, SC, E, PC>(EpicType<S, SC, E, PC> => void | { [updaterKey: string]: UpdaterType<S, SC, *, E> }) => void,
 |}
 type PluginType = PluginPropsType => void
 type UpdaterStateValuesFullfilledType = { [string]: bool }
@@ -227,7 +227,7 @@ type MakeExecuteActionPropsType = {|
 	dispatch: DispatchType,
 	effectManagers: { [string]: EffectManager<any, any, any> },
 	epicKeyByVat: { [string]: string },
-	epicsMapByVat: { [string]: EpicType<any, any, any> },
+	epicsMapByVat: { [string]: EpicType<any, any, any, any> },
 	rootConditionsByActionType: { [string]: AnyConditionType },
 	trace: Function,
 	warn: Function,
@@ -381,7 +381,7 @@ function makeEffectManager<E, S, SC>({
 		_effect: (null: any),
 	}
 }
-function getInitialState<S>({ initialState }: EpicType<S, any, any>): S { return initialState }
+function getInitialState<S>({ initialState }: EpicType<S, any, any, any>): S { return initialState }
 
 const isArray = Array.isArray
 const getObjectKeys = Object.keys
@@ -859,7 +859,7 @@ const makeExecuteAction = ({
 				return
 			}
 			const updaterSubs = epicSubs[subVat]
-			const epic: EpicType<any, any, any> = epicsMapByVat[subVat]
+			const epic = epicsMapByVat[subVat]
 			const epicState: EpicStateType = epicsState[subVat]
 			const updateReasons = []
 			const allEffects = []
@@ -1463,7 +1463,7 @@ function makeEpicConditionReceiveFullAction<State>(vat: string): Condition<EpicV
 function makeEpicCondition<State>(vat: string): Condition<State> {
 	return makeEpicConditionReceiveFullAction(vat).withSelectorKey('value')
 }
-function makeEpicWithScope<S, SC, E>({ vat, updaters, initialState, initialScope, pluginConfig }: MakeEpicWithScopePropsType<S, SC, E>): EpicType<S, SC, E> {
+function makeEpicWithScope<S, SC, E, PC>({ vat, updaters, initialState, initialScope, pluginConfig }: MakeEpicWithScopePropsType<S, SC, E, PC>): EpicType<S, SC, E, PC> {
 	const c = makeEpicCondition<S>(vat)
 
 	return ({
@@ -1476,7 +1476,7 @@ function makeEpicWithScope<S, SC, E>({ vat, updaters, initialState, initialScope
 		pluginConfig,
 	})
 }
-function makeEpic<S, E>({ vat, updaters, initialState, pluginConfig }: MakeEpicPropsType<S, E>): EpicType<S, void, E> {
+function makeEpic<S, E, PC>({ vat, updaters, initialState, pluginConfig }: MakeEpicPropsType<S, E, PC>): EpicType<S, void, E, PC> {
 	return makeEpicWithScope({
 		vat,
 		updaters,
@@ -1489,7 +1489,7 @@ const matchAnyActionCondition: Condition<typeof MatchAnyActionType> = makeCondit
 
 const makePluginStateKey = (key: string) => `plugin/${key}`
 
-function createEpicsSubStoresByVat(epics: { [string]: EpicType<*, *, *> }): { [epicKey: string]: EpicsStoreType<any> } {
+function createEpicsSubStoresByVat(epics: { [string]: EpicType<*, *, *, *> }): { [epicKey: string]: EpicsStoreType<any> } {
 	return getObjectKeys(epics).reduce((result, epicKey) => {
 		const epic = epics[epicKey]
 
@@ -1505,7 +1505,7 @@ type ServiceStateType = {|
 |}
 
 type DevToolsConfigType = Object
-function createStore<Epics: { [string]: EpicType<*, *, *> }> ({
+function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 	epics,
 	effectManagers = {},
 	plugins = {},

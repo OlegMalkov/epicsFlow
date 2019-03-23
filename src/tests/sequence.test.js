@@ -1,14 +1,13 @@
 // @flow strict
 import {
-    createStore,
-    makeEpic,
-    makeCondition,
-    makeEpicCondition,
-    makeUpdater,
-    dispatchActionEffectCreator,
-    type BuiltInEffectType,
-    traceToString
-} from '../epics';
+	createStore,
+	makeEpic,
+	makeCondition,
+	makeEpicCondition,
+	makeUpdater,
+	dispatchActionEffectCreator,
+	type BuiltInEffectType,
+} from '../epics'
 
 describe('sequence', () => {
 	it('simple actions sequence', () => {
@@ -21,7 +20,7 @@ describe('sequence', () => {
 		const yC = makeCondition<{ type: 'y', value: number }>(y)
 
 
-		const e1 = makeEpic<StateType, empty>({
+		const e1 = makeEpic<StateType, empty, empty>({
 			vat: 'e1',
 			initialState: { a: 0 },
 			updaters: {
@@ -44,7 +43,7 @@ describe('sequence', () => {
 	it.skip('should call e3 once if e1 and e2 are changed withing A and e3 depends on e1 and e2', () => {
 		const a = 'a'
 		const aC = makeCondition(a)
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 1,
 			updaters: {
@@ -54,7 +53,7 @@ describe('sequence', () => {
 				}),
 			},
 		})
-		const e2 = makeEpic<number, empty>({
+		const e2 = makeEpic<number, empty, empty>({
 			vat: 'e2',
 			initialState: 1,
 			updaters: {
@@ -64,7 +63,7 @@ describe('sequence', () => {
 				}),
 			},
 		})
-		const e3 = makeEpic<number, empty>({
+		const e3 = makeEpic<number, empty, empty>({
 			vat: 'e3',
 			initialState: 0,
 			updaters: {
@@ -86,7 +85,7 @@ describe('sequence', () => {
 		type StateType = {| a: number, b: number |}
 		const a = 'a'
 		const aC = makeCondition<{ type: 'a' }>(a)
-		const e1 = makeEpic<StateType, empty>({
+		const e1 = makeEpic<StateType, empty, empty>({
 			vat: 'e1',
 			initialState: { a: 1, b: 1 },
 			updaters: {
@@ -96,7 +95,7 @@ describe('sequence', () => {
 				}),
 			},
 		})
-		const e2 = makeEpic<number, empty>({
+		const e2 = makeEpic<number, empty, empty>({
 			vat: 'e2',
 			initialState: 0,
 			updaters: {
@@ -120,7 +119,7 @@ describe('sequence', () => {
 	it.skip('should have ro(e1.m) and e1.i in sync inside e3 when A changes e1.m and e1.i and e2 has active sub to e1.m and e3 has active sub to e2', () => {
 		const a = 'a'
 		const aC = makeCondition(a)
-		const e1 = makeEpic<{| i: string, m: { [string]: {| kind: string |} } |}, empty>({
+		const e1 = makeEpic<{| i: string, m: { [string]: {| kind: string |} } |}, empty, empty>({
 			vat: 'e1',
 			initialState: { m: { x: { kind: 'dummy' } }, i: 'x' },
 			updaters: {
@@ -130,7 +129,7 @@ describe('sequence', () => {
 				}),
 			},
 		})
-		const e2 = makeEpic<Array<string>, empty>({
+		const e2 = makeEpic<Array<string>, empty, empty>({
 			vat: 'e2',
 			initialState: [],
 			updaters: {
@@ -140,7 +139,7 @@ describe('sequence', () => {
 				}),
 			},
 		})
-		const e3 = makeEpic<string, empty>({
+		const e3 = makeEpic<string, empty, empty>({
 			vat: 'e3',
 			initialState: '',
 			updaters: {
@@ -161,7 +160,7 @@ describe('sequence', () => {
 	it.skip('should have compute e3 once when A changes e1.m and e1.i and e2 has active sub to e1.m, e1.i and e3 has active sub to e2', () => {
 		const a = 'a'
 		const aC = makeCondition(a)
-		const e1 = makeEpic<{| i: string, m: { [string]: {| kind: string |} } |}, empty>({
+		const e1 = makeEpic<{| i: string, m: { [string]: {| kind: string |} } |}, empty, empty>({
 			vat: 'e1',
 			initialState: { m: { x: { kind: 'dummy' } }, i: 'x' },
 			updaters: {
@@ -171,7 +170,7 @@ describe('sequence', () => {
 				}),
 			},
 		})
-		const e2 = makeEpic<Array<string>, empty>({
+		const e2 = makeEpic<Array<string>, empty, empty>({
 			vat: 'e2',
 			initialState: [],
 			updaters: {
@@ -181,7 +180,7 @@ describe('sequence', () => {
 				}),
 			},
 		})
-		const e3 = makeEpic<string, empty>({
+		const e3 = makeEpic<string, empty, empty>({
 			vat: 'e3',
 			initialState: '',
 			updaters: {
@@ -203,7 +202,7 @@ describe('sequence', () => {
 		const a = 'a'
 		const aC = makeCondition(a)
 		const e1C = makeEpicCondition<{| i: string, m: number, n: number |}>('e1')
-		const e1 = makeEpic<{| i: string, m: number, n: number |}, empty>({
+		const e1 = makeEpic<{| i: string, m: number, n: number |}, empty, empty>({
 			vat: 'e1',
 			initialState: { n: 0, m: 0, i: 'x' },
 			updaters: {
@@ -221,7 +220,7 @@ describe('sequence', () => {
 				}),
 			},
 		})
-		const e2 = makeEpic<{| a: string, b: string |}, empty>({
+		const e2 = makeEpic<{| a: string, b: string |}, empty, empty>({
 			vat: 'e2',
 			initialState: { a: '', b: '' },
 			updaters: {
@@ -250,7 +249,7 @@ describe('sequence', () => {
 		const aC = makeCondition(a)
 		const bC = makeCondition(b)
 		const xCondition = makeCondition(x)
-		const e1 = makeEpic<{| i: string, m: number, n: number |}, BuiltInEffectType>({
+		const e1 = makeEpic<{| i: string, m: number, n: number |}, BuiltInEffectType, empty>({
 			vat: 'e1',
 			initialState: { n: 0, m: 0, i: 'x' },
 			updaters: {
@@ -272,7 +271,7 @@ describe('sequence', () => {
 				}),
 			},
 		})
-		const e2 = makeEpic<{| a: string, b: string |}, empty>({
+		const e2 = makeEpic<{| a: string, b: string |}, empty, empty>({
 			vat: 'e2',
 			initialState: { a: '', b: '' },
 			updaters: {

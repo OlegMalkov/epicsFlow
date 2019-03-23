@@ -12,7 +12,7 @@ type WorkspaceViewportStateType = {|
 |}
 
 const setDimensions = setPropDeepCompare<WorkspaceViewportStateType, *>('dimensions')
-const workspaceViewportEpic = makeEpic<WorkspaceViewportStateType, empty>({
+const workspaceViewportEpic = makeEpic<WorkspaceViewportStateType, empty, empty>({
 	vat: 'WORKSPACE_VIEWPORT_VAT',
 	initialState: { dimensions: { width: 0, height: 0 } },
 	updaters: {

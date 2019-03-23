@@ -20,7 +20,7 @@ const aovnC = aoC.wsk('v').wsk('n')
 
 describe('conditions', () => {
 	it('can chain selectors', () => {
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 1,
 			updaters: {
@@ -52,7 +52,7 @@ describe('conditions', () => {
 	})
 
 	it('condition .withSelector works', () => {
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
@@ -75,7 +75,7 @@ describe('conditions', () => {
 	})
 
 	it('condition .withSelector + .withGuard works', () => {
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
@@ -105,7 +105,7 @@ describe('conditions', () => {
 	})
 
 	it('condition .withGuard + .toOptional works', () => {
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
@@ -135,7 +135,7 @@ describe('conditions', () => {
 	})
 
 	it('condition .withGuard + .withSelector works', () => {
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
@@ -165,7 +165,7 @@ describe('conditions', () => {
 	})
 
 	it('calls once if selector return same value by ref compare', () => {
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 1,
 			updaters: {
@@ -184,7 +184,7 @@ describe('conditions', () => {
 	})
 
 	it('calls twice if selector return different values by ref compare', () => {
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 1,
 			updaters: {
@@ -203,7 +203,7 @@ describe('conditions', () => {
 	})
 
 	it('calls twice if no selector present, even same action reference dispatched twice', () => {
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 1,
 			updaters: {
@@ -302,7 +302,7 @@ describe('conditions', () => {
 	it('can have nested guards', () => {
 		const aGC = aC.wg(({ o }) => o.flag)
 		const aoGC = aGC.wsk('o').wg(({ v }) => v.flag)
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
@@ -337,7 +337,7 @@ describe('conditions', () => {
 	})
 
 	it('it is possible to have different guards for root level', () => {
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
@@ -380,7 +380,7 @@ describe('conditions', () => {
 	})
 
 	it('it is possible to have different guards for not root level', () => {
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
@@ -424,7 +424,7 @@ describe('conditions', () => {
 
 	it('can use prevValue inside selector of condition', () => {
 		const nDiffC = aC.ws((value, prevValue) => prevValue ? value.o.v.n - prevValue.o.v.n : 0)
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
@@ -454,7 +454,7 @@ describe('conditions', () => {
 
 	it('if epic is changed multiple times during same action, but condition changed only once, updater should be called only once', () => {
 		const aC = makeCondition<AType>(a)
-		const e1 = makeEpic<{| flag: bool, value: number |}, empty>({
+		const e1 = makeEpic<{| flag: bool, value: number |}, empty, empty>({
 			vat: 'e1',
 			initialState: { value: 0, flag: false },
 			updaters: {
@@ -468,7 +468,7 @@ describe('conditions', () => {
 				}),
 			},
 		})
-		const e2 = makeEpic<number, empty>({
+		const e2 = makeEpic<number, empty, empty>({
 			vat: 'e2',
 			initialState: 0,
 			updaters: {

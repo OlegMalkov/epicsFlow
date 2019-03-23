@@ -10,7 +10,7 @@ import { T, F } from '../../utils'
 import { makeEpicWithScope, type BuiltInEffectType, makeUpdater } from '../../epics'
 
 const
-	componentEpic = makeEpicWithScope<ComponentStateType, ComponentScope, BuiltInEffectType>({
+	componentEpic = makeEpicWithScope<ComponentStateType, ComponentScope, BuiltInEffectType, empty>({
 		vat: componentVat,
 		initialState: componentInitialState,
 		initialScope: componentInitialScope,

@@ -12,13 +12,15 @@ import {
 } from '../epics'
 import { type LocalStorageEffectType } from '../effectManagers/localStorageEM'
 
+type PluginConfigType = {| injectStateIncOnCreateStore: bool |}
+
 const a = makeSACAC('A')
 
 describe('plugin', () => {
 	it('can inject epics and do initialization on storeCreated', async () => {
 		const plugin: PluginType = ({ injectEpics }) => {
 			injectEpics({
-				e1: makeEpic<number, LocalStorageEffectType>({
+				e1: makeEpic<number, LocalStorageEffectType, empty>({
 					vat: 'E1_VAT',
 					initialState: 0,
 					updaters: {
@@ -30,7 +32,7 @@ describe('plugin', () => {
 						}),
 					},
 				}),
-				e2: makeEpic<number, LocalStorageEffectType>({
+				e2: makeEpic<number, LocalStorageEffectType, empty>({
 					vat: 'E2_VAT',
 					initialState: 0,
 					updaters: {
@@ -55,7 +57,7 @@ describe('plugin', () => {
 		expect(store.getState()[makePluginStateKey('e2')]).toBe(2)
 	})
 	it('can inject updaters, updaters name spaced by plugin key', async () => {
-		const e1 = makeEpic<number, empty>({
+		const e1 = makeEpic<number, empty, PluginConfigType>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
@@ -66,7 +68,7 @@ describe('plugin', () => {
 			},
 			pluginConfig: { injectStateIncOnCreateStore: true },
 		})
-		const e2 = makeEpic<number, empty>({
+		const e2 = makeEpic<number, empty, empty>({
 			vat: 'e2',
 			initialState: 0,
 			updaters: {
@@ -76,7 +78,7 @@ describe('plugin', () => {
 				}),
 			},
 		})
-		const e3 = makeEpic<number, empty>({
+		const e3 = makeEpic<number, empty, PluginConfigType>({
 			vat: 'e3',
 			initialState: 0,
 			updaters: {
@@ -88,8 +90,8 @@ describe('plugin', () => {
 			pluginConfig: { injectStateIncOnCreateStore: true },
 		})
 		const plugin: PluginType = ({ injectUpdaters }) => {
-			injectUpdaters((epic: EpicType<number, *, *>) => {
-				const pluginConfig: {| injectStateIncOnCreateStore: bool |} | void = epic.pluginConfig
+			injectUpdaters((epic: EpicType<number, *, *, PluginConfigType>) => {
+				const pluginConfig = epic.pluginConfig
 
 				if (!pluginConfig || !pluginConfig.injectStateIncOnCreateStore) return
 

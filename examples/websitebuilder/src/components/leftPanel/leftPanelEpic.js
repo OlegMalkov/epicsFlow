@@ -11,7 +11,7 @@ const LeftPanelWidthCollapsed = 50
 const setWidth = setProp<LeftPanelStateType, *>('width')
 const setExpanded = setProp<LeftPanelStateType, *>('expanded')
 
-export const leftPanelEpic = makeEpic<LeftPanelStateType, empty>({
+export const leftPanelEpic = makeEpic<LeftPanelStateType, empty, empty>({
 	vat: 'LEFT_PANEL_VAT',
 	initialState: { width: 200, expanded: true },
 	updaters: {

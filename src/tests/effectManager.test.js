@@ -20,7 +20,7 @@ const b = makeSACAC('B')
 describe('effectManager', () => {
 	it('only epic that requested effect can receive response from effect manager (animation frame)', async () => {
 		const
-			e1 = makeEpic<number, CustomEpicEffectType>({
+			e1 = makeEpic<number, CustomEpicEffectType, empty>({
 				vat: 'e1',
 				initialState: 0,
 				updaters: {
@@ -32,7 +32,7 @@ describe('effectManager', () => {
 			})
 
 
-		const e2 = makeEpic<number, CustomEpicEffectType>({
+		const e2 = makeEpic<number, CustomEpicEffectType, empty>({
 			vat: 'e2',
 			initialState: 0,
 			updaters: {
@@ -63,7 +63,7 @@ describe('effectManager', () => {
 	})
 	it.only('can do batched dispach', async () => {
 		const
-			e1 = makeEpic<number, BuiltInEffectType>({
+			e1 = makeEpic<number, BuiltInEffectType, empty>({
 				vat: 'e1',
 				initialState: 0,
 				updaters: {
@@ -78,7 +78,7 @@ describe('effectManager', () => {
 			})
 
 
-		const e2 = makeEpic<number, BuiltInEffectType>({
+		const e2 = makeEpic<number, BuiltInEffectType, empty>({
 			vat: 'e2',
 			initialState: 0,
 			updaters: {
@@ -93,7 +93,7 @@ describe('effectManager', () => {
 			},
 		})
 
-		const e3 = makeEpic<number, BuiltInEffectType>({
+		const e3 = makeEpic<number, BuiltInEffectType, empty>({
 			vat: 'e3',
 			initialState: 0,
 			updaters: {
@@ -108,7 +108,7 @@ describe('effectManager', () => {
 			},
 		})
 
-		const e4 = makeEpic<number, BuiltInEffectType>({
+		const e4 = makeEpic<number, BuiltInEffectType, empty>({
 			vat: 'e4',
 			initialState: 0,
 			updaters: {
