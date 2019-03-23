@@ -31,6 +31,7 @@ opaque type Condition<V: Object>: {
 	withSelectorKey: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
 	ws: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
 	wsk: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
+	isEpicCondition: bool,
 } = {|
 	...CompulsoryConditionFieldsType,
 	childrenConditionsWithSelectorOrGuard?: Array<AnyConditionType>,
@@ -85,7 +86,7 @@ opaque type SendMsgOutsideEpicsEffectType = {|
 |}
 type ReducerType<S: AnyValueType, SC: Object, CV, E> = ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<CV, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: CV |}) => ReducerResult<S, SC, E>
 type BuiltInEffectType = DispatchActionEffectType | SendMsgOutsideEpicsEffectType | DispatchBatchedActionsEffectType
-type UpdaterType<S, SC, C, E> = {|
+type UpdaterType<S, SC, C: AnyConditionType, E> = {|
 	compulsoryConditionsKeys: Array<$Keys<C>>,
 	conditionKeysToConditionUpdaterKeys: Array<[string, $Keys<C>]>,
 	conditions: C,
@@ -155,6 +156,7 @@ type MakeEffectManagerPropsType<E, S, SC> = {|
 type MakeEffectManagerType = <E, S, SC>(MakeEffectManagerPropsType<E, S, SC>) => EffectManager<S, SC, E>
 type PluginPropsType = {|
 	getEpics: () => { [string]: EpicType<any, any, any, any> },
+	getEpicsWithPluginConfig: () => Array<{| key: string, ...EpicType<any, any, any, any>, pluginConfig: Object |}>,
 	injectEpics: (epicsMapToInject: { [epicKey: string]: EpicType<any, any, any, any> }) => void,
 	injectUpdaters: <S, SC, E, PC>(EpicType<S, SC, E, PC> => void | { [updaterKey: string]: UpdaterType<S, SC, *, E> }) => void,
 |}
@@ -413,8 +415,7 @@ function findObjDiff(lhs: Object, rhs: Object) {
 			const difference = findObjDiff(lhs[key], rhs[key])
 
 			if (isObject(difference) && isEmpty(difference)) return acc
-			return { ...acc,
-				[key]: difference }
+			return { ...acc, [key]: difference }
 		}
 		return acc
 	}, {})
@@ -1699,6 +1700,9 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 				if (!pluginInitializationComplete) {throw new Error('getEpics can not be used during plugin initialization because they are not in the final state yet.')}
 				return epics
 			},
+			getEpicsWithPluginConfig: () => {
+				return getObjectKeys(epics).filter(key => epics[key].pluginConfig).map(key => ({ key, ...epics[key] }))
+			},
 		})
 	})
 	epics = deepCopy(epics) // eslint-disable-line no-param-reassign
@@ -1872,6 +1876,8 @@ export type { // eslint-disable-line import/group-exports
 	PluginPropsType,
 	PluginType,
 	AnyValueType,
+	AnyConditionType,
+	AnyActionType,
 }
 
 export { // eslint-disable-line import/group-exports

@@ -27,7 +27,7 @@ const localStorageCheckQuotaExceededEC = (): LocalStorageEffectType => ({ type: 
 const localStorageGetItemEC = (key: string): LocalStorageEffectType => ({ type: requestType, cmd: { type: 'GET_ITEM', key } })
 const localStorageGetItemsEC = (keys: Array<string>): LocalStorageEffectType => ({ type: requestType, cmd: { type: 'GET_ITEMS', keys } })
 const localStorageSetItemEC = (key: string, value: AnyValueType): LocalStorageEffectType => ({ type: requestType, cmd: { type: 'SET_ITEM', key, value } })
-const localStorageSetItemsEC = (key: string, items: { [key: string]: AnyValueType }): LocalStorageEffectType => ({ type: requestType, cmd: { type: 'SET_ITEMS', items } })
+const localStorageSetItemsEC = (items: { [key: string]: AnyValueType }): LocalStorageEffectType => ({ type: requestType, cmd: { type: 'SET_ITEMS', items } })
 const localStorageRemoveItemEC = (key: string): LocalStorageEffectType => ({ type: requestType, cmd: { type: 'REMOVE_ITEM', key } })
 const localStorageRemoveItemsEC = (keys: Array<string>): LocalStorageEffectType => ({ type: requestType, cmd: { type: 'REMOVE_ITEMS', keys } })
 const localStorageGetKeysEC = (): LocalStorageEffectType => ({ type: requestType, cmd: { type: 'GET_KEYS' } })
