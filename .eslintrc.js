@@ -51,13 +51,6 @@ module.exports = {
         ],
         "flowtype/require-exact-type": "error",
         "flowtype/semi": ["error", "never"],
-        "flowtype/sort-keys": [
-            "error",
-            "asc", {
-              "caseSensitive": true,
-              "natural": false
-            }
-          ],
         "flowtype/type-id-match": [
             "error",
             "^([A-Z][a-z0-9]*)+Type$"

@@ -1,7 +1,13 @@
 // @flow strict
 
-import { makeEffectManager, EMRT, type AnyValueType, makeSACAC } from '../epics'
-import { makeACAC, getObjectKeys } from '../../examples/websitebuilder/src/epics'
+import {
+	makeEffectManager,
+	EMRT,
+	type AnyValueType,
+	makeSACAC,
+	makeACAC,
+	getObjectKeys,
+} from '../epics'
 
 opaque type LocalStorageCommandType =
 	| {| type: 'CHECK' |}
@@ -61,7 +67,7 @@ function getLocalStorageStatus() {
 	return { available: false, quotaExceeded: false }
 }
 
-const requestAnimationFrameEM = makeEffectManager<LocalStorageEffectType, {| available: bool, quotaExceeded: bool |}, null>({
+const localStorageEM = makeEffectManager<LocalStorageEffectType, {| available: bool, quotaExceeded: bool |}, null>({
 	requestType,
 	initialState: getLocalStorageStatus(),
 	initialScope: null,
@@ -141,6 +147,8 @@ export type { // eslint-disable-line import/group-exports
 }
 
 export { // eslint-disable-line import/group-exports
+	localStorageEM,
+
 	localStorageCheckQuotaExceededEC,
 	localStorageGetItemEC,
 	localStorageGetItemsEC,
@@ -150,7 +158,6 @@ export { // eslint-disable-line import/group-exports
 	localStorageRemoveItemsEC,
 	localStorageGetKeysEC,
 	localStorageClearEC,
-	requestAnimationFrameEM,
 
 	localStorageUnavailableResult,
 	localStorageQuotaExceededResult,

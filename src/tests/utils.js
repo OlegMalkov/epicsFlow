@@ -1,10 +1,10 @@
 // @flow
-import {type EpicsStore} from '../epics'
+import {type EpicsStoreType} from '../epics'
 
 const timeoutSymbol = Symbol('timeout')
 
 export const waitEffectManagers = async (
-	store: EpicsStore<Object>,
+	store: EpicsStoreType<Object>,
 	singleEffectTimeout?: number = 100
 ) => {
 	let	i

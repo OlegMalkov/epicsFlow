@@ -23,7 +23,6 @@ export const store = createStore<typeof epics>({
 	epics,
 	debug,
 })
-
 const red = 'red'
 const green = 'green'
 const assert = (result, xColor, yColor) => {
