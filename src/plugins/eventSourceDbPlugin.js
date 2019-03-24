@@ -14,10 +14,12 @@ import {
 	makeEpicWithScope,
 } from '../epics'
 import {
-	type LocalStorageEffectType,
-	localStorageSetItemsEC,
-} from '../effectManagers/localStorageEM'
-import { setPath2 } from '../utils'
+    type LocalStorageEffectType,
+    localStorageSetItemsEC,
+    localStorageGetItemEC,
+    localStorageGetItemResult
+} from '../effectManagers/localStorageEM';
+import { setPath2, setProp } from '../utils';
 
 type EffectType = BuiltInEffectType | LocalStorageEffectType
 type EsdbPluginConfigType = {| esdbAggregate: true |}
@@ -32,6 +34,7 @@ type ScopeType = {|
 	notSavedActions: { [dateNow: number]: AnyActionType },
 |}
 
+const setAggregatesStates = setProp<ScopeType, *, *>('aggregatesStates')
 const setAggregateState = (aggregateKey: string) => setPath2<ScopeType, *, *>('aggregatesStates', aggregateKey)
 const addNotSavedAction = (action: AnyActionType) => (scope: ScopeType) => ({ ...scope, notSavedActions: { ...scope.notSavedActions, [`${Date.now()}`]: action } })
 const esdbPlugin: PluginType = ({ injectEpics, getEpicsWithPluginConfig }) => {
@@ -68,6 +71,18 @@ const esdbPlugin: PluginType = ({ injectEpics, getEpicsWithPluginConfig }) => {
 					conditions: { _: storeCreated.c },
 					reducer: ({ R }) => {
 						return R.sideEffect(dispatchActionEffectCreator(esdbRehydrate.ac()))
+					},
+				}),
+				rehydrate: makeUpdater({
+					conditions: { _: esdbRehydrate.c },
+					reducer: ({ R }) => R.sideEffect(localStorageGetItemEC(esdbAggregatesStateLocalStorageKey)),
+				}),
+				aggregatesStatesRetrivedFromLocalStorage: makeUpdater({
+					conditions: { aggregatesStates: localStorageGetItemResult.c.wsk('value') },
+					reducer: ({ values: { aggregatesStates }, R }) => {
+						if (!aggregatesStates) return R.doNothing
+
+						return R.updateScope(setAggregatesStates(JSON.parse(aggregatesStates)))
 					},
 				}),
 				save: makeUpdater({

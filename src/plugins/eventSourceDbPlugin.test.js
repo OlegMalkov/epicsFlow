@@ -64,12 +64,11 @@ describe('eventSourceDbPlugin', () => {
 		}),
 	}
 
-	it('saves actions used by aggregates and aggregates states to local storage on esdbSave', async () => {
+	const createPopulatedStore = () => {
 		const store = createStore({
 			epics: countOfABEpics,
 			plugins: { esdb: esdbPlugin },
 			effectManagers: { localStorage: localStorageEM },
-			debug: true,
 		})
 
 		store.dispatch(a.ac())
@@ -84,6 +83,12 @@ describe('eventSourceDbPlugin', () => {
 		setNow(5)
 		store.dispatch(b.ac())
 		setNow(6)
+
+		return store
+	}
+
+	it('saves actions used by aggregates and aggregates states to local storage on esdbSave', async () => {
+		const store = createPopulatedStore()
 
 		expect(store.getState().countOfA).toBe(2)
 		expect(store.getState().countOfB).toBe(3)
@@ -106,6 +111,23 @@ describe('eventSourceDbPlugin', () => {
 			countOfB: 3,
 			countOfAorB: 5,
 		}))
+	})
+
+	it.only('rehydrates store', async () => {
+		const store = createPopulatedStore()
+
+		store.dispatch(esdbSave.ac())
+
+		const rehydratedStore = createStore({
+			epics: countOfABEpics,
+			plugins: { esdb: esdbPlugin },
+			effectManagers: { localStorage: localStorageEM },
+			debug: true,
+		})
+
+		expect(rehydratedStore.getState().countOfA).toBe(2)
+		expect(rehydratedStore.getState().countOfB).toBe(3)
+		expect(rehydratedStore.getState().countOfAorB).toBe(5)
 	})
 
 	it.skip('should find all aggregates and rehydrate them on createStore', async () => {

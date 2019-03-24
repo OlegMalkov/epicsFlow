@@ -116,20 +116,14 @@ type MakeEpicPropsType<S, E, PC> = {|
 	updaters: { [string]: UpdaterType<S, void, *, E> },
 	vat: string,
 |}
-opaque type DoNothingEMRT = {| type: typeof do_nothing_emrt |}
-opaque type UpdateStateEMRT<S> = {| state: S, type: typeof update_state_emrt |}
-opaque type UpdateStateWithEffectPromiseRT<S> = {| promise: Promise<void>, state: S, type: typeof update_state_with_effect_promise_emrt |}
-type EffectManagerResultTypeType<State> =
-| DoNothingEMRT
-| UpdateStateEMRT<State>
-| UpdateStateWithEffectPromiseRT<State>
-type EMRTType = typeof EMRT
+
+type OnEffectRequestType<S, SC, E> = ({| dispatch: DispatchType, effect: $ReadOnly<E>, requesterEpicVat: string, scope: SC, state: $ReadOnly<S>, R: EffectManagerResultType<S> |}) => EffectManagerResultType<S>
 opaque type EffectManager<S, SC, E> = {|
 	_effect: E,
 	initialScope?: SC,
 	initialState?: S,
 	key?: string,
-	onEffectRequest: ({ dispatch: DispatchType, effect: $ReadOnly<E>, requesterEpicVat: string, scope: SC, state: $ReadOnly<S> }) => EffectManagerResultTypeType<S>,
+	onEffectRequest: OnEffectRequestType<S, SC, E>,
 	requestType: string,
 |}
 type PendingEffectType<E> = {| effect: E, promise: Promise<any> |}
@@ -144,13 +138,7 @@ type EffectManagersStateUpdateType = { [string]: EffectManagerStateUpdateType }
 type MakeEffectManagerPropsType<E, S, SC> = {|
 	initialScope?: SC,
 	initialState?: S,
-	onEffectRequest: ({
-	dispatch: DispatchType,
-	effect: $ReadOnly<E>,
-	requesterEpicVat: string,
-	scope: SC,
-	state: $ReadOnly<S>,
-}) => EffectManagerResultTypeType<S>,
+	onEffectRequest: OnEffectRequestType<S, SC, E>,
 	requestType: string,
 |}
 type MakeEffectManagerType = <E, S, SC>(MakeEffectManagerPropsType<E, S, SC>) => EffectManager<S, SC, E>
@@ -350,24 +338,33 @@ function makeUpdater<S: AnyValueType, SC: Object, C: { [string]: { actionType: s
 		compulsoryConditionsKeys,
 	}
 }
-const do_nothing_emrt: 'do_nothing_emrt' = 'do_nothing_emrt'
-const update_state_emrt: 'update_state_emrt' = 'update_state_emrt'
-const update_state_with_effect_promise_emrt: 'update_state_with_effect_promise_emrt' = 'update_state_with_effect_promise_emrt'
-const EffectManagerResultType = {
-	doNothing: ({ type: do_nothing_emrt }: DoNothingEMRT),
-	updateState: <S>(state: S): UpdateStateEMRT<S> =>
-		({
-			type: update_state_emrt,
-			state,
-		}),
-	updateStateWithEffectPromise: <S>({ state, promise }: {| promise: Promise<void>, state: S |}): UpdateStateWithEffectPromiseRT<S> =>
-		({
-			type: update_state_with_effect_promise_emrt,
-			state,
-			promise,
-		}),
+
+class EffectManagerResultType<S> {
+	_state: S
+	_actionsToDispatch: Array<{| action: AnyActionType, broadcast?: bool |}>
+	_promise: Promise<void>
+	constructor(state: S) {
+		this._state = state
+		this._actionsToDispatch = []
+		this.doNothing = this
+	}
+	doNothing: EffectManagerResultType<S>
+	updateState(updater: S => S): EffectManagerResultType<S> {
+		this._state = updater(this._state)
+		return this
+	}
+	dispatchAction(action: AnyActionType, broadcast?: true): EffectManagerResultType<S> {
+		this._actionsToDispatch.push(({
+			action,
+			broadcast,
+		}))
+		return this
+	}
+	withEffectPromise(promise: Promise<void>): EffectManagerResultType<S> {
+		this._promise = promise
+		return this
+	}
 }
-const EMRT = EffectManagerResultType
 
 function makeEffectManager<E, S, SC>({
 	initialState,
@@ -1095,25 +1092,44 @@ const makeExecuteAction = ({
 						const effectManager: EffectManager<*, *, *> = effectManagersByRequestType[effectRequestType]
 						const effectManagerStateUpdate = effectManagersStateUpdate[effectRequestType]
 						const effectManagerState = effectManagersState[effectRequestType]
+						const state = (effectManagerStateUpdate && effectManagerStateUpdate.state) ? effectManagerStateUpdate.state : effectManagerState.state
 						const result = effectManager.onEffectRequest({
 							effect: e,
 							requesterEpicVat: subVat,
-							state: (effectManagerStateUpdate && effectManagerStateUpdate.state) ? effectManagerStateUpdate.state : effectManagerState.state,
+							state,
 							scope: effectManagerState.scope,
 							dispatch,
+							R: new EffectManagerResultType(state),
 						})
 
-						switch (result.type) {
-						case do_nothing_emrt:
-							break
-						case update_state_emrt: {
-							const { state } = result
-
-							effectManagersStateUpdate[effectRequestType] = { ...effectManagerStateUpdate, state }
-							break
+						if (result._state !== state) {
+							effectManagersStateUpdate[effectRequestType] = { ...effectManagerStateUpdate, state: result._state }
 						}
-						case update_state_with_effect_promise_emrt: {
-							const { state, promise } = result
+
+						result._actionsToDispatch.forEach(({ action, broadcast }) => {
+							if (!broadcast) {
+								(action: any).targetEpicVatsMap = { [subVat]: true }
+							}
+							executeAction({
+								actionsChain: [action, ...actionsChain],
+								conditionsValues,
+								prevConditionsValues,
+								conditionsValuesUpdate,
+								epicsState,
+								epicsStateUpdate,
+								effectManagersState,
+								effectManagersStateUpdate,
+								lastReducerValuesByEpicVatUpdaterKey,
+								messagesToSendOutside,
+								batchedDispatchBatches,
+								executionLevelTrace: trace && executionLevelTrace ? getNextLevelTrace({ executionLevelTrace,
+									subVat,
+									triggerAction: action,
+								}) : undefined,
+							})
+						})
+
+						if (result._promise) {
 							const effect = e
 
 							effectManagersStateUpdate[effectRequestType] = {
@@ -1121,11 +1137,10 @@ const makeExecuteAction = ({
 								state,
 								pendingEffects: [
 									...((effectManagerStateUpdate && effectManagerStateUpdate.pendingEffects) || []),
-									{ effect,
-										promise },
+									{ effect, promise: result._promise },
 								],
 							}
-							promise
+							result._promise
 								.then(() => dispatch({ type: effectPromiseCompleteAT,
 									effect,
 									effectRequestType }))
@@ -1133,10 +1148,6 @@ const makeExecuteAction = ({
 									effect,
 									effectRequestType,
 									error }))
-							break
-						}
-						default:
-							throw new Error(`unsupported effect manager result type: ${result.type}`)
 						}
 					}
 					}
@@ -1866,7 +1877,6 @@ const storeCreated = makeSACAC('@STORE_CREATED')
 export type { // eslint-disable-line import/group-exports
 	Condition,
 	BuiltInEffectType,
-	EMRTType,
 	MakeEffectManagerType,
 	MakeConditionType,
 	UpdaterType,
@@ -1898,7 +1908,6 @@ export { // eslint-disable-line import/group-exports
 	deepCopy,
 	deepEqual,
 	traceToString,
-	EMRT,
 	storeCreated,
 	makePluginStateKey,
 	getObjectKeys,

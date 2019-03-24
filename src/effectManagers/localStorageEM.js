@@ -2,12 +2,12 @@
 
 import {
 	makeEffectManager,
-	EMRT,
 	type AnyValueType,
 	makeSACAC,
 	makeACAC,
 	getObjectKeys,
 } from '../epics'
+import { setProp } from '../utils'
 
 opaque type LocalStorageCommandType =
 	| {| type: 'CHECK' |}
@@ -21,6 +21,8 @@ opaque type LocalStorageCommandType =
 	| {| type: 'CLEAR' |}
 
 opaque type LocalStorageEffectType = {| cmd: LocalStorageCommandType, type: typeof requestType |}
+
+type StateType = {| available: bool, quotaExceeded: bool |}
 
 const requestType: 'local_storage_effect' = 'local_storage_effect'
 const localStorageCheckQuotaExceededEC = (): LocalStorageEffectType => ({ type: requestType, cmd: { type: 'CHECK' } })
@@ -67,38 +69,34 @@ function getLocalStorageStatus() {
 	return { available: false, quotaExceeded: false }
 }
 
-const localStorageEM = makeEffectManager<LocalStorageEffectType, {| available: bool, quotaExceeded: bool |}, null>({
+const setQuotaExceeded = setProp<StateType, *>('quotaExceeded')
+
+const localStorageEM = makeEffectManager<LocalStorageEffectType, StateType, null>({
 	requestType,
 	initialState: getLocalStorageStatus(),
 	initialScope: null,
-	onEffectRequest: ({ effect, requesterEpicVat, state, dispatch }) => {
-		const dispatchBackToRequester = (action) => dispatch(action, { targetEpicVats: [requesterEpicVat] })
-
+	onEffectRequest: ({ effect, state, R }) => {
 		if (!state.available) {
-			dispatchBackToRequester(localStorageUnavailableResult.ac())
-			return EMRT.doNothing
+			return R.dispatchAction(localStorageUnavailableResult.ac())
 		}
 
 		switch (effect.cmd.type) {
 		case 'CHECK':
 			if (state.quotaExceeded) {
-				dispatchBackToRequester(localStorageQuotaExceededResult.ac())
-				return EMRT.doNothing
+				return R.dispatchAction(localStorageQuotaExceededResult.ac())
 			}
 			break
 		case 'GET_ITEM':
-			dispatchBackToRequester(localStorageGetItemResult.ac({ value: localStorage.getItem(effect.cmd.key) }))
-			break
+			return R.dispatchAction(localStorageGetItemResult.ac({ value: localStorage.getItem(effect.cmd.key) }))
 		case 'GET_ITEMS': {
 			const { keys } = effect.cmd
 
-			dispatchBackToRequester(localStorageGetItemsResult.ac({
+			return R.dispatchAction(localStorageGetItemsResult.ac({
 				values: keys.reduce((acc, key) => {
 					acc[key] = localStorage.getItem(key)
 					return acc
 				}, {}),
 			}))
-			break
 		}
 		case 'SET_ITEM':
 			try {
@@ -106,7 +104,7 @@ const localStorageEM = makeEffectManager<LocalStorageEffectType, {| available: b
 
 				localStorage.setItem(key, JSON.stringify(value))
 			} catch (e) {
-				return EMRT.updateState({ ...state, quotaExceeded: true })
+				return R.updateState(setQuotaExceeded(true))
 			}
 			break
 		case 'SET_ITEMS': {
@@ -117,28 +115,28 @@ const localStorageEM = makeEffectManager<LocalStorageEffectType, {| available: b
 				itemsKeys.forEach(key => localStorage.setItem(key, JSON.stringify(items[key])))
 			} catch (e) {
 				itemsKeys.forEach(key => localStorage.removeItem(key))
-				dispatchBackToRequester(localStorageQuotaExceededResult.ac())
-				return EMRT.updateState({ ...state, quotaExceeded: true })
+				return R
+					.updateState(setQuotaExceeded(true))
+					.dispatchAction(localStorageQuotaExceededResult.ac())
 			}
 			break
 		}
 		case 'REMOVE_ITEM':
 			localStorage.removeItem(effect.cmd.key)
-			return EMRT.updateState({ ...state, quotaExceeded: false })
+			return R.updateState(setQuotaExceeded(false))
 		case 'REMOVE_ITEMS':
 			effect.cmd.keys.forEach(key => localStorage.removeItem(key))
-			return EMRT.updateState({ ...state, quotaExceeded: false })
+			return R.updateState(setQuotaExceeded(false))
 		case 'CLEAR':
 			localStorage.clear()
-			return EMRT.updateState({ ...state, quotaExceeded: false })
+			return R.updateState(setQuotaExceeded(false))
 		case 'GET_KEYS':
-			dispatchBackToRequester(localStorageGetKeysResult.ac({ keys: Object.keys(localStorage) }))
-			break
+			return R.dispatchAction(localStorageGetKeysResult.ac({ keys: Object.keys(localStorage) }))
 		default:
 			// eslint-disable-next-line no-unused-expressions
 			(effect.cmd.type: empty)
 		}
-		return EMRT.doNothing
+		return R.doNothing
 	},
 })
 

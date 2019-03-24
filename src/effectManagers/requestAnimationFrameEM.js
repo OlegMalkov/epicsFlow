@@ -1,6 +1,6 @@
 // @flow strict
 
-import { makeACAC, makeEffectManager, EMRT } from '../epics'
+import { makeACAC, makeEffectManager } from '../epics'
 
 type StateType = {| requestsByEpicVat: { [vat: string]: Request } |}
 type ScopeType = {| resolvePromiseByEpicVat: { [vat: string]: () => void } |}
@@ -15,7 +15,7 @@ const requestAnimationFrameEM = makeEffectManager<RequestAnimationFrameEffectTyp
 	requestType,
 	initialState: { requestsByEpicVat: {} },
 	initialScope: { resolvePromiseByEpicVat: {} },
-	onEffectRequest: ({ effect, requesterEpicVat, state, scope, dispatch }) => {
+	onEffectRequest: ({ effect, requesterEpicVat, state, scope, dispatch, R }) => {
 		if (effect.cmd === 'REQUEST') {
 			let rafId
 			const promise = new Promise((resolve) => {
@@ -31,29 +31,28 @@ const requestAnimationFrameEM = makeEffectManager<RequestAnimationFrameEffectTyp
 				scope.resolvePromiseByEpicVat[requesterEpicVat] = resolvePromise
 			})
 
-			return EMRT.updateStateWithEffectPromise({
-				state: {
+			return R
+				.withEffectPromise(promise)
+				.updateState(() => ({
 					...state,
 					requestsByEpicVat: {
 						...state.requestsByEpicVat,
 						[requesterEpicVat]: rafId,
 					},
-				},
-				promise,
-			})
+				}))
 		} else if (effect.cmd === 'CANCEL') {
 			window.cancelAnimationFrame(state.requestsByEpicVat[requesterEpicVat])
 			scope.resolvePromiseByEpicVat[requesterEpicVat]()
 
-			return EMRT.updateState({
+			return R.updateState(() => ({
 				...state,
 				requestsByEpicVat: {
 					...state.requestsByEpicVat,
 					[requesterEpicVat]: null,
 				},
-			})
+			}))
 		}
-		return EMRT.doNothing
+		return R.doNothing
 	},
 })
 
