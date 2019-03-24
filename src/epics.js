@@ -273,35 +273,37 @@ const daEC = dispatchActionEffectCreator
 const sendMessageOutsideEpicsEffectCreator = (msg: any): SendMsgOutsideEpicsEffectType => ({ type: sendMsgOutsideEpicsEffectType, msg })
 
 class ReducerResult<S, SC, SE> {
-	_stateUpdated: bool;
-	_scopeUpdated: bool;
 	_state: S;
 	_scope: SC;
 	_sideEffects: Array<SE>;
 	_updateReasons: Array<string>
-	constructor(state: S, updateReasons: Array<string>, scope: SC, sideEffects: Array<SE>, stateUpdated: bool, scopeUpdated: bool) {
+	constructor(state: S, scope: SC) {
 		this._state = state
-		this._updateReasons = updateReasons
+		this._updateReasons = []
 		this._scope = scope
-		this._sideEffects = sideEffects
-		this._stateUpdated = stateUpdated
-		this._scopeUpdated = scopeUpdated
+		this._sideEffects = []
 		this.doNothing = this
 	}
 	doNothing: ReducerResult<S, SC, SE>
 	sideEffect(effect: SE): ReducerResult<S, SC, SE> {
-		return new ReducerResult<S, SC, SE>(this._state, this._updateReasons, this._scope, [...this._sideEffects, effect], this._stateUpdated, this._scopeUpdated)
+		this._sideEffects.push(effect)
+		return this
 	}
 	// update reason will be taken only if updater returned updated state
 	updateState(updater: S => S, updateReason?: string): ReducerResult<S, SC, SE> {
 		const nextState = updater(this._state)
 
-		return new ReducerResult<S, SC, SE>(nextState, updateReason && (nextState !== this._state) ? [...this._updateReasons, updateReason] : this._updateReasons, this._scope, this._sideEffects, true, this._scopeUpdated)
+		if (updateReason && (nextState !== this._state)) {
+			this._updateReasons.push(updateReason)
+		}
+		this._state = nextState
+		return this
 	}
 	updateScope(updater: SC => SC): ReducerResult<S, SC, SE> {
 		const nextScope = updater(this._scope)
 
-		return new ReducerResult<S, SC, SE>(this._state, this._updateReasons, nextScope, this._sideEffects, this._stateUpdated, true)
+		this._scope = nextScope
+		return this
 	}
 }
 
@@ -949,8 +951,11 @@ const makeExecuteAction = ({
 					scope: prevScope,
 					sourceAction,
 					changedActiveConditionsKeysMap: changedActiveConditionsKeys.reduce((m, k) => { m[k] = true; return m }, {}),
-					R: new ReducerResult(prevState, [], prevScope, [], false, false),
+					R: new ReducerResult(prevState, prevScope),
 				})
+
+				const stateUpdated = prevState !== result._state
+				const scopeUpdated = prevScope !== result._scope
 
 				if (trace && executionLevelTrace) {
 					const updaters = getTraceUpdaters({ executionLevelTrace, subVat })
@@ -959,12 +964,12 @@ const makeExecuteAction = ({
 						changedActiveConditionsKeys,
 					}
 
-					if (!result._stateUpdated && !result._scopeUpdated && !result._sideEffects.length) {
+					if (!stateUpdated && !scopeUpdated && !result._sideEffects.length) {
 						updaterTraceInfo.didNothing = true
 					} else {
 						updaterTraceInfo.reducerValues = reducerValues
 					}
-					if (result._stateUpdated) {
+					if (stateUpdated) {
 						updaterTraceInfo.epicState = prevState
 						if (typeof prevState === 'object') {
 							const updaterEpicStateChange = findObjDiff(prevState, result._state)
@@ -978,7 +983,7 @@ const makeExecuteAction = ({
 							updaterTraceInfo.updaterEpicStateChange = result._state
 						}
 					}
-					if (result._scopeUpdated) {
+					if (scopeUpdated) {
 						updaterTraceInfo.epicScope = prevScope
 						const updaterEpicScopeChange = findObjDiff(prevScope, result._scope)
 
@@ -1002,10 +1007,10 @@ const makeExecuteAction = ({
 						})
 					}
 				})
-				if (result._scopeUpdated) {
+				if (scopeUpdated) {
 					epicStateUpdate.scope = result._scope // eslint-disable-line no-param-reassign
 				}
-				if (result._stateUpdated) {
+				if (stateUpdated) {
 					updaterKeysThatChangedState.push(updaterKey)
 					epicStateUpdate.state = result._state // eslint-disable-line no-param-reassign
 					updateReasons.push(...result._updateReasons)

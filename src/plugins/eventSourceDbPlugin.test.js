@@ -113,7 +113,7 @@ describe('eventSourceDbPlugin', () => {
 		}))
 	})
 
-	it.only('rehydrates store', async () => {
+	it('rehydrates store', async () => {
 		const store = createPopulatedStore()
 
 		store.dispatch(esdbSave.ac())
