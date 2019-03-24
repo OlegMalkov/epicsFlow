@@ -94,7 +94,7 @@ type UpdaterType<S, SC, C: AnyConditionType, E> = {|
 	reducer: ReducerType<S, SC, $Exact<$ObjMap<C, typeof extractConditionV>>, E>,
 |}
 type EpicValueActionType<State> = {| type: string, value: State |}
-opaque type EpicType<S, SC, E, PC>: { c: Condition<S>, condition: Condition<S>, initialState: S, pluginConfig: PC | void } = {|
+opaque type EpicType<S, SC, E, PC>: { c: Condition<S>, condition: Condition<S>, initialState: S, pluginConfig: PC | void, vat: string } = {|
 	c: Condition<S>,
 	condition: Condition<S>,
 	initialScope: SC,

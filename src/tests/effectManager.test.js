@@ -133,7 +133,6 @@ describe('effectManager', () => {
 				requestAnimationFrame: requestAnimationFrameEM,
 			},
 			epics: { e1, e2, e3, e4 },
-			debug: true,
 		})
 		let storeStateChangedCounter = 0
 

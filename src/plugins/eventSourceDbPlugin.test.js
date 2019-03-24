@@ -107,9 +107,9 @@ describe('eventSourceDbPlugin', () => {
 			'5': b.ac(),
 		}))
 		expect(localStorage.getItem(esdbAggregatesStateLocalStorageKey)).toEqual(JSON.stringify({
-			countOfA: 2,
-			countOfB: 3,
-			countOfAorB: 5,
+			'COUNT_OF_A_VAT': 2,
+			'COUNT_OF_B_VAT': 3,
+			'COUNT_OF_A_OR_B_VAT': 5,
 		}))
 	})
 
@@ -122,7 +122,6 @@ describe('eventSourceDbPlugin', () => {
 			epics: countOfABEpics,
 			plugins: { esdb: esdbPlugin },
 			effectManagers: { localStorage: localStorageEM },
-			debug: true,
 		})
 
 		expect(rehydratedStore.getState().countOfA).toBe(2)
