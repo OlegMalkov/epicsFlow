@@ -20,7 +20,7 @@ const computeLeftAlignedPosition = ({ componentLeft, componentResizeHandleNTop, 
 const computeRightAlignedPosition = ({ componentRight, componentResizeHandleNTop, componentMainActionsDimensions }) =>
 	({ left: componentRight - componentMainActionsDimensions.width, top: componentResizeHandleNTop - 10 - componentMainActionsDimensions.height })
 const componentResizeHandleNTopPassiveCondition = componentResizeHandleNTopCondition.toPassive()
-const componentMainActionsEpic = makeEpic<ComponentMainActionsState, *>({
+const componentMainActionsEpic = makeEpic<ComponentMainActionsState, *, *>({
 	vat: componentMainActionsEpicVat,
 	initialState: componentMainActionsInitialState,
 	updaters: {

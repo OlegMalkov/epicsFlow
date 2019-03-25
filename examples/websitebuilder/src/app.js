@@ -25,55 +25,22 @@
 // 21. Properties panel should be dragable
 
 import React, { Component } from 'react'
+import { type DispatchType } from './epics'
 import './app.css'
 import { windowMouseMove, windowMouseUp, keyDown } from './globalACAC'
-import { componentEpic } from './components/component/componentEpic'
-import { templateEpic } from './components/template/templateEpic'
 import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateAreaMouseDown } from './components/template/templateACAC'
 import { ComponentView } from './components/component/componentView'
 import { ResizeDecorationsView } from './components/componentResizeDecorations/componentResizeDecorationsView'
-import { componentResizeDecorationsEpic } from './components/componentResizeDecorations/componentResizeDecorationsEpic'
-import { componentMainActionsEpic } from './components/componentMainActions/componentMainActionsEpic'
 import { ComponentMainActionsView } from './components/componentMainActions/componentMainActionsView'
-import { propertiesPanelEpic } from './components/propertiesPanel/propertiesPanelEpic'
 import { PropertiesPanelView } from './components/propertiesPanel/propertiesPanelView'
 import { TopBarHeight } from './components/topBar/topBarConstants'
 import { browserDimensions } from './components/env/envACAC'
-import { leftPanelEpic } from './components/leftPanel/leftPanelEpic'
 import { leftPanelToggleExpansionButtonPressed } from './components/leftPanel/leftPanelACAC'
-import { workspaceViewportEpic } from './components/workspace/workspaceViewportEpic'
 import { workspaceScroll } from './components/workspace/workspaceACAC'
-import { createStore, traceToString } from './epics'
+import { wsbStore } from './wsbStore';
 
 declare var window: EventTarget;
-
-
-const store = createStore({
-	epics: {
-		component: componentEpic,
-		componentMainActions: componentMainActionsEpic,
-		resizeDecorations: componentResizeDecorationsEpic,
-		propertiesPanel: propertiesPanelEpic,
-		template: templateEpic,
-		leftPanel: leftPanelEpic,
-
-		_workspaceViewport: workspaceViewportEpic,
-	},
-	debug: {
-		// eslint-disable-next-line no-console
-		warn: console.warn,
-		// eslint-disable-next-line no-console
-		trace: e => console.log(traceToString(e)),
-		devTools: { config: {} },
-	},
-})
-
-const initialState = store.getState()
-const dispatch = store.dispatch
-
-//$FlowFixMe
-window.$R = {}
-window.$R.store = store
+const initialState = wsbStore.getState()
 
 function getBrowserDimensions() {
 	// $FlowFixMe
@@ -86,31 +53,46 @@ function getBrowserDimensions() {
 	}
 }
 export class App extends Component<{}, typeof initialState> {
-templateAreaRef: any
-workspaceRef: any
+templateAreaRef: { current: HTMLDivElement | null }
+workspaceRef: { current: HTMLDivElement | null }
+dispatch: DispatchType
 constructor(props: {}) {
 	super(props)
 	this.state = initialState
-	this.templateAreaRef = React.createRef()
-	this.workspaceRef = React.createRef()
+	this.templateAreaRef = React.createRef<HTMLDivElement>()
+	this.workspaceRef = React.createRef<HTMLDivElement>()
 }
 componentDidMount() {
-	store.subscribeOnStateChange(appState => this.setState(appState))
+	const m: { hot: { accept: (string, () => void) => void }} = (module: any)
+	if (m.hot){
+		m.hot.accept('./wsbStore', () => {
+			const currentState = (wsbStore: any)._getServiceState()
+			((wsbStore: any)._dispose())
+			const newWsbStore = require('./wsbStore').wsbStore;
+			this.dispatch = newWsbStore.dispatch
+			newWsbStore.subscribeOnStateChange(appState => this.setState(appState))
+		})
+	}
+	this.dispatch = wsbStore.dispatch
+	wsbStore.subscribeOnStateChange(appState => this.setState(appState))
 
 	window.addEventListener(
 		'mousemove',
-		(e: MouseEvent) => dispatch(
+		(e: MouseEvent) => this.dispatch(
 			windowMouseMove.actionCreator({ position: { left: e.clientX, top: e.clientY } })
 		)
 	)
-	window.addEventListener('mouseup', () => dispatch(windowMouseUp.actionCreator()))
-	window.addEventListener('keydown', (e: KeyboardEvent) => dispatch(keyDown.actionCreator({ keyCode: e.keyCode })))
+	window.addEventListener('mouseup', () => this.dispatch(windowMouseUp.actionCreator()))
+	window.addEventListener('keydown', (e: KeyboardEvent) => this.dispatch(keyDown.actionCreator({ keyCode: e.keyCode })))
 
-	dispatch(browserDimensions.actionCreator(getBrowserDimensions()))
-	window.addEventListener('resize', () => dispatch(browserDimensions.actionCreator(getBrowserDimensions())))
+	this.dispatch(browserDimensions.actionCreator(getBrowserDimensions()))
+	window.addEventListener('resize', () => this.dispatch(browserDimensions.actionCreator(getBrowserDimensions())))
 
-	this.workspaceRef.current.addEventListener('scroll', () => dispatch(workspaceScroll.actionCreator({ top: this.workspaceRef.current.scrollTop })))
-	dispatch(workspaceScroll.actionCreator({ top: this.workspaceRef.current.scrollTop }))
+	const { current } = this.workspaceRef
+	if (current){
+		current.addEventListener('scroll', () => this.dispatch(workspaceScroll.actionCreator({ top: current.scrollTop })))
+		this.dispatch(workspaceScroll.actionCreator({ top: current.scrollTop }))
+	}
 }
 
 render() {
@@ -118,29 +100,29 @@ render() {
 		<div className="App">
 			<div className="TopBar" style={{ height: TopBarHeight }} />
 			<div className="Body">
-				<div className="LeftPanel" style={{ width: this.state.leftPanel.width }} onClick={() => dispatch(leftPanelToggleExpansionButtonPressed.ac())} />
+				<div className="LeftPanel" style={{ width: this.state.leftPanel.width }} onClick={() => this.dispatch(leftPanelToggleExpansionButtonPressed.ac())} />
 				<div className="Workspace" >
 					<div className="WorkspaceScrollableArea" ref={this.workspaceRef}>
 						<div
 							ref={this.templateAreaRef}
 							className="TemplateArea"
 							style={{ width: this.state.template.width }}
-							onMouseDown={(e) => e.target === this.templateAreaRef.current && dispatch(templateAreaMouseDown.actionCreator())}
+							onMouseDown={(e) => e.target === this.templateAreaRef.current && this.dispatch(templateAreaMouseDown.actionCreator())}
 						>
 							<div
 								className="TemplateWidthResizeHandle"
-								onMouseDown={() => dispatch(templateWidthLeftResizeHandleMouseDown.actionCreator())}
+								onMouseDown={() => this.dispatch(templateWidthLeftResizeHandleMouseDown.actionCreator())}
 							/>
 							<div
 								className="TemplateWidthResizeHandle TemplateWidthResizeHandleRight"
-								onMouseDown={() => dispatch(templateWidthRightResizeHandleMouseDown.actionCreator())}
+								onMouseDown={() => this.dispatch(templateWidthRightResizeHandleMouseDown.actionCreator())}
 							/>
-							<ComponentView state={this.state.component} dispatch={dispatch} />
-							<ResizeDecorationsView state={this.state.resizeDecorations} dispatch={dispatch} />
-							<ComponentMainActionsView state={this.state.componentMainActions} dispatch={dispatch} />
+							<ComponentView state={this.state.component} dispatch={this.dispatch} />
+							<ResizeDecorationsView state={this.state.resizeDecorations} dispatch={this.dispatch} />
+							<ComponentMainActionsView state={this.state.componentMainActions} dispatch={this.dispatch} />
 						</div>
 					</div>
-					<PropertiesPanelView state={this.state.propertiesPanel} dispatch={dispatch} />
+					<PropertiesPanelView state={this.state.propertiesPanel} dispatch={this.dispatch} />
 				</div>
 			</div>
 		</div>

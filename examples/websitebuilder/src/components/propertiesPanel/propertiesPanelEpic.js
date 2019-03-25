@@ -118,7 +118,7 @@ const makeComputePropertiesPanelBBoxWithRespectToTemplateArea = ({
 	return result
 }
 
-const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, PropertiesPanelScopeType, *>({
+const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, PropertiesPanelScopeType, *, *>({
 	vat: propertiesPanelEpicVat,
 	initialState,
 	initialScope: { moveDnd: dndInitialState },
@@ -129,7 +129,6 @@ const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, Properti
 		}),
 		computePosition: makeUpdater({
 			conditions: {
-				workspaceScroll: workspaceScroll.condition.toPassive(),
 				componentPosition: componentPositionPassiveCondition,
 				componentDimensions: componentDimensionsPassiveCondition,
 				componentsMainActionsPosition: componentsMainActionsPositionWhenVisiblePassiveCondition,
@@ -148,7 +147,6 @@ const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, Properti
 					componentDimensions,
 					componentsMainActionsPosition,
 					componentsMainActionsDimensions,
-					workspaceScroll,
 				},
 				R,
 				state,
@@ -159,7 +157,7 @@ const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, Properti
 						workspaceWidth: workspaceViewportDimensions.width,
 						templateWidth,
 						propertiesPanelHeight: state.height,
-						workspaceScroll,
+						workspaceScroll: { top: 0 },
 					})
 					const componentBBox = computeBBoxFromPositionAndDimensions(componentPosition, componentDimensions)
 					const componentMainActionsBBox = computeBBoxFromPositionAndDimensions(componentsMainActionsPosition, componentsMainActionsDimensions)

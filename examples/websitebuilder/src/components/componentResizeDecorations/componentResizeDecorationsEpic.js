@@ -30,7 +30,7 @@ const componentResizeDecorationsEpicVat = 'COMPONENT_RESIZE_DECORATIONS_VAT'
 const resizeDecorationsCondition = makeEpicCondition<ComponentResizeDecorationsStateType>(componentResizeDecorationsEpicVat)
 const componentResizeHandleNTopCondition = resizeDecorationsCondition.wsk('handles').wsk('n').wsk('position').wsk('top')
 const componentResizeDecorationsVisibleCondition = resizeDecorationsCondition.wsk('visible')
-const componentResizeDecorationsEpic = makeEpic<ComponentResizeDecorationsStateType, *>({
+const componentResizeDecorationsEpic = makeEpic<ComponentResizeDecorationsStateType, *, *>({
 	vat: componentResizeDecorationsEpicVat,
 	initialState: { activeHandleKey: null, handles: initialResizeHandlesState, visible: false },
 	updaters: {

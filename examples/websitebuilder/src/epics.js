@@ -230,17 +230,18 @@ opaque type EpicsStoreType<Epics: Object>: {
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	subscribeOnMessage: any => any,
 	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
-	warn: Function,
+	warn: Function
 } = {|
 	_getNextStateForActionWithoutUpdatingStoreState: (AnyActionType) => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	_getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
 	_setState: ServiceStateType => void,
+	_dispose: () => void,
 	dispatch: DispatchType,
 	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	subscribeOnMessage: any => any,
 	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
-	warn: Function,
+	warn: Function
 |}
 function getFields(condition: AnyConditionType): {| ...CompulsoryConditionFieldsType, parentCondition: AnyConditionType |} {
 	const {
@@ -1837,7 +1838,11 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		warn,
 		subscribeOnStateChange: subscriber => stateChangedSubscribers.push(subscriber),
 		subscribeOnMessage: sub => msgSubscribers.push(sub),
-
+		_dispose: () => {
+			stateChangedSubscribers.length = 0
+			msgSubscribers.length = 0
+			// TODO cancel all side effects?
+		}
 	}
 }
 function makeACAC<ActionExtraFields>(actionType: string): {|
