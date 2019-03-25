@@ -34,8 +34,9 @@ describe('eventSourceDbPlugin', () => {
 			vat: 'COUNT_OF_A_VAT',
 			updaters: {
 				inc: makeUpdater({
-					conditions: { _a: a.c },
-					reducer: ({ R }) => R.updateState(inc),
+					dependsOn: {},
+					reactsTo: { _a: a.c },
+					exec: ({ R }) => R.updateState(inc),
 				}),
 			},
 			pluginConfig: { esdbAggregate: true },
@@ -45,8 +46,9 @@ describe('eventSourceDbPlugin', () => {
 			vat: 'COUNT_OF_B_VAT',
 			updaters: {
 				inc: makeUpdater({
-					conditions: { _b: b.c },
-					reducer: ({ R }) => R.updateState(inc),
+					dependsOn: {},
+					reactsTo: { _b: b.c },
+					exec: ({ R }) => R.updateState(inc),
 				}),
 			},
 			pluginConfig: { esdbAggregate: true },
@@ -56,8 +58,9 @@ describe('eventSourceDbPlugin', () => {
 			vat: 'COUNT_OF_A_OR_B_VAT',
 			updaters: {
 				inc: makeUpdater({
-					conditions: { _a: a.c.to(), _b: b.c.to() },
-					reducer: ({ R }) => R.updateState(inc),
+					dependsOn: {},
+					reactsTo: { _a: a.c.to(), _b: b.c.to() },
+					exec: ({ R }) => R.updateState(inc),
 				}),
 			},
 			pluginConfig: { esdbAggregate: true },

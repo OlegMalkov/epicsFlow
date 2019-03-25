@@ -22,8 +22,6 @@ opaque type Condition<V: Object>: {
 	resetConditionsByKeyAfterReducerCall: (Array<string>) => Condition<V>,
 	to: () => Condition<V>,
 	toOptional: () => Condition<V>,
-	toPassive: () => Condition<V>,
-	tp: () => Condition<V>,
 	value: V,
 	wg: <VV: V>(guard: VV => bool) => Condition<VV>,
 	withGuard: <VV: V>(guard: VV => bool) => Condition<VV>,
@@ -47,7 +45,6 @@ opaque type Condition<V: Object>: {
 	to: () => Condition<V>,
 	toOptional: () => Condition<V>,
 	toPassive: () => Condition<V>,
-	tp: () => Condition<V>,
 	value: V,
 	valueKey: string,
 	wg: <VV: V>(guard: VV => bool) => Condition<VV>,
@@ -86,12 +83,12 @@ opaque type SendMsgOutsideEpicsEffectType = {|
 |}
 type ReducerType<S: AnyValueType, SC: Object, CV, E> = ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<CV, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: CV |}) => ReducerResult<S, SC, E>
 type BuiltInEffectType = DispatchActionEffectType | SendMsgOutsideEpicsEffectType | DispatchBatchedActionsEffectType
-type UpdaterType<S, SC, C: AnyConditionType, E> = {|
+type UpdaterType<S, SC, C: { [string]: { actionType: string } & Object }, E> = {|
 	compulsoryConditionsKeys: Array<$Keys<C>>,
 	conditionKeysToConditionUpdaterKeys: Array<[string, $Keys<C>]>,
 	conditions: C,
 	conditionsKeys: Array<$Keys<C>>,
-	reducer: ReducerType<S, SC, $Exact<$ObjMap<C, typeof extractConditionV>>, E>,
+	exec: ReducerType<S, SC, $Exact<$ObjMap<C, typeof extractConditionV>>, E>,
 |}
 type EpicValueActionType<State> = {| type: string, value: State |}
 opaque type EpicType<S, SC, E, PC>: { c: Condition<S>, condition: Condition<S>, initialState: S, pluginConfig: PC | void, vat: string } = {|
@@ -308,16 +305,22 @@ class ReducerResult<S, SC, SE> {
 	}
 }
 
-function makeUpdater<S: AnyValueType, SC: Object, C: { [string]: { actionType: string } & Object }, E> ({ conditions, reducer }: {|
-	conditions: C,
-	reducer: ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<C, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: $Exact<$ObjMap<C, typeof extractConditionV>> |}) => ReducerResult<S, SC, E>,
+type Merge<T, T1> = {| ...$Exact<T>, ...$Exact<T1> |}
+function makeUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: string } & Object }, ReactsTo: { [string]: { actionType: string } & Object }, E> ({ dependsOn, reactsTo, exec }: {|
+	dependsOn: DO,
+	reactsTo: ReactsTo,
+	exec: ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<Merge<DO, ReactsTo>, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: $Exact<$ObjMap<Merge<DO, ReactsTo>, typeof extractConditionV>> |}) => ReducerResult<S, SC, E>,
 |}): UpdaterType<S, SC, any, E> {
 	let noActiveConditions = true
-	const
-		conditionKeysToConditionUpdaterKeys = []
-
-
+	const conditionKeysToConditionUpdaterKeys = []
 	const compulsoryConditionsKeys = []
+	const conditions =  dependsOn ? ({ ...Object.keys(dependsOn).reduce((r, k: string) => ({ ...r, [k]: dependsOn[k] }), {}), ...reactsTo }) : reactsTo
+
+	Object.keys(reactsTo).forEach(reactsToKey => {
+		if (reactsTo[reactsToKey].passive) {
+			throw new Error(`can not use passive condition "${reactsToKey}" in reacts to.`)
+		}
+	})
 
 	Object.keys(conditions).forEach(conditionKey => {
 		const condition: AnyConditionType = conditions[conditionKey]
@@ -333,9 +336,16 @@ function makeUpdater<S: AnyValueType, SC: Object, C: { [string]: { actionType: s
 	if (noActiveConditions) {
 		throw new Error('makeUpdater requires at least one condition to be active')
 	}
+
+	if(dependsOn){
+		Object.keys(dependsOn).forEach(k => {
+			if (reactsTo[k]) throw new Error(`dependsOn can not contain same key as reacts to: ${k}`)
+		})
+	}
+
 	return {
-		conditions: (conditions: any),
-		reducer: (reducer: any),
+		conditions: { ...dependsOn, ...reactsTo },
+		exec: (exec: any),
 		conditionKeysToConditionUpdaterKeys,
 		conditionsKeys: Object.keys((conditions: any)),
 		compulsoryConditionsKeys,
@@ -945,8 +955,8 @@ const makeExecuteAction = ({
 					deepFreeze(prevState)
 					deepFreeze(prevScope)
 				}
-				// TODO flow - mark everything passed inside reducer as $ReadOnly
-				const result = updater.reducer({
+				// TODO flow - mark everything passed inside exec as $ReadOnly
+				const result = updater.exec({
 					values: reducerValues,
 					state: prevState,
 					scope: prevScope,
@@ -1223,7 +1233,7 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 				throw new Error(msg)
 			}
 			if (batchedDispatchBatches.length) {
-				const msg = 'epics should not do batched dispatch on initializing default state. use storeCreated.condition instead.'
+				const msg = 'epics should not exec batched dispatch on initializing default state. use storeCreated.condition instead.'
 
 				warn(msg, batchedDispatchBatches)
 				throw new Error(msg)
@@ -1407,7 +1417,6 @@ function _makeCondition({
 		},
 	}: any)
 
-	condition.tp = condition.toPassive
 	condition.to = condition.toOptional
 	condition.wg = condition.withGuard
 	if (!sealed) {

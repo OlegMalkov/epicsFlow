@@ -35,11 +35,13 @@ const componentResizeDecorationsEpic = makeEpic<ComponentResizeDecorationsStateT
 	initialState: { activeHandleKey: null, handles: initialResizeHandlesState, visible: false },
 	updaters: {
 		detectActiveHandleKey: makeUpdater({
-			conditions: {
+			dependsOn: {
 				nMouseDown: componentResizeNMouseDown.condition.toOptional(),
+			},
+			reactsTo: {
 				componentIsResizing: componentIsResizingCondition.resetConditionsByKeyAfterReducerCall(['nMouseDown']),
 			},
-			reducer: ({ values: { nMouseDown, componentIsResizing }, R, changedActiveConditionsKeysMap }) => {
+			exec: ({ values: { nMouseDown, componentIsResizing }, R, changedActiveConditionsKeysMap }) => {
 				if (changedActiveConditionsKeysMap.componentIsResizing && componentIsResizing === false) {
 					return R.updateState(resetActiveHandleKey)
 				}
@@ -52,22 +54,24 @@ const componentResizeDecorationsEpic = makeEpic<ComponentResizeDecorationsStateT
 			},
 		}),
 		computeVisibile: makeUpdater({
-			conditions: {
+			dependsOn: {},
+			reactsTo: {
 				componentIsMoving: componentIsMovingCondition,
 				componentIsResizing: componentIsResizingCondition,
 				componentSelected: componentSelectedCondition,
 			},
-			reducer: ({ values: { componentIsMoving, componentIsResizing, componentSelected }, R }) =>
+			exec: ({ values: { componentIsMoving, componentIsResizing, componentSelected }, R }) =>
 				R.updateState(setVisible(componentSelected && !componentIsMoving && !componentIsResizing)),
 		}),
 		computePositionsForHandles: makeUpdater({
-			conditions: {
+			dependsOn: {},
+			reactsTo: {
 				componentPosition: componentPositionCondition,
 				componentDimensions: componentDimensionsCondition,
 				isVisible: resizeDecorationsCondition.withSelectorKey('visible'),
 				activeHandleKey: resizeDecorationsCondition.withSelectorKey('activeHandleKey'),
 			},
-			reducer: ({ values: { componentPosition, componentDimensions, isVisible, activeHandleKey }, R }) => {
+			exec: ({ values: { componentPosition, componentDimensions, isVisible, activeHandleKey }, R }) => {
 				if (isVisible || activeHandleKey === 'n') {
 					return R.updateState(setResizeNHandlePosition({
 						left: componentPosition.left + componentDimensions.width / 2 - HalfResizeHandleSidePx,

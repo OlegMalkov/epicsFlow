@@ -8,17 +8,18 @@ import { xClicked } from './xAAC'
 type XUpdaterType = UpdaterType<XStateType, *, *, *>
 
 const xClickedUpdater: XUpdaterType = makeUpdater({
-	conditions: {
-		zResult: zResultC.tp(),
+	dependsOn: { zResult: zResultC },
+	reactsTo: {
 		_xClicked: xClicked.condition,
 	},
-	reducer: ({ values: { zResult }, R }) => R.updateState(isEven(zResult)? incX : decX),
+	exec: ({ values: { zResult }, R }) => R.updateState(isEven(zResult)? incX : decX),
 })
 
 
 const zResultChanged: XUpdaterType = makeUpdater({
-	conditions: { zResult: zResultC },
-	reducer: ({ values: { zResult }, R }) => R.updateState(setXColor(isEven(zResult) ? 'green' : 'red')),
+	dependsOn: { },
+	reactsTo: { zResult: zResultC },
+	exec: ({ values: { zResult }, R }) => R.updateState(setXColor(isEven(zResult) ? 'green' : 'red')),
 })
 
 export const xUpdaters = {

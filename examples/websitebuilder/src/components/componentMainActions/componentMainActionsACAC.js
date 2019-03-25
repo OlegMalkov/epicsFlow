@@ -10,15 +10,11 @@ const componentsMainActionsIsVisibleCondition = componentMainActionsCondition.wi
 const componentsMainActionsWhenVisibleCondition = componentMainActionsCondition.withGuard<ComponentMainActionsState>(s => s.visible)
 const componentsMainActionsPositionWhenVisibleCondition = componentsMainActionsWhenVisibleCondition.wsk('position')
 const componentsMainActionsDimensionsWhenVisibleCondition = componentsMainActionsWhenVisibleCondition.wsk('dimensions')
-// $FlowFixMe
-const componentsMainActionsPositionWhenVisiblePassiveCondition = componentsMainActionsPositionWhenVisibleCondition.toPassive()
-// $FlowFixMe
-const componentsMainActionsDimensionsWhenVisiblePassiveCondition = componentsMainActionsDimensionsWhenVisibleCondition.toPassive()
 
 export {
 	componentMainActionsEditButtonPress,
 	componentsMainActionsIsVisibleCondition,
-	componentsMainActionsPositionWhenVisiblePassiveCondition,
-	componentsMainActionsDimensionsWhenVisiblePassiveCondition,
+	componentsMainActionsPositionWhenVisibleCondition,
+	componentsMainActionsDimensionsWhenVisibleCondition,
 	componentMainActionsEpicVat,
 }

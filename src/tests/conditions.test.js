@@ -18,15 +18,16 @@ const aC = makeCondition<AType>(a)
 const aoC = aC.wsk('o')
 const aovnC = aoC.wsk('v').wsk('n')
 
-describe('conditions', () => {
+describe('dependsOn', () => {
 	it('can chain selectors', () => {
 		const e1 = makeEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 1,
 			updaters: {
 				nChanged: makeUpdater({
-					conditions: { n: aovnC },
-					reducer: ({ values: { n }, R }) => R.updateState(state => state + n),
+					dependsOn: {},
+					reactsTo: { n: aovnC },
+					exec: ({ values: { n }, R }) => R.updateState(state => state + n),
 				}),
 			},
 		})
@@ -57,11 +58,12 @@ describe('conditions', () => {
 			initialState: 0,
 			updaters: {
 				nChanged: makeUpdater({
-					conditions: {
+					dependsOn: {},
+					reactsTo: {
 						n: aovnC.withSelector(n => { return { a: n } }),
 						n1: aovnC.ws(() => { return { a11: 11 } }),
 					},
-					reducer: ({ R, values: { n, n1 } }) => {
+					exec: ({ R, values: { n, n1 } }) => {
 						return R.updateState(state => state + n.a + n1.a11)
 					},
 				}),
@@ -80,10 +82,11 @@ describe('conditions', () => {
 			initialState: 0,
 			updaters: {
 				nChanged: makeUpdater({
-					conditions: {
+					dependsOn: {},
+					reactsTo: {
 						n: aovnC.withSelector(n => { return { a: n } }).wg((value) => value.a > 5),
 					},
-					reducer: ({ R, values: { n } }) => {
+					exec: ({ R, values: { n } }) => {
 						return R.updateState(state => state + n.a)
 					},
 				}),
@@ -110,10 +113,11 @@ describe('conditions', () => {
 			initialState: 0,
 			updaters: {
 				nChanged: makeUpdater({
-					conditions: {
+					dependsOn: {},
+					reactsTo: {
 						n: aovnC.wg(value => value > 5).toOptional(),
 					},
-					reducer: ({ R, values: { n } }) => {
+					exec: ({ R, values: { n } }) => {
 						return R.updateState(state => state + n)
 					},
 				}),
@@ -140,10 +144,11 @@ describe('conditions', () => {
 			initialState: 0,
 			updaters: {
 				nChanged: makeUpdater({
-					conditions: {
+					dependsOn: {},
+					reactsTo: {
 						n: aovnC.wg((n) => n > 5).withSelector(n => { return { a: n } }),
 					},
-					reducer: ({ R, values: { n } }) => {
+					exec: ({ R, values: { n } }) => {
 						return R.updateState(state => state + n.a)
 					},
 				}),
@@ -170,8 +175,9 @@ describe('conditions', () => {
 			initialState: 1,
 			updaters: {
 				nChanged: makeUpdater({
-					conditions: { n: aovnC },
-					reducer: ({ R, values: { n } }) => R.updateState(state => state + n),
+					dependsOn: {},
+					reactsTo: { n: aovnC },
+					exec: ({ R, values: { n } }) => R.updateState(state => state + n),
 				}),
 			},
 		})
@@ -189,8 +195,9 @@ describe('conditions', () => {
 			initialState: 1,
 			updaters: {
 				nChanged: makeUpdater({
-					conditions: { o: aoC },
-					reducer: ({ R, values: { o } }) => R.updateState(state => state + o.v.n),
+					dependsOn: {},
+					reactsTo: { o: aoC },
+					exec: ({ R, values: { o } }) => R.updateState(state => state + o.v.n),
 				}),
 			},
 		})
@@ -208,8 +215,9 @@ describe('conditions', () => {
 			initialState: 1,
 			updaters: {
 				nChanged: makeUpdater({
-					conditions: { _: aC },
-					reducer: ({ R }) => R.updateState(state => state + 1),
+					dependsOn: {},
+					reactsTo: { _: aC },
+					exec: ({ R }) => R.updateState(state => state + 1),
 				}),
 			},
 		})
@@ -225,25 +233,19 @@ describe('conditions', () => {
 	it('compute key correctly', () => {
 		const aC = makeCondition('AType')
 		const aP1C = aC.wsk('p1')
-		const aP1GPassiveOC = aP1C.tp().wg(() => true).to()
-		const aP1GP2PassiveC = aP1GPassiveOC.wsk('p2')
 
 		// $FlowFixMe
 		expect(aP1C.valueKey).toBe('AType.p1')
-		// $FlowFixMe
-		expect(aP1GPassiveOC.valueKey).toBe('AType.p1.$$guard3')
-		// $FlowFixMe
-		expect(aP1GP2PassiveC.valueKey).toBe('AType.p1.$$guard3.p2')
 	})
 
-	it('reuse existiting root conditions', () => {
+	it('reuse existiting root dependsOn', () => {
 		const aC = makeCondition('AType')
 		const aC1 = makeCondition('AType')
 
 		expect(aC).toBe(aC1)
 	})
 
-	it('reuse existiting child conditions', () => {
+	it('reuse existiting child dependsOn', () => {
 		const aC = makeCondition('AType')
 		const aP1C = aC.wsk('p1')
 		const aP1C1 = aC.wsk('p1')
@@ -259,44 +261,26 @@ describe('conditions', () => {
 		expect(aGC).toBe(aGC1)
 	})
 
-	it('not reuse existiting child conditions', () => {
+	it('not reuse existiting child dependsOn', () => {
 		const akC = makeCondition('AType').wsk('k')
-		const akPC = makeCondition('AType').wsk('k').tp()
 		const akGC = makeCondition('AType').wsk('k').wg(() => true)
-		const akOPC = makeCondition('AType').to().wsk('k').tp()
 		const akmC = akC.wsk('m')
-		const akmPC = akPC.wsk('m')
-		const akmOPC = akOPC.wsk('m')
 		const akGmC = akGC.wsk('m')
 		const akGmSC = akGC.wsk('m').ws(() => 1)
-		const akGmSPC = akGmSC.tp()
 
-		expect(akmC).not.toBe(akmPC)
-		expect(akmC).not.toBe(akmOPC)
 		expect(akmC).not.toBe(akGmC)
-		expect(akmPC).not.toBe(akmOPC)
 		expect(akGmC).not.toBe(akGmSC)
-		expect(akGmSC).not.toBe(akGmSPC)
-		expect(akGmC).not.toBe(akGmSPC)
 
 		// $FlowFixMe
 		expect(akmC.passive).toBe(false)
 		// $FlowFixMe
 		expect(akmC.optional).toBe(false)
-		// $FlowFixMe
-		expect(akmPC.passive).toBe(true)
-		// $FlowFixMe
-		expect(akmPC.optional).toBe(false)
-		// $FlowFixMe
-		expect(akmOPC.passive).toBe(true)
-		// $FlowFixMe
-		expect(akmOPC.optional).toBe(true)
 	})
 
 	it('can not have guards for same level', () => {
 		expect(
 			() => aC.wg(() => true).wg(() => false)
-		).toThrow('Guards can be applied only once per level. Condition "a.$$guard6" already has guard.')
+		).toThrow('Guards can be applied only once per level. Condition "a.$$guard5" already has guard.')
 	})
 
 	it('can have nested guards', () => {
@@ -307,8 +291,9 @@ describe('conditions', () => {
 			initialState: 0,
 			updaters: {
 				nChanged: makeUpdater({
-					conditions: { a: aGC, o: aoGC },
-					reducer: ({ R, values: { a, o } }) => R.updateState(state => state + a.o.v.n + o.v.n),
+					dependsOn: {},
+					reactsTo: { a: aGC, o: aoGC },
+					exec: ({ R, values: { a, o } }) => R.updateState(state => state + a.o.v.n + o.v.n),
 				}),
 			},
 		})
@@ -326,7 +311,7 @@ describe('conditions', () => {
 		store.dispatch(aAC(5, true, true))
 		expect(store.getState().e1).toBe(10)
 
-		store.dispatch(aAC(5, false, true)) // if oFlag is false, child conditions are not evaluated
+		store.dispatch(aAC(5, false, true)) // if oFlag is false, child dependsOn are not evaluated
 		expect(store.getState().e1).toBe(10)
 
 		store.dispatch(aAC(5, true, false)) // o is already happend, so we using it's value when a changed
@@ -342,26 +327,29 @@ describe('conditions', () => {
 			initialState: 0,
 			updaters: {
 				aChangedWhenNMoreThan5: makeUpdater({
-					conditions: {
+					dependsOn: {},
+					reactsTo: {
 						a: aC.wg((value) => value.o.v.n > 5),
 					},
-					reducer: ({ R, values: { a } }) => {
+					exec: ({ R, values: { a } }) => {
 						return R.updateState(state => state + a.o.v.n)
 					},
 				}),
 				aChangedWhenNLessThan5: makeUpdater({
-					conditions: {
+					dependsOn: {},
+					reactsTo: {
 						a: aC.wg((value) => value.o.v.n < 5),
 					},
-					reducer: ({ R, values: { a } }) => {
+					exec: ({ R, values: { a } }) => {
 						return R.updateState(state => state - a.o.v.n)
 					},
 				}),
 				aChangedWhenNEquals5: makeUpdater({
-					conditions: {
+					dependsOn: {},
+					reactsTo: {
 						a: aC.wg((value) => value.o.v.n === 5),
 					},
-					reducer: ({ R }) => {
+					exec: ({ R }) => {
 						return R.updateState(state => state === 0 ? 1 : state * 2)
 					},
 				}),
@@ -385,26 +373,29 @@ describe('conditions', () => {
 			initialState: 0,
 			updaters: {
 				nMoreThan5: makeUpdater({
-					conditions: {
+					dependsOn: {},
+					reactsTo: {
 						n: aovnC.wg((value) => value > 5),
 					},
-					reducer: ({ R, values: { n } }) => {
+					exec: ({ R, values: { n } }) => {
 						return R.updateState(state => state + n)
 					},
 				}),
 				nLessThan5: makeUpdater({
-					conditions: {
+					dependsOn: {},
+					reactsTo: {
 						n: aovnC.wg((value) => value < 5),
 					},
-					reducer: ({ R, values: { n } }) => {
+					exec: ({ R, values: { n } }) => {
 						return R.updateState(state => state - n)
 					},
 				}),
 				nEquals5: makeUpdater({
-					conditions: {
+					dependsOn: {},
+					reactsTo: {
 						n: aovnC.wg((value) => value === 5),
 					},
-					reducer: ({ R }) => {
+					exec: ({ R }) => {
 						return R.updateState(state => state === 0 ? 1 : state * 2)
 					},
 				}),
@@ -429,8 +420,9 @@ describe('conditions', () => {
 			initialState: 0,
 			updaters: {
 				nChanged: makeUpdater({
-					conditions: { diff: nDiffC },
-					reducer: ({ R, values: { diff } }) => R.updateState(state => state + diff),
+					dependsOn: {},
+					reactsTo: { diff: nDiffC },
+					exec: ({ R, values: { diff } }) => R.updateState(state => state + diff),
 				}),
 			},
 		})
@@ -459,12 +451,14 @@ describe('conditions', () => {
 			initialState: { value: 0, flag: false },
 			updaters: {
 				nChanged: makeUpdater({
-					conditions: { a: aC },
-					reducer: ({ R }) => R.updateState(state => ({ ...state, flag: true })),
+					dependsOn: {},
+					reactsTo: { a: aC },
+					exec: ({ R }) => R.updateState(state => ({ ...state, flag: true })),
 				}),
 				e2Changed: makeUpdater({
-					conditions: { e2: makeEpicCondition<number>('e2') },
-					reducer: ({ R }) => R.updateState(state => ({ ...state, value: state.value + 1 })),
+					dependsOn: {},
+					reactsTo: { e2: makeEpicCondition<number>('e2') },
+					exec: ({ R }) => R.updateState(state => ({ ...state, value: state.value + 1 })),
 				}),
 			},
 		})
@@ -473,8 +467,9 @@ describe('conditions', () => {
 			initialState: 0,
 			updaters: {
 				e1Changed: makeUpdater({
-					conditions: { e1: e1.c.wsk('flag') },
-					reducer: ({ R }) => R.updateState(state => state + 1),
+					dependsOn: {},
+					reactsTo: { e1: e1.c.wsk('flag') },
+					exec: ({ R }) => R.updateState(state => state + 1),
 				}),
 			},
 		})

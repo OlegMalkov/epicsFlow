@@ -3,7 +3,7 @@
 import { type ComponentStateType, componentInitialState, updateComponentBBox, setComponentSelected, setComponentIsMovingFalse, setComponentIsMovingTrue, setComponentIsResizingFalse, setComponentIsResizingTrue } from './componentState'
 import { componentVat, componentMouseDown, componentResizeNMouseDown } from './componentACAC'
 import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC'
-import { templateWidthPC, templateAreaMouseDown } from '../template/templateACAC'
+import { templateWidthCondition, templateAreaMouseDown } from '../template/templateACAC'
 import { componentInitialScope, type ComponentScope, initComponentMoveDnd, resetComponentMoveDnd, resetComponentResizeDnd, initComponentResizeDnd } from './componentScope'
 import { dndTypeIdle, dndTypeProgress } from '../shared/dnd'
 import { T, F } from '../../utils'
@@ -16,14 +16,16 @@ const
 		initialScope: componentInitialScope,
 		updaters: {
 			dndMoveAndSelection: makeUpdater({
-				conditions: {
-					templateWidth: templateWidthPC,
+				dependsOn: {
+					templateWidth: templateWidthCondition,
 					mouseDown: componentMouseDown.condition,
+				},
+				reactsTo: {
 					mousePosition: windowMousePositionCondition,
 					cancel: keyboardEscDownCondition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
 					mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
 				},
-				reducer: ({
+				exec: ({
 					state: { position },
 					scope,
 					values: { mousePosition, templateWidth },
@@ -71,14 +73,16 @@ const
 				},
 			}),
 			dndResize: makeUpdater({
-				conditions: {
-					templateWidth: templateWidthPC,
+				dependsOn: {
+					templateWidth: templateWidthCondition,
 					resizeNMouseDown: componentResizeNMouseDown.condition,
+				},
+				reactsTo: {
 					mousePosition: windowMousePositionCondition,
 					cancel: keyboardEscDownCondition.toOptional().resetConditionsByKeyAfterReducerCall(['resizeNMouseDown']),
 					mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['resizeNMouseDown']),
 				},
-				reducer: ({
+				exec: ({
 					state,
 					scope,
 					values: { mousePosition, templateWidth },
@@ -120,8 +124,12 @@ const
 				},
 			}),
 			deselection: makeUpdater({
-				conditions: { templateAreaMouseDown: templateAreaMouseDown.condition.toOptional(), escPressed: keyboardEscDownCondition.toOptional() },
-				reducer: ({ R }) => R.updateState(setComponentSelected(F)),
+				dependsOn: {},
+				reactsTo: { 
+					templateAreaMouseDown: templateAreaMouseDown.condition.toOptional(),
+					escPressed: keyboardEscDownCondition.toOptional()
+				},
+				exec: ({ R }) => R.updateState(setComponentSelected(F)),
 			}),
 		},
 	})

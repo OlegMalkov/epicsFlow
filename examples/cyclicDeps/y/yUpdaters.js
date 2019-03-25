@@ -8,17 +8,18 @@ import { yClicked } from './yAAC'
 type YUpdaterType = UpdaterType<YStateType, *, *, *>
 
 const yClickedUpdater: YUpdaterType = makeUpdater({
-	conditions: {
-		zResult: zResultC.tp(),
+	dependsOn: { zResult: zResultC },
+	reactsTo: {
 		_yClicked: yClicked.condition,
 	},
-	reducer: ({ values: { zResult }, R }) => R.updateState(isOdd(zResult)? incY: decY),
+	exec: ({ values: { zResult }, R }) => R.updateState(isOdd(zResult)? incY: decY),
 })
 
 
 const zRezultChanged: YUpdaterType = makeUpdater({
-	conditions: { zResult: zResultC },
-	reducer: ({ values: { zResult }, R }) => R.updateState(setYColor(isOdd(zResult) ? 'green' : 'red')),
+	dependsOn: {},
+	reactsTo: { zResult: zResultC },
+	exec: ({ values: { zResult }, R }) => R.updateState(setYColor(isOdd(zResult) ? 'green' : 'red')),
 })
 
 export const yUpdaters = {

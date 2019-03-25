@@ -1,6 +1,6 @@
 // @flow strict
 
-import { componentPositionCondition, componentRightPassiveCondition } from '../component/componentACAC'
+import { componentPositionCondition, componentRightCondition } from '../component/componentACAC'
 import { componentResizeHandleNTopCondition, componentResizeDecorationsVisibleCondition } from '../componentResizeDecorations/componentResizeDecorationsEpic'
 import { componentMainActionsInitialState, type ComponentMainActionsState, componentMainActionsSetVisible, componentMainActionsSetPosition } from './componentMainActionsState'
 import { componentMainActionsEpicVat, componentsMainActionsIsVisibleCondition } from './componentMainActionsACAC'
@@ -19,22 +19,24 @@ const computeLeftAlignedPosition = ({ componentLeft, componentResizeHandleNTop, 
 	({ left: componentLeft, top: componentResizeHandleNTop - 10 - componentMainActionsHeight })
 const computeRightAlignedPosition = ({ componentRight, componentResizeHandleNTop, componentMainActionsDimensions }) =>
 	({ left: componentRight - componentMainActionsDimensions.width, top: componentResizeHandleNTop - 10 - componentMainActionsDimensions.height })
-const componentResizeHandleNTopPassiveCondition = componentResizeHandleNTopCondition.toPassive()
 const componentMainActionsEpic = makeEpic<ComponentMainActionsState, *, *>({
 	vat: componentMainActionsEpicVat,
 	initialState: componentMainActionsInitialState,
 	updaters: {
 		showHide: makeUpdater({
-			conditions: { resizeDecorationsVisible: componentResizeDecorationsVisibleCondition },
-			reducer: ({ values: { resizeDecorationsVisible }, R }) => R.updateState(componentMainActionsSetVisible(resizeDecorationsVisible)),
+			dependsOn: {},
+			reactsTo: { resizeDecorationsVisible: componentResizeDecorationsVisibleCondition },
+			exec: ({ values: { resizeDecorationsVisible }, R }) => R.updateState(componentMainActionsSetVisible(resizeDecorationsVisible)),
 		}),
 		computePosition: makeUpdater({
-			conditions: {
-				componentMainActionsIsVisible: componentsMainActionsIsVisibleCondition,
-				componentPosition: componentPositionCondition.toPassive(),
-				componentResizeHandleNTop: componentResizeHandleNTopPassiveCondition,
+			dependsOn: {
+				componentPosition: componentPositionCondition,
+				componentResizeHandleNTop: componentResizeHandleNTopCondition,
 			},
-			reducer: ({ values: { componentMainActionsIsVisible, componentPosition, componentResizeHandleNTop }, R, state }) => {
+			reactsTo: {
+				componentMainActionsIsVisible: componentsMainActionsIsVisibleCondition,
+			},
+			exec: ({ values: { componentMainActionsIsVisible, componentPosition, componentResizeHandleNTop }, R, state }) => {
 				if (componentMainActionsIsVisible) {
 					const position = computeLeftAlignedPosition({
 						componentLeft: componentPosition.left,
@@ -48,17 +50,18 @@ const componentMainActionsEpic = makeEpic<ComponentMainActionsState, *, *>({
 			},
 		}),
 		adjustPositionIfOverlapWithPropertiesPanel: makeUpdater({
-			conditions: {
-				componentRight: componentRightPassiveCondition,
-				componentResizeHandleNTop: componentResizeHandleNTopPassiveCondition,
-
+			dependsOn: {
+				componentRight: componentRightCondition,
+				componentResizeHandleNTop: componentResizeHandleNTopCondition,
+			},
+			reactsTo: {
 				templateWidth: templateWidthCondition,
 				workspaceWidth: workspaceViewportEpic.condition.wsk('dimensions').wsk('width'),
 				propertiesPanelRTPositionAndHeight: propertiesPanelEpic.condition.wg<PropertiesPanelStateType>(pp => pp.visible).ws(pp => ({ rtPosition: pp.positonRT, height: pp.height })),
 				workspaceScroll: workspaceScroll.condition,
 				resetPropertiesPanelRTPositionAndHeightWhenPropPanelIsNotVisible: propertiesPanelEpic.condition.wg<PropertiesPanelStateType>(pp => !pp.visible).resetConditionsByKey(['propertiesPanelRTPositionAndHeight']).toOptional(),
 			},
-			reducer: ({ values: { workspaceScroll, componentRight, componentResizeHandleNTop, propertiesPanelRTPositionAndHeight, workspaceWidth, templateWidth }, R, state }) => {
+			exec: ({ values: { workspaceScroll, componentRight, componentResizeHandleNTop, propertiesPanelRTPositionAndHeight, workspaceWidth, templateWidth }, R, state }) => {
 				const propertiesPanelBBoxWithRespectToTemplateArea = makeComputePropertiesPanelBBoxWithRespectToTemplateArea({
 					workspaceWidth,
 					templateWidth,

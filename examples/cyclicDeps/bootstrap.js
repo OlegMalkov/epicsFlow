@@ -8,11 +8,6 @@ import { xClicked } from './x/xAAC'
 import { yClicked } from './y/yAAC'
 import { createStore } from '../../src/epics'
 
-const debug = {
-	warn: console.warn, // eslint-disable-line
-	trace: console.log // eslint-disable-line
-}
-
 const epics = {
 	x,
 	y,
@@ -21,7 +16,7 @@ const epics = {
 
 export const store = createStore<typeof epics>({
 	epics,
-	debug,
+	debug: true,
 })
 const red = 'red'
 const green = 'green'

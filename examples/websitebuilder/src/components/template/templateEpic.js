@@ -2,7 +2,7 @@
 
 import { windowMousePositionCondition, windowMouseUp } from '../../globalACAC'
 import { type TemplateStateType, templateInitialState, setTemplateWidth } from './templateState'
-import { componentRightPassiveCondition } from '../component/componentACAC'
+import { componentRightCondition } from '../component/componentACAC'
 import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateVat } from './templateACAC'
 import { templateInitialScope, type TemplateScopeType, resetTemplateDnd, templateInitDnd } from './templateScope'
 import { makeEpicWithScope, makeUpdater } from '../../epics'
@@ -13,14 +13,16 @@ const templateEpic = makeEpicWithScope<TemplateStateType, TemplateScopeType, emp
 	initialScope: templateInitialScope,
 	updaters: {
 		dnd: makeUpdater({
-			conditions: {
-				componentRight: componentRightPassiveCondition,
-				mouseLeft: windowMousePositionCondition.withSelector(({ left }) => left),
-				mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['leftDown', 'rightDown']),
+			dependsOn: {
+				componentRight: componentRightCondition,
 				leftDown: templateWidthLeftResizeHandleMouseDown.condition.toOptional(),
 				rightDown: templateWidthRightResizeHandleMouseDown.condition.toOptional(),
 			},
-			reducer: ({ state, scope, values: { mouseLeft, leftDown, rightDown, componentRight }, changedActiveConditionsKeysMap, R }) => {
+			reactsTo: {
+				mouseLeft: windowMousePositionCondition.withSelector(({ left }) => left),
+				mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['leftDown', 'rightDown']),
+			},
+			exec: ({ state, scope, values: { mouseLeft, leftDown, rightDown, componentRight }, changedActiveConditionsKeysMap, R }) => {
 				if (!leftDown && !rightDown) return R.doNothing
 
 				if (changedActiveConditionsKeysMap.mouseUp) {

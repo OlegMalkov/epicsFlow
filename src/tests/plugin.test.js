@@ -17,7 +17,7 @@ type PluginConfigType = {| injectStateIncOnCreateStore: bool |}
 const a = makeSACAC('A')
 
 describe('plugin', () => {
-	it('can inject epics and do initialization on storeCreated', async () => {
+	it('can inject epics and exec initialization on storeCreated', async () => {
 		const plugin: PluginType = ({ injectEpics }) => {
 			injectEpics({
 				e1: makeEpic<number, LocalStorageEffectType, empty>({
@@ -25,8 +25,9 @@ describe('plugin', () => {
 					initialState: 0,
 					updaters: {
 						init: makeUpdater({
-							conditions: { _: storeCreated.condition },
-							reducer: ({ R }) => {
+							dependsOn: {},
+							reactsTo: { _: storeCreated.condition },
+							exec: ({ R }) => {
 								return R.updateState(() => 1)
 							},
 						}),
@@ -37,8 +38,9 @@ describe('plugin', () => {
 					initialState: 0,
 					updaters: {
 						init: makeUpdater({
-							conditions: { _: storeCreated.condition },
-							reducer: ({ R }) => {
+							dependsOn: {},
+							reactsTo: { _: storeCreated.condition },
+							exec: ({ R }) => {
 								return R.updateState(() => 2)
 							},
 						}),
@@ -62,8 +64,9 @@ describe('plugin', () => {
 			initialState: 0,
 			updaters: {
 				a: makeUpdater({
-					conditions: { _a: a.c },
-					reducer: ({ R }) => R.updateState(() => -1),
+					dependsOn: {},
+					reactsTo: { _a: a.c },
+					exec: ({ R }) => R.updateState(() => -1),
 				}),
 			},
 			pluginConfig: { injectStateIncOnCreateStore: true },
@@ -73,8 +76,9 @@ describe('plugin', () => {
 			initialState: 0,
 			updaters: {
 				a: makeUpdater({
-					conditions: { _a: a.c },
-					reducer: ({ R }) => R.updateState(() => 2),
+					dependsOn: {},
+					reactsTo: { _a: a.c },
+					exec: ({ R }) => R.updateState(() => 2),
 				}),
 			},
 		})
@@ -83,8 +87,9 @@ describe('plugin', () => {
 			initialState: 0,
 			updaters: {
 				a: makeUpdater({
-					conditions: { _a: a.c },
-					reducer: ({ R }) => R.updateState(() => 3),
+					dependsOn: {},
+					reactsTo: { _a: a.c },
+					exec: ({ R }) => R.updateState(() => 3),
 				}),
 			},
 			pluginConfig: { injectStateIncOnCreateStore: true },
@@ -96,9 +101,10 @@ describe('plugin', () => {
 				if (!pluginConfig || !pluginConfig.injectStateIncOnCreateStore) return
 
 				return {
-					inc: makeUpdater<number, *, *, *>({
-						conditions: { _: storeCreated.condition },
-						reducer: ({ R }) => R.updateState(state => state + 1),
+					inc: makeUpdater<number, *, *, *, *>({
+						dependsOn: {},
+						reactsTo: { _: storeCreated.condition },
+						exec: ({ R }) => R.updateState(state => state + 1),
 					}),
 				}
 			})

@@ -1,7 +1,6 @@
 // @flow strict
 import { type XStateType } from './xState'
-import { makeEpicCondition } from '../../../src/epics'
-import { makeSACAC } from '../../websitebuilder/src/epics'
+import { makeEpicCondition, makeSACAC } from '../../../src/epics';
 
 const xVat = 'X'
 const xCondition = makeEpicCondition<XStateType>(xVat)
