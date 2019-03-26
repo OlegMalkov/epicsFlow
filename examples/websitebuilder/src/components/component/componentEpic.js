@@ -4,13 +4,13 @@ import { type ComponentStateType, componentInitialState, updateComponentBBox, se
 import { componentVat, componentMouseDown, componentResizeNMouseDown } from './componentACnC'
 import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC'
 import { templateWidthCondition, templateAreaMouseDown } from '../template/templateACAC'
-import { componentInitialScope, type ComponentScope, initComponentMoveDnd, resetComponentMoveDnd, resetComponentResizeDnd, initComponentResizeDnd } from './componentScope'
+import { componentInitialScope, type ComponentScopeType, initComponentMoveDnd, resetComponentMoveDnd, resetComponentResizeDnd, initComponentResizeDnd } from './componentScope'
 import { dndTypeIdle, dndTypeProgress } from '../shared/dnd'
 import { T, F } from '../../../../../src/utils'
 import { createEpicWithScope, type BuiltInEffectType, createUpdater } from '../../../../../src/epics'
 
 const
-	componentEpic = createEpicWithScope<ComponentStateType, ComponentScope, BuiltInEffectType, empty>({
+	componentEpic = createEpicWithScope<ComponentStateType, ComponentScopeType, BuiltInEffectType, empty>({
 		vat: componentVat,
 		initialState: componentInitialState,
 		initialScope: componentInitialScope,
