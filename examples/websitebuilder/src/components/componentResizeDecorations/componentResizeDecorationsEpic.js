@@ -38,10 +38,10 @@ const componentResizeDecorationsEpic = makeEpic<ComponentResizeDecorationsStateT
 			dependsOn: {
 				nMouseDown: componentResizeNMouseDown.condition.toOptional(),
 			},
-			reactsTo: {
+			when: {
 				componentIsResizing: componentIsResizingCondition.resetConditionsByKeyAfterReducerCall(['nMouseDown']),
 			},
-			exec: ({ values: { nMouseDown, componentIsResizing }, R, changedActiveConditionsKeysMap }) => {
+			then: ({ values: { nMouseDown, componentIsResizing }, R, changedActiveConditionsKeysMap }) => {
 				if (changedActiveConditionsKeysMap.componentIsResizing && componentIsResizing === false) {
 					return R.updateState(resetActiveHandleKey)
 				}
@@ -55,23 +55,23 @@ const componentResizeDecorationsEpic = makeEpic<ComponentResizeDecorationsStateT
 		}),
 		computeVisibile: makeUpdater({
 			dependsOn: {},
-			reactsTo: {
+			when: {
 				componentIsMoving: componentIsMovingCondition,
 				componentIsResizing: componentIsResizingCondition,
 				componentSelected: componentSelectedCondition,
 			},
-			exec: ({ values: { componentIsMoving, componentIsResizing, componentSelected }, R }) =>
+			then: ({ values: { componentIsMoving, componentIsResizing, componentSelected }, R }) =>
 				R.updateState(setVisible(componentSelected && !componentIsMoving && !componentIsResizing)),
 		}),
 		computePositionsForHandles: makeUpdater({
 			dependsOn: {},
-			reactsTo: {
+			when: {
 				componentPosition: componentPositionCondition,
 				componentDimensions: componentDimensionsCondition,
 				isVisible: resizeDecorationsCondition.withSelectorKey('visible'),
 				activeHandleKey: resizeDecorationsCondition.withSelectorKey('activeHandleKey'),
 			},
-			exec: ({ values: { componentPosition, componentDimensions, isVisible, activeHandleKey }, R }) => {
+			then: ({ values: { componentPosition, componentDimensions, isVisible, activeHandleKey }, R }) => {
 				if (isVisible || activeHandleKey === 'n') {
 					return R.updateState(setResizeNHandlePosition({
 						left: componentPosition.left + componentDimensions.width / 2 - HalfResizeHandleSidePx,

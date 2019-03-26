@@ -35,8 +35,8 @@ describe('eventSourceDbPlugin', () => {
 			updaters: {
 				inc: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _a: a.c },
-					exec: ({ R }) => R.updateState(inc),
+					when: { _a: a.c },
+					then: ({ R }) => R.updateState(inc),
 				}),
 			},
 			pluginConfig: { esdbAggregate: true },
@@ -47,8 +47,8 @@ describe('eventSourceDbPlugin', () => {
 			updaters: {
 				inc: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _b: b.c },
-					exec: ({ R }) => R.updateState(inc),
+					when: { _b: b.c },
+					then: ({ R }) => R.updateState(inc),
 				}),
 			},
 			pluginConfig: { esdbAggregate: true },
@@ -59,8 +59,8 @@ describe('eventSourceDbPlugin', () => {
 			updaters: {
 				inc: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _a: a.c.to(), _b: b.c.to() },
-					exec: ({ R }) => R.updateState(inc),
+					when: { _a: a.c.to(), _b: b.c.to() },
+					then: ({ R }) => R.updateState(inc),
 				}),
 			},
 			pluginConfig: { esdbAggregate: true },

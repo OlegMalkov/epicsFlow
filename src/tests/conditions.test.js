@@ -26,8 +26,8 @@ describe('dependsOn', () => {
 			updaters: {
 				nChanged: makeUpdater({
 					dependsOn: {},
-					reactsTo: { n: aovnC },
-					exec: ({ values: { n }, R }) => R.updateState(state => state + n),
+					when: { n: aovnC },
+					then: ({ values: { n }, R }) => R.updateState(state => state + n),
 				}),
 			},
 		})
@@ -59,11 +59,11 @@ describe('dependsOn', () => {
 			updaters: {
 				nChanged: makeUpdater({
 					dependsOn: {},
-					reactsTo: {
+					when: {
 						n: aovnC.withSelector(n => { return { a: n } }),
 						n1: aovnC.ws(() => { return { a11: 11 } }),
 					},
-					exec: ({ R, values: { n, n1 } }) => {
+					then: ({ R, values: { n, n1 } }) => {
 						return R.updateState(state => state + n.a + n1.a11)
 					},
 				}),
@@ -83,10 +83,10 @@ describe('dependsOn', () => {
 			updaters: {
 				nChanged: makeUpdater({
 					dependsOn: {},
-					reactsTo: {
+					when: {
 						n: aovnC.withSelector(n => { return { a: n } }).wg((value) => value.a > 5),
 					},
-					exec: ({ R, values: { n } }) => {
+					then: ({ R, values: { n } }) => {
 						return R.updateState(state => state + n.a)
 					},
 				}),
@@ -114,10 +114,10 @@ describe('dependsOn', () => {
 			updaters: {
 				nChanged: makeUpdater({
 					dependsOn: {},
-					reactsTo: {
+					when: {
 						n: aovnC.wg(value => value > 5).toOptional(),
 					},
-					exec: ({ R, values: { n } }) => {
+					then: ({ R, values: { n } }) => {
 						return R.updateState(state => state + n)
 					},
 				}),
@@ -145,10 +145,10 @@ describe('dependsOn', () => {
 			updaters: {
 				nChanged: makeUpdater({
 					dependsOn: {},
-					reactsTo: {
+					when: {
 						n: aovnC.wg((n) => n > 5).withSelector(n => { return { a: n } }),
 					},
-					exec: ({ R, values: { n } }) => {
+					then: ({ R, values: { n } }) => {
 						return R.updateState(state => state + n.a)
 					},
 				}),
@@ -176,8 +176,8 @@ describe('dependsOn', () => {
 			updaters: {
 				nChanged: makeUpdater({
 					dependsOn: {},
-					reactsTo: { n: aovnC },
-					exec: ({ R, values: { n } }) => R.updateState(state => state + n),
+					when: { n: aovnC },
+					then: ({ R, values: { n } }) => R.updateState(state => state + n),
 				}),
 			},
 		})
@@ -196,8 +196,8 @@ describe('dependsOn', () => {
 			updaters: {
 				nChanged: makeUpdater({
 					dependsOn: {},
-					reactsTo: { o: aoC },
-					exec: ({ R, values: { o } }) => R.updateState(state => state + o.v.n),
+					when: { o: aoC },
+					then: ({ R, values: { o } }) => R.updateState(state => state + o.v.n),
 				}),
 			},
 		})
@@ -216,8 +216,8 @@ describe('dependsOn', () => {
 			updaters: {
 				nChanged: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _: aC },
-					exec: ({ R }) => R.updateState(state => state + 1),
+					when: { _: aC },
+					then: ({ R }) => R.updateState(state => state + 1),
 				}),
 			},
 		})
@@ -292,8 +292,8 @@ describe('dependsOn', () => {
 			updaters: {
 				nChanged: makeUpdater({
 					dependsOn: {},
-					reactsTo: { a: aGC, o: aoGC },
-					exec: ({ R, values: { a, o } }) => R.updateState(state => state + a.o.v.n + o.v.n),
+					when: { a: aGC, o: aoGC },
+					then: ({ R, values: { a, o } }) => R.updateState(state => state + a.o.v.n + o.v.n),
 				}),
 			},
 		})
@@ -328,28 +328,28 @@ describe('dependsOn', () => {
 			updaters: {
 				aChangedWhenNMoreThan5: makeUpdater({
 					dependsOn: {},
-					reactsTo: {
+					when: {
 						a: aC.wg((value) => value.o.v.n > 5),
 					},
-					exec: ({ R, values: { a } }) => {
+					then: ({ R, values: { a } }) => {
 						return R.updateState(state => state + a.o.v.n)
 					},
 				}),
 				aChangedWhenNLessThan5: makeUpdater({
 					dependsOn: {},
-					reactsTo: {
+					when: {
 						a: aC.wg((value) => value.o.v.n < 5),
 					},
-					exec: ({ R, values: { a } }) => {
+					then: ({ R, values: { a } }) => {
 						return R.updateState(state => state - a.o.v.n)
 					},
 				}),
 				aChangedWhenNEquals5: makeUpdater({
 					dependsOn: {},
-					reactsTo: {
+					when: {
 						a: aC.wg((value) => value.o.v.n === 5),
 					},
-					exec: ({ R }) => {
+					then: ({ R }) => {
 						return R.updateState(state => state === 0 ? 1 : state * 2)
 					},
 				}),
@@ -374,28 +374,28 @@ describe('dependsOn', () => {
 			updaters: {
 				nMoreThan5: makeUpdater({
 					dependsOn: {},
-					reactsTo: {
+					when: {
 						n: aovnC.wg((value) => value > 5),
 					},
-					exec: ({ R, values: { n } }) => {
+					then: ({ R, values: { n } }) => {
 						return R.updateState(state => state + n)
 					},
 				}),
 				nLessThan5: makeUpdater({
 					dependsOn: {},
-					reactsTo: {
+					when: {
 						n: aovnC.wg((value) => value < 5),
 					},
-					exec: ({ R, values: { n } }) => {
+					then: ({ R, values: { n } }) => {
 						return R.updateState(state => state - n)
 					},
 				}),
 				nEquals5: makeUpdater({
 					dependsOn: {},
-					reactsTo: {
+					when: {
 						n: aovnC.wg((value) => value === 5),
 					},
-					exec: ({ R }) => {
+					then: ({ R }) => {
 						return R.updateState(state => state === 0 ? 1 : state * 2)
 					},
 				}),
@@ -421,8 +421,8 @@ describe('dependsOn', () => {
 			updaters: {
 				nChanged: makeUpdater({
 					dependsOn: {},
-					reactsTo: { diff: nDiffC },
-					exec: ({ R, values: { diff } }) => R.updateState(state => state + diff),
+					when: { diff: nDiffC },
+					then: ({ R, values: { diff } }) => R.updateState(state => state + diff),
 				}),
 			},
 		})
@@ -452,13 +452,13 @@ describe('dependsOn', () => {
 			updaters: {
 				nChanged: makeUpdater({
 					dependsOn: {},
-					reactsTo: { a: aC },
-					exec: ({ R }) => R.updateState(state => ({ ...state, flag: true })),
+					when: { a: aC },
+					then: ({ R }) => R.updateState(state => ({ ...state, flag: true })),
 				}),
 				e2Changed: makeUpdater({
 					dependsOn: {},
-					reactsTo: { e2: makeEpicCondition<number>('e2') },
-					exec: ({ R }) => R.updateState(state => ({ ...state, value: state.value + 1 })),
+					when: { e2: makeEpicCondition<number>('e2') },
+					then: ({ R }) => R.updateState(state => ({ ...state, value: state.value + 1 })),
 				}),
 			},
 		})
@@ -468,8 +468,8 @@ describe('dependsOn', () => {
 			updaters: {
 				e1Changed: makeUpdater({
 					dependsOn: {},
-					reactsTo: { e1: e1.c.wsk('flag') },
-					exec: ({ R }) => R.updateState(state => state + 1),
+					when: { e1: e1.c.wsk('flag') },
+					then: ({ R }) => R.updateState(state => state + 1),
 				}),
 			},
 		})

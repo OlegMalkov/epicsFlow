@@ -18,11 +18,11 @@ const templateEpic = makeEpicWithScope<TemplateStateType, TemplateScopeType, emp
 				leftDown: templateWidthLeftResizeHandleMouseDown.condition.toOptional(),
 				rightDown: templateWidthRightResizeHandleMouseDown.condition.toOptional(),
 			},
-			reactsTo: {
+			when: {
 				mouseLeft: windowMousePositionCondition.withSelector(({ left }) => left),
 				mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['leftDown', 'rightDown']),
 			},
-			exec: ({ state, scope, values: { mouseLeft, leftDown, rightDown, componentRight }, changedActiveConditionsKeysMap, R }) => {
+			then: ({ state, scope, values: { mouseLeft, leftDown, rightDown, componentRight }, changedActiveConditionsKeysMap, R }) => {
 				if (!leftDown && !rightDown) return R.doNothing
 
 				if (changedActiveConditionsKeysMap.mouseUp) {

@@ -20,12 +20,12 @@ const
 					templateWidth: templateWidthCondition,
 					mouseDown: componentMouseDown.condition,
 				},
-				reactsTo: {
+				when: {
 					mousePosition: windowMousePositionCondition,
 					cancel: keyboardEscDownCondition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
 					mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
 				},
-				exec: ({
+				then: ({
 					state: { position },
 					scope,
 					values: { mousePosition, templateWidth },
@@ -77,12 +77,12 @@ const
 					templateWidth: templateWidthCondition,
 					resizeNMouseDown: componentResizeNMouseDown.condition,
 				},
-				reactsTo: {
+				when: {
 					mousePosition: windowMousePositionCondition,
 					cancel: keyboardEscDownCondition.toOptional().resetConditionsByKeyAfterReducerCall(['resizeNMouseDown']),
 					mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['resizeNMouseDown']),
 				},
-				exec: ({
+				then: ({
 					state,
 					scope,
 					values: { mousePosition, templateWidth },
@@ -125,11 +125,11 @@ const
 			}),
 			deselection: makeUpdater({
 				dependsOn: {},
-				reactsTo: { 
+				when: { 
 					templateAreaMouseDown: templateAreaMouseDown.condition.toOptional(),
 					escPressed: keyboardEscDownCondition.toOptional()
 				},
-				exec: ({ R }) => R.updateState(setComponentSelected(F)),
+				then: ({ R }) => R.updateState(setComponentSelected(F)),
 			}),
 		},
 	})

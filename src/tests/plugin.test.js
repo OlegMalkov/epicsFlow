@@ -17,7 +17,7 @@ type PluginConfigType = {| injectStateIncOnCreateStore: bool |}
 const a = makeSACAC('A')
 
 describe('plugin', () => {
-	it('can inject epics and exec initialization on storeCreated', async () => {
+	it('can inject epics and then initialization on storeCreated', async () => {
 		const plugin: PluginType = ({ injectEpics }) => {
 			injectEpics({
 				e1: makeEpic<number, LocalStorageEffectType, empty>({
@@ -26,8 +26,8 @@ describe('plugin', () => {
 					updaters: {
 						init: makeUpdater({
 							dependsOn: {},
-							reactsTo: { _: storeCreated.condition },
-							exec: ({ R }) => {
+							when: { _: storeCreated.condition },
+							then: ({ R }) => {
 								return R.updateState(() => 1)
 							},
 						}),
@@ -39,8 +39,8 @@ describe('plugin', () => {
 					updaters: {
 						init: makeUpdater({
 							dependsOn: {},
-							reactsTo: { _: storeCreated.condition },
-							exec: ({ R }) => {
+							when: { _: storeCreated.condition },
+							then: ({ R }) => {
 								return R.updateState(() => 2)
 							},
 						}),
@@ -65,8 +65,8 @@ describe('plugin', () => {
 			updaters: {
 				a: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _a: a.c },
-					exec: ({ R }) => R.updateState(() => -1),
+					when: { _a: a.c },
+					then: ({ R }) => R.updateState(() => -1),
 				}),
 			},
 			pluginConfig: { injectStateIncOnCreateStore: true },
@@ -77,8 +77,8 @@ describe('plugin', () => {
 			updaters: {
 				a: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _a: a.c },
-					exec: ({ R }) => R.updateState(() => 2),
+					when: { _a: a.c },
+					then: ({ R }) => R.updateState(() => 2),
 				}),
 			},
 		})
@@ -88,8 +88,8 @@ describe('plugin', () => {
 			updaters: {
 				a: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _a: a.c },
-					exec: ({ R }) => R.updateState(() => 3),
+					when: { _a: a.c },
+					then: ({ R }) => R.updateState(() => 3),
 				}),
 			},
 			pluginConfig: { injectStateIncOnCreateStore: true },
@@ -103,8 +103,8 @@ describe('plugin', () => {
 				return {
 					inc: makeUpdater<number, *, *, *, *>({
 						dependsOn: {},
-						reactsTo: { _: storeCreated.condition },
-						exec: ({ R }) => R.updateState(state => state + 1),
+						when: { _: storeCreated.condition },
+						then: ({ R }) => R.updateState(state => state + 1),
 					}),
 				}
 			})

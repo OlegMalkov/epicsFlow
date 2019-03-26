@@ -25,18 +25,18 @@ const componentMainActionsEpic = makeEpic<ComponentMainActionsState, *, *>({
 	updaters: {
 		showHide: makeUpdater({
 			dependsOn: {},
-			reactsTo: { resizeDecorationsVisible: componentResizeDecorationsVisibleCondition },
-			exec: ({ values: { resizeDecorationsVisible }, R }) => R.updateState(componentMainActionsSetVisible(resizeDecorationsVisible)),
+			when: { resizeDecorationsVisible: componentResizeDecorationsVisibleCondition },
+			then: ({ values: { resizeDecorationsVisible }, R }) => R.updateState(componentMainActionsSetVisible(resizeDecorationsVisible)),
 		}),
 		computePosition: makeUpdater({
 			dependsOn: {
 				componentPosition: componentPositionCondition,
 				componentResizeHandleNTop: componentResizeHandleNTopCondition,
 			},
-			reactsTo: {
+			when: {
 				componentMainActionsIsVisible: componentsMainActionsIsVisibleCondition,
 			},
-			exec: ({ values: { componentMainActionsIsVisible, componentPosition, componentResizeHandleNTop }, R, state }) => {
+			then: ({ values: { componentMainActionsIsVisible, componentPosition, componentResizeHandleNTop }, R, state }) => {
 				if (componentMainActionsIsVisible) {
 					const position = computeLeftAlignedPosition({
 						componentLeft: componentPosition.left,
@@ -54,14 +54,14 @@ const componentMainActionsEpic = makeEpic<ComponentMainActionsState, *, *>({
 				componentRight: componentRightCondition,
 				componentResizeHandleNTop: componentResizeHandleNTopCondition,
 			},
-			reactsTo: {
+			when: {
 				templateWidth: templateWidthCondition,
 				workspaceWidth: workspaceViewportEpic.condition.wsk('dimensions').wsk('width'),
 				propertiesPanelRTPositionAndHeight: propertiesPanelEpic.condition.wg<PropertiesPanelStateType>(pp => pp.visible).ws(pp => ({ rtPosition: pp.positonRT, height: pp.height })),
 				workspaceScroll: workspaceScroll.condition,
 				resetPropertiesPanelRTPositionAndHeightWhenPropPanelIsNotVisible: propertiesPanelEpic.condition.wg<PropertiesPanelStateType>(pp => !pp.visible).resetConditionsByKey(['propertiesPanelRTPositionAndHeight']).toOptional(),
 			},
-			exec: ({ values: { workspaceScroll, componentRight, componentResizeHandleNTop, propertiesPanelRTPositionAndHeight, workspaceWidth, templateWidth }, R, state }) => {
+			then: ({ values: { workspaceScroll, componentRight, componentResizeHandleNTop, propertiesPanelRTPositionAndHeight, workspaceWidth, templateWidth }, R, state }) => {
 				const propertiesPanelBBoxWithRespectToTemplateArea = makeComputePropertiesPanelBBoxWithRespectToTemplateArea({
 					workspaceWidth,
 					templateWidth,

@@ -14,10 +14,10 @@ const
 			x: xValueCondition,
 			y: yValueC,
 		},
-		reactsTo: {
+		when: {
 			_zClicked: zClicked.condition,
 		},
-		exec: ({ values: { x, y }, R }) => R
+		then: ({ values: { x, y }, R }) => R
 			.updateState(zIncMultiplier)
 			.updateState(zComputeResult(x,y)),
 	})
@@ -25,11 +25,11 @@ const
 
 const xOrYChanged: ZUpdaterType = makeUpdater({
 	dependsOn: {},
-	reactsTo: {
+	when: {
 		x: xValueCondition,
 		y: yValueC,
 	},
-	exec: ({ values: { x , y }, R }) => R.updateState(zComputeResult(x,y)),
+	then: ({ values: { x , y }, R }) => R.updateState(zComputeResult(x,y)),
 })
 
 const zUpdaters = {

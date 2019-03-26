@@ -88,7 +88,7 @@ type UpdaterType<S, SC, C: { [string]: { actionType: string } & Object }, E> = {
 	conditionKeysToConditionUpdaterKeys: Array<[string, $Keys<C>]>,
 	conditions: C,
 	conditionsKeys: Array<$Keys<C>>,
-	exec: ReducerType<S, SC, $Exact<$ObjMap<C, typeof extractConditionV>>, E>,
+	then: ReducerType<S, SC, $Exact<$ObjMap<C, typeof extractConditionV>>, E>,
 |}
 type EpicValueActionType<State> = {| type: string, value: State |}
 opaque type EpicType<S, SC, E, PC>: { c: Condition<S>, condition: Condition<S>, initialState: S, pluginConfig: PC | void, vat: string } = {|
@@ -306,17 +306,17 @@ class ReducerResult<S, SC, SE> {
 }
 
 type MergeType<T, T1> = {| ...$Exact<T>, ...$Exact<T1> |}
-function makeUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: string } & Object }, ReactsTo: { [string]: { actionType: string } & Object }, E> ({ dependsOn, reactsTo, exec }: {|
+function makeUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: string } & Object }, ReactsTo: { [string]: { actionType: string } & Object }, E> ({ dependsOn, when, then }: {|
 	dependsOn: DO,
-	reactsTo: ReactsTo,
-	exec: ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<MergeType<DO, ReactsTo>, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: $Exact<$ObjMap<MergeType<DO, ReactsTo>, typeof extractConditionV>> |}) => ReducerResult<S, SC, E>,
+	when: ReactsTo,
+	then: ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<MergeType<DO, ReactsTo>, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: $Exact<$ObjMap<MergeType<DO, ReactsTo>, typeof extractConditionV>> |}) => ReducerResult<S, SC, E>,
 |}): UpdaterType<S, SC, any, E> {
 	let noActiveConditions = true
 	const conditionKeysToConditionUpdaterKeys = []
 	const compulsoryConditionsKeys = []
-	const conditions =  dependsOn ? ({ ...Object.keys(dependsOn).reduce((r, k: string) => ({ ...r, [k]: dependsOn[k].toPassive() }), {}), ...reactsTo }) : reactsTo
-	Object.keys(reactsTo).forEach(reactsToKey => {
-		if (reactsTo[reactsToKey].passive) {
+	const conditions =  dependsOn ? ({ ...Object.keys(dependsOn).reduce((r, k: string) => ({ ...r, [k]: dependsOn[k].toPassive() }), {}), ...when }) : when
+	Object.keys(when).forEach(reactsToKey => {
+		if (when[reactsToKey].passive) {
 			throw new Error(`can not use passive condition "${reactsToKey}" in reacts to.`)
 		}
 	})
@@ -338,13 +338,13 @@ function makeUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: 
 
 	if (dependsOn) {
 		Object.keys(dependsOn).forEach(k => {
-			if (reactsTo[k]) throw new Error(`dependsOn can not contain same key as reacts to: ${k}`)
+			if (when[k]) throw new Error(`dependsOn can not contain same key as reacts to: ${k}`)
 		})
 	}
 
 	return {
 		conditions,
-		exec: (exec: any),
+		then: (then: any),
 		conditionKeysToConditionUpdaterKeys,
 		conditionsKeys: Object.keys((conditions: any)),
 		compulsoryConditionsKeys,
@@ -950,8 +950,8 @@ const makeExecuteAction = ({
 					deepFreeze(prevState)
 					deepFreeze(prevScope)
 				}
-				// TODO flow - mark everything passed inside exec as $ReadOnly
-				const result = updater.exec({
+				// TODO flow - mark everything passed inside then as $ReadOnly
+				const result = updater.then({
 					values: reducerValues,
 					state: prevState,
 					scope: prevScope,
@@ -1228,7 +1228,7 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 				throw new Error(msg)
 			}
 			if (batchedDispatchBatches.length) {
-				const msg = 'epics should not exec batched dispatch on initializing default state. use storeCreated.condition instead.'
+				const msg = 'epics should not then batched dispatch on initializing default state. use storeCreated.condition instead.'
 
 				warn(msg, batchedDispatchBatches)
 				throw new Error(msg)

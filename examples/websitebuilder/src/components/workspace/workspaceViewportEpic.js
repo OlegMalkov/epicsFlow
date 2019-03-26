@@ -18,11 +18,11 @@ const workspaceViewportEpic = makeEpic<WorkspaceViewportStateType, empty, empty>
 	updaters: {
 		compute: makeUpdater({
 			dependsOn: {},
-			reactsTo: {
+			when: {
 				browserDimensions: browserDimensions.condition,
 				leftPanelWidth: leftPanelEpic.condition.withSelectorKey('width'),
 			},
-			exec: ({ values: { browserDimensions, leftPanelWidth }, R }) =>
+			then: ({ values: { browserDimensions, leftPanelWidth }, R }) =>
 				R.updateState(setDimensions({
 					width: browserDimensions.width - leftPanelWidth,
 					height: browserDimensions.height - TopBarHeight,

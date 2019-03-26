@@ -9,17 +9,17 @@ type XUpdaterType = UpdaterType<XStateType, *, *, *>
 
 const xClickedUpdater: XUpdaterType = makeUpdater({
 	dependsOn: { zResult: zResultC },
-	reactsTo: {
+	when: {
 		_xClicked: xClicked.condition,
 	},
-	exec: ({ values: { zResult }, R }) => R.updateState(isEven(zResult)? incX : decX),
+	then: ({ values: { zResult }, R }) => R.updateState(isEven(zResult)? incX : decX),
 })
 
 
 const zResultChanged: XUpdaterType = makeUpdater({
 	dependsOn: { },
-	reactsTo: { zResult: zResultC },
-	exec: ({ values: { zResult }, R }) => R.updateState(setXColor(isEven(zResult) ? 'green' : 'red')),
+	when: { zResult: zResultC },
+	then: ({ values: { zResult }, R }) => R.updateState(setXColor(isEven(zResult) ? 'green' : 'red')),
 })
 
 export const xUpdaters = {

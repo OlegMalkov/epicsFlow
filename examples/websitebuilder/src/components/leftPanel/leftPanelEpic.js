@@ -17,8 +17,8 @@ export const leftPanelEpic = makeEpic<LeftPanelStateType, empty, empty>({
 	updaters: {
 		compute: makeUpdater({
 			dependsOn: {},
-			reactsTo: { _: leftPanelToggleExpansionButtonPressed.condition },
-			exec: ({ R, state }) => {
+			when: { _: leftPanelToggleExpansionButtonPressed.condition },
+			then: ({ R, state }) => {
 				return R
 					.updateState(setWidth(state.expanded ? LeftPanelWidthCollapsed : LeftPanelWidthExpanded))
 					.updateState(setExpanded(expanded => !expanded))

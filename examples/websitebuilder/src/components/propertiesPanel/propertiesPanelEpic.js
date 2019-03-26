@@ -125,8 +125,8 @@ const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, Properti
 	updaters: {
 		showHide: makeUpdater({
 			dependsOn: {},
-			reactsTo: { componentMainActionsVisible: componentsMainActionsIsVisibleCondition },
-			exec: ({ values: { componentMainActionsVisible }, R }) => R.updateState(setVisible(componentMainActionsVisible)),
+			when: { componentMainActionsVisible: componentsMainActionsIsVisibleCondition },
+			then: ({ values: { componentMainActionsVisible }, R }) => R.updateState(setVisible(componentMainActionsVisible)),
 		}),
 		computePosition: makeUpdater({
 			dependsOn: {
@@ -137,10 +137,10 @@ const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, Properti
 				templateWidth: templateWidthCondition,
 				workspaceViewportDimensions: workspaceViewportEpic.condition.wsk('dimensions'),
 			},
-			reactsTo: {
+			when: {
 				propertiesPanelIsVisible: propertiesPanelVisibleCondition.withGuard<bool>(visible => visible === true),
 			},
-			exec: ({
+			then: ({
 				values: {
 					propertiesPanelIsVisible,
 					workspaceViewportDimensions,
@@ -188,12 +188,12 @@ const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, Properti
 				workspaceViewportDimensions: workspaceViewportEpic.condition.wsk('dimensions'),
 				propertiesPanelDragMouseDown: propertiesPanelDragMouseDown.condition,
 			},
-			reactsTo: {
+			when: {
 				mousePosition: windowMousePositionCondition,
 				cancel: keyboardEscDownCondition.toOptional().resetConditionsByKeyAfterReducerCall(['propertiesPanelDragMouseDown']),
 				mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['propertiesPanelDragMouseDown']),
 			},
-			exec: ({
+			then: ({
 				state,
 				scope,
 				values: { mousePosition, workspaceViewportDimensions },
@@ -232,10 +232,10 @@ const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, Properti
 		}),
 		validateAndFixPosition: makeUpdater({
 			dependsOn: {},
-			reactsTo: {
+			when: {
 				workspaceViewportDimensions: workspaceViewportEpic.condition.wsk('dimensions'),
 			},
-			exec: ({ values: { workspaceViewportDimensions }, R, state }) =>
+			then: ({ values: { workspaceViewportDimensions }, R, state }) =>
 				R.updateState(
 					setPosition({
 						workspaceViewportDimensions,
@@ -246,13 +246,13 @@ const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, Properti
 		}),
 		resetStateOnComponentDeselection: makeUpdater({
 			dependsOn: {},
-			reactsTo: { componentDeselected: componentSelectedCondition.withGuard<bool>(selected => selected === false) },
-			exec: ({ R }) => R.updateState(() => initialState),
+			when: { componentDeselected: componentSelectedCondition.withGuard<bool>(selected => selected === false) },
+			then: ({ R }) => R.updateState(() => initialState),
 		}),
 		setHeightForNextPage: makeUpdater({
 			dependsOn: {},
-			reactsTo: { propertiesPanelNextPagePressed: propertiesPanelNextPageButtonPress.condition },
-			exec: ({ R }) => R.updateState(setHeight(h => h + 50)),
+			when: { propertiesPanelNextPagePressed: propertiesPanelNextPageButtonPress.condition },
+			then: ({ R }) => R.updateState(setHeight(h => h + 50)),
 		}),
 	},
 })

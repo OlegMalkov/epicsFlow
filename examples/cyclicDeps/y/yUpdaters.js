@@ -9,17 +9,17 @@ type YUpdaterType = UpdaterType<YStateType, *, *, *>
 
 const yClickedUpdater: YUpdaterType = makeUpdater({
 	dependsOn: { zResult: zResultC },
-	reactsTo: {
+	when: {
 		_yClicked: yClicked.condition,
 	},
-	exec: ({ values: { zResult }, R }) => R.updateState(isOdd(zResult)? incY: decY),
+	then: ({ values: { zResult }, R }) => R.updateState(isOdd(zResult)? incY: decY),
 })
 
 
 const zRezultChanged: YUpdaterType = makeUpdater({
 	dependsOn: {},
-	reactsTo: { zResult: zResultC },
-	exec: ({ values: { zResult }, R }) => R.updateState(setYColor(isOdd(zResult) ? 'green' : 'red')),
+	when: { zResult: zResultC },
+	then: ({ values: { zResult }, R }) => R.updateState(setYColor(isOdd(zResult) ? 'green' : 'red')),
 })
 
 export const yUpdaters = {

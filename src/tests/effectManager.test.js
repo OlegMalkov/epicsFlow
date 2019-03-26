@@ -26,8 +26,8 @@ describe('effectManager', () => {
 				updaters: {
 					af: makeUpdater({
 						dependsOn: {},
-						reactsTo: { _af: animationFrame.condition },
-						exec: ({ R }) => R.updateState(() => 1),
+						when: { _af: animationFrame.condition },
+						then: ({ R }) => R.updateState(() => 1),
 					}),
 				},
 			})
@@ -39,13 +39,13 @@ describe('effectManager', () => {
 			updaters: {
 				a: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _a: a.c },
-					exec: ({ R }) => R.sideEffect(requestAnimationFrameEC()),
+					when: { _a: a.c },
+					then: ({ R }) => R.sideEffect(requestAnimationFrameEC()),
 				}),
 				af: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _af: animationFrame.condition },
-					exec: ({ R }) => R.updateState(state => state + 1),
+					when: { _af: animationFrame.condition },
+					then: ({ R }) => R.updateState(state => state + 1),
 				}),
 			},
 		})
@@ -64,7 +64,7 @@ describe('effectManager', () => {
 		expect(store.getState().e1).toBe(0)
 		expect(store.getState().e2).toBe(1)
 	})
-	it.only('can exec batched dispach', async () => {
+	it.only('can then batched dispach', async () => {
 		const
 			e1 = makeEpic<number, BuiltInEffectType, empty>({
 				vat: 'e1',
@@ -72,8 +72,8 @@ describe('effectManager', () => {
 				updaters: {
 					storeCreatedOrB: makeUpdater({
 						dependsOn: {},
-						reactsTo: { _: storeCreated.condition.to(), _b: b.c.to() },
-						exec: ({ R }) => R.sideEffect(dispatchBatchedActionsEffectCreator([
+						when: { _: storeCreated.condition.to(), _b: b.c.to() },
+						then: ({ R }) => R.sideEffect(dispatchBatchedActionsEffectCreator([
 							{ actions: [a.ac(), a.ac()], targetEpicVat: 'e2' },
 							{ actions: [a.ac(), a.ac(), a.ac()], targetEpicVat: 'e3' },
 						])),
@@ -88,13 +88,13 @@ describe('effectManager', () => {
 			updaters: {
 				a: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _a: a.c },
-					exec: ({ R }) => R.updateState(state => state + 1),
+					when: { _a: a.c },
+					then: ({ R }) => R.updateState(state => state + 1),
 				}),
 				b: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _a: b.c },
-					exec: ({ R }) => R.updateState(() => 10),
+					when: { _a: b.c },
+					then: ({ R }) => R.updateState(() => 10),
 				}),
 			},
 		})
@@ -105,13 +105,13 @@ describe('effectManager', () => {
 			updaters: {
 				a: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _a: a.c },
-					exec: ({ R }) => R.updateState(state => state + 1),
+					when: { _a: a.c },
+					then: ({ R }) => R.updateState(state => state + 1),
 				}),
 				b: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _b: b.c },
-					exec: ({ R }) => R.updateState(() => 10),
+					when: { _b: b.c },
+					then: ({ R }) => R.updateState(() => 10),
 				}),
 			},
 		})
@@ -122,18 +122,18 @@ describe('effectManager', () => {
 			updaters: {
 				e2: makeUpdater({
 					dependsOn: {},
-					reactsTo: { e2: e2.c },
-					exec: ({ values: { e2 }, R }) => R.updateState(state => state + e2),
+					when: { e2: e2.c },
+					then: ({ values: { e2 }, R }) => R.updateState(state => state + e2),
 				}),
 				e3: makeUpdater({
 					dependsOn: {},
-					reactsTo: { e3: e3.c },
-					exec: ({ values: { e3 }, R }) => R.updateState(state => state + e3),
+					when: { e3: e3.c },
+					then: ({ values: { e3 }, R }) => R.updateState(state => state + e3),
 				}),
 				b: makeUpdater({
 					dependsOn: {},
-					reactsTo: { _b: b.c },
-					exec: ({ R }) => R.updateState(() => 0),
+					when: { _b: b.c },
+					then: ({ R }) => R.updateState(() => 0),
 				}),
 			},
 		})
