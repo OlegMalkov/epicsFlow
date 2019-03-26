@@ -567,7 +567,7 @@ const printEpicExecutionInfo = (epicExecutionInfo: EpicExecutionInfoType) => {
 	return `${epicKey}[${result}]`
 }
 
-function traceToString(trace: ExecutionLevelInfoType, executedEpicsFilter: EpicExecutionInfoType => bool = () => true, whitespaceLength: number = 0): string {
+function traceToString(trace: ExecutionLevelInfoType, executedEpicsFilter?: EpicExecutionInfoType => bool = () => true, whitespaceLength?: number = 0, level?: number = 0): string {
 // go till you see > 1 executed epics (after calling filter) or > 1 children layers
 // measure length of output at this point, an pass it down, so we print white space in following lines
 	const executedEpicsOutputs = trace.executedEpics
@@ -582,17 +582,13 @@ function traceToString(trace: ExecutionLevelInfoType, executedEpicsFilter: EpicE
 		return `${trace.triggerAction.type} does not have any effect`
 	}
 	const branches = executedEpicsOutputs.map(({ output, epicExecutionInfo }) => {
-		const
-			whitespace = new Array(whitespaceLength).join(' ')
-
-
-		const prevPrefix = `${whitespace}${trace.triggerAction.type} => `
-
-
+		const whitespace = new Array(whitespaceLength).join(' ')
+		const isEpicVat = trace.triggerAction.type.indexOf('_VAT') !== -1
+		const prevPrefix = `${whitespace}${level !== 0 && isEpicVat ? '' : trace.triggerAction.type}${level !== 0 ? '|':' '}=> `
 		const prefix = `${prevPrefix}${output}`
 
 		if (!epicExecutionInfo.childrenLayers) return prefix
-		return [prefix, ...epicExecutionInfo.childrenLayers.map(childLayer => traceToString(childLayer, executedEpicsFilter, prevPrefix.length + 1))]
+		return [prefix, ...epicExecutionInfo.childrenLayers.map(childLayer => traceToString(childLayer, executedEpicsFilter, prevPrefix.length + 1, level + 1))]
 	})
 
 	return unnest<string>(branches).filter(x => x).join('\n')
@@ -1538,7 +1534,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 	debug,
 	isSubStore,
 }: {|
-	debug?: true | {| devTools?: { config: DevToolsConfigType }, getState?: () => EpicsStateType, trace?: Function, warn?: Function |},
+	debug?: true | {| devTools?: { config: DevToolsConfigType }, trace?: Function, warn?: Function |},
 	effectManagers?: { [string]: EffectManager<*, *, *> },
 	epics: Epics,
 	plugins?: { [string]: PluginType },

@@ -2,7 +2,7 @@
 import { type XStateType } from './xState'
 import { makeEpicCondition, makeSACAC } from '../../../src/epics';
 
-const xVat = 'X'
+const xVat = 'X_VAT'
 const xCondition = makeEpicCondition<XStateType>(xVat)
 const xValueCondition = xCondition.wsk('value')
 const xClicked = makeSACAC('X_CLICKED')

@@ -35,13 +35,8 @@ const templateEpic = makeEpicWithScope<TemplateStateType, TemplateScopeType, emp
 					return R.updateScope(templateInitDnd({ startWidth: state.width, mouseStartLeft: mouseLeft }))
 				}
 
-				const
-					{ startWidth, mouseStartLeft } = dnd
-
-
+				const { startWidth, mouseStartLeft } = dnd
 				const leftDiff = mouseStartLeft - mouseLeft
-
-
 				const nextWidth = Math.max(300, componentRight, leftDown ? startWidth + 2 * leftDiff : startWidth - 2 * leftDiff)
 
 				return R.updateState(setTemplateWidth(nextWidth))
