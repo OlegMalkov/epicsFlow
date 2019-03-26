@@ -314,8 +314,7 @@ function makeUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: 
 	let noActiveConditions = true
 	const conditionKeysToConditionUpdaterKeys = []
 	const compulsoryConditionsKeys = []
-	const conditions = { ...dependsOn, ...reactsTo }
-
+	const conditions =  dependsOn ? ({ ...Object.keys(dependsOn).reduce((r, k: string) => ({ ...r, [k]: dependsOn[k].toPassive() }), {}), ...reactsTo }) : reactsTo
 	Object.keys(reactsTo).forEach(reactsToKey => {
 		if (reactsTo[reactsToKey].passive) {
 			throw new Error(`can not use passive condition "${reactsToKey}" in reacts to.`)

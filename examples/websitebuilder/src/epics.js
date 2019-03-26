@@ -227,7 +227,7 @@ opaque type EpicsStoreType<Epics: Object>: {
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	subscribeOnMessage: any => any,
 	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
-	warn: Function
+	warn: Function,
 } = {|
 	_getNextStateForActionWithoutUpdatingStoreState: (AnyActionType) => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	_getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
@@ -238,7 +238,7 @@ opaque type EpicsStoreType<Epics: Object>: {
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	subscribeOnMessage: any => any,
 	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
-	warn: Function
+	warn: Function,
 |}
 function getFields(condition: AnyConditionType): {| ...CompulsoryConditionFieldsType, parentCondition: AnyConditionType |} {
 	const {
@@ -305,17 +305,16 @@ class ReducerResult<S, SC, SE> {
 	}
 }
 
-type Merge<T, T1> = {| ...$Exact<T>, ...$Exact<T1> |}
+type MergeType<T, T1> = {| ...$Exact<T>, ...$Exact<T1> |}
 function makeUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: string } & Object }, ReactsTo: { [string]: { actionType: string } & Object }, E> ({ dependsOn, reactsTo, exec }: {|
 	dependsOn: DO,
 	reactsTo: ReactsTo,
-	exec: ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<Merge<DO, ReactsTo>, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: $Exact<$ObjMap<Merge<DO, ReactsTo>, typeof extractConditionV>> |}) => ReducerResult<S, SC, E>,
+	exec: ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<MergeType<DO, ReactsTo>, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: $Exact<$ObjMap<MergeType<DO, ReactsTo>, typeof extractConditionV>> |}) => ReducerResult<S, SC, E>,
 |}): UpdaterType<S, SC, any, E> {
 	let noActiveConditions = true
 	const conditionKeysToConditionUpdaterKeys = []
 	const compulsoryConditionsKeys = []
-	const conditions =  dependsOn ? ({ ...Object.keys(dependsOn).reduce((r, k: string) => ({ ...r, [k]: dependsOn[k] }), {}), ...reactsTo }) : reactsTo
-
+	const conditions =  dependsOn ? ({ ...Object.keys(dependsOn).reduce((r, k: string) => ({ ...r, [k]: dependsOn[k].toPassive() }), {}), ...reactsTo }) : reactsTo
 	Object.keys(reactsTo).forEach(reactsToKey => {
 		if (reactsTo[reactsToKey].passive) {
 			throw new Error(`can not use passive condition "${reactsToKey}" in reacts to.`)
@@ -337,14 +336,14 @@ function makeUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: 
 		throw new Error('makeUpdater requires at least one condition to be active')
 	}
 
-	if(dependsOn){
+	if (dependsOn) {
 		Object.keys(dependsOn).forEach(k => {
 			if (reactsTo[k]) throw new Error(`dependsOn can not contain same key as reacts to: ${k}`)
 		})
 	}
 
 	return {
-		conditions: { ...dependsOn, ...reactsTo },
+		conditions,
 		exec: (exec: any),
 		conditionKeysToConditionUpdaterKeys,
 		conditionsKeys: Object.keys((conditions: any)),
@@ -1790,7 +1789,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 	const stateChangedSubscribers = []
 	const msgSubscribers = []
 
-	if (debug && devToolsConfig && window && window.__REDUX_DEVTOOLS_EXTENSION__) {
+	if (debug && devToolsConfig && typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__) {
 		devTools = window.__REDUX_DEVTOOLS_EXTENSION__.connect({ ...devToolsConfig, name: 'service' })
 		devTools.subscribe((message) => {
 			if (message.type === 'DISPATCH' && message.state) {
@@ -1851,7 +1850,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			stateChangedSubscribers.length = 0
 			msgSubscribers.length = 0
 			// TODO cancel all side effects?
-		}
+		},
 	}
 }
 function makeACAC<ActionExtraFields>(actionType: string): {|
