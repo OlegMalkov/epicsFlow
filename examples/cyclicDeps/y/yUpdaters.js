@@ -1,5 +1,5 @@
 // @flow strict
-import { type UpdaterType, makeUpdater } from '../../../src/epics'
+import { type UpdaterType, createUpdater } from '../../../src/epics'
 import { zResultC } from '../z/zVAT'
 import { type YStateType, setYColor, incY, decY } from './yState'
 import { isOdd } from '../utils'
@@ -7,7 +7,7 @@ import { yClicked } from './yAAC'
 
 type YUpdaterType = UpdaterType<YStateType, *, *, *>
 
-const yClickedUpdater: YUpdaterType = makeUpdater({
+const yClickedUpdater: YUpdaterType = createUpdater({
 	dependsOn: { zResult: zResultC },
 	when: {
 		_yClicked: yClicked.condition,
@@ -16,7 +16,7 @@ const yClickedUpdater: YUpdaterType = makeUpdater({
 })
 
 
-const zRezultChanged: YUpdaterType = makeUpdater({
+const zRezultChanged: YUpdaterType = createUpdater({
 	dependsOn: {},
 	when: { zResult: zResultC },
 	then: ({ values: { zResult }, R }) => R.updateState(setYColor(isOdd(zResult) ? 'green' : 'red')),

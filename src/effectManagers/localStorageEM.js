@@ -1,10 +1,10 @@
 // @flow strict
 
 import {
-	makeEffectManager,
+	createEffectManager,
 	type AnyValueType,
-	makeSACAC,
-	makeACAC,
+	createSACAC,
+	createACAC,
 	getObjectKeys,
 } from '../epics'
 import { setProp } from '../utils'
@@ -35,11 +35,11 @@ const localStorageRemoveItemsEC = (keys: Array<string>): LocalStorageEffectType 
 const localStorageGetKeysEC = (): LocalStorageEffectType => ({ type: requestType, cmd: { type: 'GET_KEYS' } })
 const localStorageClearEC = (): LocalStorageEffectType => ({ type: requestType, cmd: { type: 'CLEAR' } })
 
-const localStorageUnavailableResult = makeSACAC('LOCAL_STORAGE_UNAVAILABLE_RESULT')
-const localStorageQuotaExceededResult = makeSACAC('LOCAL_STORAGE_QUOTA_EXCEEDED_RESULT')
-const localStorageGetItemResult = makeACAC<{| value: ?string |}>('LOCAL_STORAGE_GET_ITEM_RESULT')
-const localStorageGetItemsResult = makeACAC<{| values: { [key: string]: ?string } |}>('LOCAL_STORAGE_GET_ITEMS_RESULT')
-const localStorageGetKeysResult = makeACAC<{| keys: Array<string> |}>('LOCAL_STORAGE_GET_KEYS_RESULT')
+const localStorageUnavailableResult = createSACAC('LOCAL_STORAGE_UNAVAILABLE_RESULT')
+const localStorageQuotaExceededResult = createSACAC('LOCAL_STORAGE_QUOTA_EXCEEDED_RESULT')
+const localStorageGetItemResult = createACAC<{| value: ?string |}>('LOCAL_STORAGE_GET_ITEM_RESULT')
+const localStorageGetItemsResult = createACAC<{| values: { [key: string]: ?string } |}>('LOCAL_STORAGE_GET_ITEMS_RESULT')
+const localStorageGetKeysResult = createACAC<{| keys: Array<string> |}>('LOCAL_STORAGE_GET_KEYS_RESULT')
 
 function isQuotaExceededError(e) {
 	// https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API#Testing_for_availability
@@ -71,7 +71,7 @@ function getLocalStorageStatus() {
 
 const setQuotaExceeded = setProp<StateType, *>('quotaExceeded')
 
-const localStorageEM = makeEffectManager<LocalStorageEffectType, StateType, null>({
+const localStorageEM = createEffectManager<LocalStorageEffectType, StateType, null>({
 	requestType,
 	initialState: getLocalStorageStatus(),
 	initialScope: null,

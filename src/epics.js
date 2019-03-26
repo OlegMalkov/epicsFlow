@@ -306,7 +306,7 @@ class ReducerResult<S, SC, SE> {
 }
 
 type MergeType<T, T1> = {| ...$Exact<T>, ...$Exact<T1> |}
-function makeUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: string } & Object }, ReactsTo: { [string]: { actionType: string } & Object }, E> ({ dependsOn, when, then }: {|
+function createUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: string } & Object }, ReactsTo: { [string]: { actionType: string } & Object }, E> ({ dependsOn, when, then }: {|
 	dependsOn: DO,
 	when: ReactsTo,
 	then: ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<MergeType<DO, ReactsTo>, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: $Exact<$ObjMap<MergeType<DO, ReactsTo>, typeof extractConditionV>> |}) => ReducerResult<S, SC, E>,
@@ -314,7 +314,8 @@ function makeUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: 
 	let noActiveConditions = true
 	const conditionKeysToConditionUpdaterKeys = []
 	const compulsoryConditionsKeys = []
-	const conditions =  dependsOn ? ({ ...Object.keys(dependsOn).reduce((r, k: string) => ({ ...r, [k]: dependsOn[k].toPassive() }), {}), ...when }) : when
+	const conditions = dependsOn ? ({ ...Object.keys(dependsOn).reduce((r, k: string) => ({ ...r, [k]: dependsOn[k].toPassive() }), {}), ...when }) : when
+
 	Object.keys(when).forEach(reactsToKey => {
 		if (when[reactsToKey].passive) {
 			throw new Error(`can not use passive condition "${reactsToKey}" in reacts to.`)
@@ -333,7 +334,7 @@ function makeUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: 
 		}
 	})
 	if (noActiveConditions) {
-		throw new Error('makeUpdater requires at least one condition to be active')
+		throw new Error('createUpdater requires at least one condition to be active')
 	}
 
 	if (dependsOn) {
@@ -378,7 +379,7 @@ class EffectManagerResultType<S> {
 	}
 }
 
-function makeEffectManager<E, S, SC>({
+function createEffectManager<E, S, SC>({
 	initialState,
 	initialScope,
 	onEffectRequest,
@@ -702,7 +703,7 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 	})
 }
 const nothingChangedButObjectRecreatedWarn = 'WARN: nothing changed, but new objects with same data was created'
-const makeExecuteAction = ({
+const createExecuteAction = ({
 	trace,
 	epicsMapByVat,epicKeyByVat,
 	effectManagers,
@@ -1248,7 +1249,7 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 			...conditionsValuesUpdate },
 	}
 }
-const makeComputeOutsideState = ({ epicsVatToStateKeyMap }) => (state) => Object.keys(state).reduce((s, vat) => {
+const createComputeOutsideState = ({ epicsVatToStateKeyMap }) => (state) => Object.keys(state).reduce((s, vat) => {
 	s[epicsVatToStateKeyMap[vat]] = state[vat].state
 	return s
 }, {})
@@ -1347,7 +1348,7 @@ const globalRootConditionsByActionType = {}
 const globalSelectorsInUse = []
 const globalGuardsInUse = []
 
-function _makeCondition({
+function _createCondition({
 	actionType,
 	passive,
 	optional,
@@ -1383,16 +1384,16 @@ function _makeCondition({
 		selector,
 		isEpicCondition,
 		toPassive() {
-			return _makeCondition({ ...getFields(condition), passive: true })
+			return _createCondition({ ...getFields(condition), passive: true })
 		},
 		toOptional() {
-			return _makeCondition({ ...getFields(condition), optional: true })
+			return _createCondition({ ...getFields(condition), optional: true })
 		},
 		resetConditionsByKey(keys) {
-			return _makeCondition({ ...getFields(condition), resetConditionsByKeyKeys: keys })
+			return _createCondition({ ...getFields(condition), resetConditionsByKeyKeys: keys })
 		},
 		resetConditionsByKeyAfterReducerCall(keys) {
-			return _makeCondition({ ...getFields(condition), resetConditionsByKeyAfterReducerCallKeys: keys })
+			return _createCondition({ ...getFields(condition), resetConditionsByKeyAfterReducerCallKeys: keys })
 		},
 		// You can have multiple guards for different levels of selectors like this: c.ws().tp().ws().tp()
 		withGuard(guard) {
@@ -1406,7 +1407,7 @@ function _makeCondition({
 
 				if (existingCondition) return existingCondition
 			}
-			const newCondition = _makeCondition({ ...getFields(condition), guard })
+			const newCondition = _createCondition({ ...getFields(condition), guard })
 
 			return newCondition
 		},
@@ -1423,7 +1424,7 @@ function _makeCondition({
 
 				if (existingCondition) return existingCondition
 			}
-			return _makeCondition({ ...getFields(condition), selectorKey })
+			return _createCondition({ ...getFields(condition), selectorKey })
 		}
 
 		condition.withSelectorKey = (withSelectorKey: any)
@@ -1436,7 +1437,7 @@ function _makeCondition({
 
 				if (existingCondition) return (existingCondition: any)
 			}
-			return (_makeCondition({ ...getFields(condition),
+			return (_createCondition({ ...getFields(condition),
 				selector,
 				sealed: true }): any)
 		}
@@ -1465,11 +1466,11 @@ function _makeCondition({
 	}
 	return condition
 }
-function makeCondition<V: Object> (actionType: string, isEpicCondition?: bool = false): Condition<V> {
+function createCondition<V: Object> (actionType: string, isEpicCondition?: bool = false): Condition<V> {
 	if (globalRootConditionsByActionType[actionType]) {
 		return globalRootConditionsByActionType[actionType]
 	}
-	return (_makeCondition({
+	return (_createCondition({
 		actionType,
 		passive: false,
 		optional: false,
@@ -1479,14 +1480,14 @@ function makeCondition<V: Object> (actionType: string, isEpicCondition?: bool = 
 		isEpicCondition,
 	}, true): any)
 }
-function makeEpicConditionReceiveFullAction<State>(vat: string): Condition<EpicValueActionType<State>> {
-	return makeCondition<EpicValueActionType<State>>(vat, true)
+function createEpicConditionReceiveFullAction<State>(vat: string): Condition<EpicValueActionType<State>> {
+	return createCondition<EpicValueActionType<State>>(vat, true)
 }
-function makeEpicCondition<State>(vat: string): Condition<State> {
-	return makeEpicConditionReceiveFullAction(vat).withSelectorKey('value')
+function createEpicCondition<State>(vat: string): Condition<State> {
+	return createEpicConditionReceiveFullAction(vat).withSelectorKey('value')
 }
-function makeEpicWithScope<S, SC, E, PC>({ vat, updaters, initialState, initialScope, pluginConfig }: MakeEpicWithScopePropsType<S, SC, E, PC>): EpicType<S, SC, E, PC> {
-	const c = makeEpicCondition<S>(vat)
+function createEpicWithScope<S, SC, E, PC>({ vat, updaters, initialState, initialScope, pluginConfig }: MakeEpicWithScopePropsType<S, SC, E, PC>): EpicType<S, SC, E, PC> {
+	const c = createEpicCondition<S>(vat)
 
 	return ({
 		vat,
@@ -1498,8 +1499,8 @@ function makeEpicWithScope<S, SC, E, PC>({ vat, updaters, initialState, initialS
 		pluginConfig,
 	})
 }
-function makeEpic<S, E, PC>({ vat, updaters, initialState, pluginConfig }: MakeEpicPropsType<S, E, PC>): EpicType<S, void, E, PC> {
-	return makeEpicWithScope({
+function createEpic<S, E, PC>({ vat, updaters, initialState, pluginConfig }: MakeEpicPropsType<S, E, PC>): EpicType<S, void, E, PC> {
+	return createEpicWithScope({
 		vat,
 		updaters,
 		initialState,
@@ -1507,9 +1508,9 @@ function makeEpic<S, E, PC>({ vat, updaters, initialState, pluginConfig }: MakeE
 		pluginConfig,
 	})
 }
-const matchAnyActionCondition: Condition<typeof MatchAnyActionType> = makeCondition(MatchAnyActionType)// TODO put correct annotation
+const matchAnyActionCondition: Condition<typeof MatchAnyActionType> = createCondition(MatchAnyActionType)// TODO put correct annotation
 
-const makePluginStateKey = (key: string) => `plugin/${key}`
+const createPluginStateKey = (key: string) => `plugin/${key}`
 
 function createEpicsSubStoresByVat(epics: { [string]: EpicType<*, *, *, *> }): { [epicKey: string]: EpicsStoreType<any> } {
 	return getObjectKeys(epics).reduce((result, epicKey) => {
@@ -1715,7 +1716,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			}),
 			injectEpics: epicsToInject => {
 				// eslint-disable-next-line no-param-reassign
-				epics = { ...epics, ...getObjectKeys(epicsToInject).reduce((r,k) => ({ ...r, [makePluginStateKey(k)]: epicsToInject[k] }), {})}
+				epics = { ...epics, ...getObjectKeys(epicsToInject).reduce((r,k) => ({ ...r, [createPluginStateKey(k)]: epicsToInject[k] }), {})}
 			},
 			getEpics: () => {
 				if (!pluginInitializationComplete) {throw new Error('getEpics can not be used during plugin initialization because they are not in the final state yet.')}
@@ -1745,7 +1746,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 	const epicKeyByVat = getObjectKeys(epics).reduce((m, epicKey) => ({ ...m, [epics[epicKey].vat]: epicKey }), {})
 	const epicsArr = values(epics)
 	const epicsMapByVat = values(epics).reduce((a, e) => ({ ...a, [e.vat]: e }), {})
-	const executeAction = makeExecuteAction({
+	const executeAction = createExecuteAction({
 		trace,
 		epicsMapByVat,
 		epicKeyByVat,
@@ -1758,7 +1759,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		r[epics[epicStateKey].vat] = epicStateKey
 		return r
 	}, {})
-	const computeOutsideState = makeComputeOutsideState({ epicsVatToStateKeyMap })
+	const computeOutsideState = createComputeOutsideState({ epicsVatToStateKeyMap })
 	const { initialEpicsState, initialCondtionsValues } = computeInitialStates({
 		epicsArr,
 		warn,
@@ -1849,7 +1850,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		},
 	}
 }
-function makeACAC<ActionExtraFields>(actionType: string): {|
+function createACAC<ActionExtraFields>(actionType: string): {|
 	ac: ActionExtraFields => {| ...ActionExtraFields, type: string |},
 	actionCreator: ActionExtraFields => {| ...ActionExtraFields, type: string |},
 	c: Condition<{| ...ActionExtraFields, type: string |}>,
@@ -1857,7 +1858,7 @@ function makeACAC<ActionExtraFields>(actionType: string): {|
 	type: string,
 |} {
 	const actionCreator = extraFields => ({ type: actionType, ...extraFields })
-	const condition = makeCondition(actionType)
+	const condition = createCondition(actionType)
 
 	return ({
 		actionCreator,
@@ -1867,7 +1868,7 @@ function makeACAC<ActionExtraFields>(actionType: string): {|
 		type: actionType,
 	})
 }
-function makeSACAC(actionType: string): {|
+function createSACAC(actionType: string): {|
 	ac: () => {| type: string |},
 	actionCreator: () => {| type: string |},
 	c: Condition<{| type: string |}>,
@@ -1875,7 +1876,7 @@ function makeSACAC(actionType: string): {|
 	type: string,
 |} {
 	const actionCreator = () => ({ type: actionType })
-	const condition = makeCondition(actionType)
+	const condition = createCondition(actionType)
 
 	return ({
 		actionCreator,
@@ -1886,7 +1887,7 @@ function makeSACAC(actionType: string): {|
 	})
 }
 
-const storeCreated = makeSACAC('@STORE_CREATED')
+const storeCreated = createSACAC('@STORE_CREATED')
 
 export type { // eslint-disable-line import/group-exports
 	Condition,
@@ -1905,24 +1906,24 @@ export type { // eslint-disable-line import/group-exports
 }
 
 export { // eslint-disable-line import/group-exports
-	makeSACAC,
-	makeACAC,
-	makeEpic,
-	makeEpicWithScope,
+	createSACAC,
+	createACAC,
+	createEpic,
+	createEpicWithScope,
 	matchAnyActionCondition,
 	createStore,
 	dispatchActionEffectCreator,
 	daEC,
 	dispatchBatchedActionsEffectCreator,
 	sendMessageOutsideEpicsEffectCreator,
-	makeCondition,
-	makeEpicCondition,
-	makeUpdater,
-	makeEffectManager,
+	createCondition,
+	createEpicCondition,
+	createUpdater,
+	createEffectManager,
 	deepCopy,
 	deepEqual,
 	traceToString,
 	storeCreated,
-	makePluginStateKey,
+	createPluginStateKey,
 	getObjectKeys,
 }

@@ -14,7 +14,7 @@ import { templateWidthCondition } from '../template/templateACAC'
 import { propertiesPanelNextPageButtonPress, propertiesPanelDragMouseDown } from './propertiesPanelACAC'
 import { workspaceViewportEpic } from '../workspace/workspaceViewportEpic'
 import { workspaceScroll } from '../workspace/workspaceACAC'
-import { makeEpicCondition, makeEpicWithScope, makeUpdater } from '../../epics'
+import { createEpicCondition, createEpicWithScope, createUpdater } from '../../epics'
 
 type PropertiesPanelStateType = {|
     height: number,
@@ -63,7 +63,7 @@ const initMoveDnd = ({ propertiesPanelStartPosition, mouseStartPosition }) => se
 const resetMoveDnd = setMoveDnd(dndInitialState)
 const PropertiesPanelWidth = 300
 const propertiesPanelEpicVat = 'PROPERTIES_PANEL_VAT'
-const propertiesPanelCondition = makeEpicCondition<PropertiesPanelStateType>(propertiesPanelEpicVat)
+const propertiesPanelCondition = createEpicCondition<PropertiesPanelStateType>(propertiesPanelEpicVat)
 const propertiesPanelVisibleCondition = propertiesPanelCondition.withSelectorKey('visible')
 const initialState = { positonRT: { right: 0, top: -99999 }, height: 300, visible: false }
 const computeRightTopPositionRT = (props: GetPositionPropsType): RTPositionType => ({// eslint-disable-line no-unused-vars
@@ -89,7 +89,7 @@ const possiblePositionsRTComputers = [
 	computeLeftBottomPositionRT,
 	computeLeftTopPositionRT,
 ]
-const makeComputePropertiesPanelBBoxWithRespectToTemplateArea = ({
+const createComputePropertiesPanelBBoxWithRespectToTemplateArea = ({
 	workspaceWidth,
 	templateWidth,
 	propertiesPanelHeight,
@@ -118,17 +118,17 @@ const makeComputePropertiesPanelBBoxWithRespectToTemplateArea = ({
 	return result
 }
 
-const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, PropertiesPanelScopeType, *, *>({
+const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, PropertiesPanelScopeType, *, *>({
 	vat: propertiesPanelEpicVat,
 	initialState,
 	initialScope: { moveDnd: dndInitialState },
 	updaters: {
-		showHide: makeUpdater({
+		showHide: createUpdater({
 			dependsOn: {},
 			when: { componentMainActionsVisible: componentsMainActionsIsVisibleCondition },
 			then: ({ values: { componentMainActionsVisible }, R }) => R.updateState(setVisible(componentMainActionsVisible)),
 		}),
-		computePosition: makeUpdater({
+		computePosition: createUpdater({
 			dependsOn: {
 				componentPosition: componentPositionCondition,
 				componentDimensions: componentDimensionsCondition,
@@ -155,7 +155,7 @@ const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, Properti
 			}) => {
 				if (propertiesPanelIsVisible) {
 					const computePositionProps = { workspaceViewportDimensions, propertiesPanelHeight: state.height }
-					const computePropertiesPanelBBoxWithRespectToTemplateArea = makeComputePropertiesPanelBBoxWithRespectToTemplateArea({
+					const computePropertiesPanelBBoxWithRespectToTemplateArea = createComputePropertiesPanelBBoxWithRespectToTemplateArea({
 						workspaceWidth: workspaceViewportDimensions.width,
 						templateWidth,
 						propertiesPanelHeight: state.height,
@@ -183,7 +183,7 @@ const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, Properti
 				return R.doNothing
 			},
 		}),
-		moveDnd: makeUpdater({
+		moveDnd: createUpdater({
 			dependsOn: {
 				workspaceViewportDimensions: workspaceViewportEpic.condition.wsk('dimensions'),
 				propertiesPanelDragMouseDown: propertiesPanelDragMouseDown.condition,
@@ -230,7 +230,7 @@ const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, Properti
 				}))
 			},
 		}),
-		validateAndFixPosition: makeUpdater({
+		validateAndFixPosition: createUpdater({
 			dependsOn: {},
 			when: {
 				workspaceViewportDimensions: workspaceViewportEpic.condition.wsk('dimensions'),
@@ -244,12 +244,12 @@ const propertiesPanelEpic = makeEpicWithScope<PropertiesPanelStateType, Properti
 					})
 				),
 		}),
-		resetStateOnComponentDeselection: makeUpdater({
+		resetStateOnComponentDeselection: createUpdater({
 			dependsOn: {},
 			when: { componentDeselected: componentSelectedCondition.withGuard<bool>(selected => selected === false) },
 			then: ({ R }) => R.updateState(() => initialState),
 		}),
-		setHeightForNextPage: makeUpdater({
+		setHeightForNextPage: createUpdater({
 			dependsOn: {},
 			when: { propertiesPanelNextPagePressed: propertiesPanelNextPageButtonPress.condition },
 			then: ({ R }) => R.updateState(setHeight(h => h + 50)),
@@ -264,7 +264,7 @@ export type {
 
 // eslint-disable-next-line import/group-exports
 export {
-	makeComputePropertiesPanelBBoxWithRespectToTemplateArea,
+	createComputePropertiesPanelBBoxWithRespectToTemplateArea,
 	propertiesPanelEpic,
 	PropertiesPanelWidth,
 }

@@ -1,8 +1,8 @@
 // @flow strict
 import { type ZStateType } from './zState'
-import { makeEpicCondition } from '../../../src/epics'
+import { createEpicCondition } from '../../../src/epics'
 
-const zCondition = makeEpicCondition<ZStateType>('Z_VAT')
+const zCondition = createEpicCondition<ZStateType>('Z_VAT')
 const zResultC = zCondition.wsk('result')
 
 export {

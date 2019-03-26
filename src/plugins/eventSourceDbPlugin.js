@@ -2,17 +2,17 @@
 import {
 	type PluginType,
 	storeCreated,
-	makeSACAC,
-	makeUpdater,
+	createSACAC,
+	createUpdater,
 	dispatchActionEffectCreator,
 	type BuiltInEffectType,
 	type AnyValueType,
 	getObjectKeys,
 	type AnyConditionType,
 	type AnyActionType,
-	makeCondition,
-	makeEpicWithScope,
-	makeACAC,
+	createCondition,
+	createEpicWithScope,
+	createACAC,
 } from '../epics'
 import {
 	type LocalStorageEffectType,
@@ -25,9 +25,9 @@ import { setPath2, setProp } from '../utils'
 type EffectType = BuiltInEffectType | LocalStorageEffectType
 type EsdbPluginConfigType = {| esdbAggregate: true |}
 
-const esdbRehydrateRequest = makeSACAC('REHYDRADE_REQUEST')
-const esdbRehydrateAggregates = makeACAC<{| aggregatesStatesByVat: { [vat: string]: AnyValueType } |}>('REHYDRADE_AGGREGATES')
-const esdbSave = makeSACAC('SAVE')
+const esdbRehydrateRequest = createSACAC('REHYDRADE_REQUEST')
+const esdbRehydrateAggregates = createACAC<{| aggregatesStatesByVat: { [vat: string]: AnyValueType } |}>('REHYDRADE_AGGREGATES')
+const esdbSave = createSACAC('SAVE')
 const esdbMakeActionsLocalStorageKey = (now: number) => `esdb:${now}`
 const esdbAggregatesStateLocalStorageKey = 'esdb_aggregates_states'
 
@@ -64,7 +64,7 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 	injectUpdaters(epic => {
 		if (epicAggregates.find(({ vat }) => epic.vat === vat)) {
 			return {
-				rehydrate: makeUpdater({
+				rehydrate: createUpdater({
 					dependsOn: {},
 					when: { aggregatesStatesByVat: esdbRehydrateAggregates.c.wsk('aggregatesStatesByVat') },
 					then: ({ values: { aggregatesStatesByVat }, R }) => {
@@ -76,7 +76,7 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 	})
 
 	injectEpics({
-		esdb: makeEpicWithScope<null, ScopeType, EffectType, empty>({
+		esdb: createEpicWithScope<null, ScopeType, EffectType, empty>({
 			vat: 'ESDB_VAT',
 			initialState: null,
 			initialScope: {
@@ -84,19 +84,19 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 				aggregatesStates: {},
 			},
 			updaters: {
-				init: makeUpdater({
+				init: createUpdater({
 					dependsOn: {},
 					when: { _: storeCreated.c },
 					then: ({ R }) => {
 						return R.sideEffect(dispatchActionEffectCreator(esdbRehydrateRequest.ac()))
 					},
 				}),
-				rehydrate: makeUpdater({
+				rehydrate: createUpdater({
 					dependsOn: {},
 					when: { _: esdbRehydrateRequest.c },
 					then: ({ R }) => R.sideEffect(localStorageGetItemEC(esdbAggregatesStateLocalStorageKey)),
 				}),
-				aggregatesStatesRetrivedFromLocalStorage: makeUpdater({
+				aggregatesStatesRetrivedFromLocalStorage: createUpdater({
 					dependsOn: {},
 					when: { aggregatesStates: localStorageGetItemResult.c.wsk('value') },
 					then: ({ values: { aggregatesStates }, R }) => {
@@ -108,7 +108,7 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 							.sideEffect(dispatchActionEffectCreator(esdbRehydrateAggregates.ac({ aggregatesStatesByVat })))
 					},
 				}),
-				save: makeUpdater({
+				save: createUpdater({
 					dependsOn: {},
 					when: { _: esdbSave.c },
 					then: ({ R, scope }) => R.sideEffect(localStorageSetItemsEC({
@@ -117,7 +117,7 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 					})).updateScope(s => ({ ...s, notSavedActions: {} })),
 				}),
 				...epicAggregates.reduce((updaters, { key, vat, condition }) => {
-					updaters[`${key}_aggregate_changed`] = makeUpdater({
+					updaters[`${key}_aggregate_changed`] = createUpdater({
 						dependsOn: {},
 						when: { aggregateState: condition },
 						then: ({ values: { aggregateState }, R }) => R.updateScope(setAggregateState(vat)(aggregateState)),
@@ -126,9 +126,9 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 				}, {}),
 				...allActionConditionsTypesInUse.reduce((updaters, actionType) => {
 					if (esdbRehydrateAggregates.type !== actionType) {
-						updaters[`remember_${actionType}`] = makeUpdater({
+						updaters[`remember_${actionType}`] = createUpdater({
 							dependsOn: {},
-							when: { action: makeCondition<AnyActionType>(actionType, false) },
+							when: { action: createCondition<AnyActionType>(actionType, false) },
 							then: ({ values: { action }, R }) => R.updateScope(addNotSavedAction(action)),
 						})
 					}

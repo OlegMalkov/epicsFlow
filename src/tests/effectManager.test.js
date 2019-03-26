@@ -1,10 +1,10 @@
 // @flow strict
 
 import {
-	makeEpic,
-	makeUpdater,
+	createEpic,
+	createUpdater,
 	createStore,
-	makeSACAC,
+	createSACAC,
 	type BuiltInEffectType,
 	storeCreated,
 	dispatchBatchedActionsEffectCreator,
@@ -14,17 +14,17 @@ import { waitEffectManagers } from './utils'
 
 type CustomEpicEffectType = RequestAnimationFrameEffectType
 
-const a = makeSACAC('A')
-const b = makeSACAC('B')
+const a = createSACAC('A')
+const b = createSACAC('B')
 
 describe('effectManager', () => {
 	it('only epic that requested effect can receive response from effect manager (animation frame)', async () => {
 		const
-			e1 = makeEpic<number, CustomEpicEffectType, empty>({
+			e1 = createEpic<number, CustomEpicEffectType, empty>({
 				vat: 'e1',
 				initialState: 0,
 				updaters: {
-					af: makeUpdater({
+					af: createUpdater({
 						dependsOn: {},
 						when: { _af: animationFrame.condition },
 						then: ({ R }) => R.updateState(() => 1),
@@ -33,16 +33,16 @@ describe('effectManager', () => {
 			})
 
 
-		const e2 = makeEpic<number, CustomEpicEffectType, empty>({
+		const e2 = createEpic<number, CustomEpicEffectType, empty>({
 			vat: 'e2',
 			initialState: 0,
 			updaters: {
-				a: makeUpdater({
+				a: createUpdater({
 					dependsOn: {},
 					when: { _a: a.c },
 					then: ({ R }) => R.sideEffect(requestAnimationFrameEC()),
 				}),
-				af: makeUpdater({
+				af: createUpdater({
 					dependsOn: {},
 					when: { _af: animationFrame.condition },
 					then: ({ R }) => R.updateState(state => state + 1),
@@ -66,11 +66,11 @@ describe('effectManager', () => {
 	})
 	it.only('can then batched dispach', async () => {
 		const
-			e1 = makeEpic<number, BuiltInEffectType, empty>({
+			e1 = createEpic<number, BuiltInEffectType, empty>({
 				vat: 'e1',
 				initialState: 0,
 				updaters: {
-					storeCreatedOrB: makeUpdater({
+					storeCreatedOrB: createUpdater({
 						dependsOn: {},
 						when: { _: storeCreated.condition.to(), _b: b.c.to() },
 						then: ({ R }) => R.sideEffect(dispatchBatchedActionsEffectCreator([
@@ -82,16 +82,16 @@ describe('effectManager', () => {
 			})
 
 
-		const e2 = makeEpic<number, BuiltInEffectType, empty>({
+		const e2 = createEpic<number, BuiltInEffectType, empty>({
 			vat: 'e2',
 			initialState: 0,
 			updaters: {
-				a: makeUpdater({
+				a: createUpdater({
 					dependsOn: {},
 					when: { _a: a.c },
 					then: ({ R }) => R.updateState(state => state + 1),
 				}),
-				b: makeUpdater({
+				b: createUpdater({
 					dependsOn: {},
 					when: { _a: b.c },
 					then: ({ R }) => R.updateState(() => 10),
@@ -99,16 +99,16 @@ describe('effectManager', () => {
 			},
 		})
 
-		const e3 = makeEpic<number, BuiltInEffectType, empty>({
+		const e3 = createEpic<number, BuiltInEffectType, empty>({
 			vat: 'e3',
 			initialState: 0,
 			updaters: {
-				a: makeUpdater({
+				a: createUpdater({
 					dependsOn: {},
 					when: { _a: a.c },
 					then: ({ R }) => R.updateState(state => state + 1),
 				}),
-				b: makeUpdater({
+				b: createUpdater({
 					dependsOn: {},
 					when: { _b: b.c },
 					then: ({ R }) => R.updateState(() => 10),
@@ -116,21 +116,21 @@ describe('effectManager', () => {
 			},
 		})
 
-		const e4 = makeEpic<number, BuiltInEffectType, empty>({
+		const e4 = createEpic<number, BuiltInEffectType, empty>({
 			vat: 'e4',
 			initialState: 0,
 			updaters: {
-				e2: makeUpdater({
+				e2: createUpdater({
 					dependsOn: {},
 					when: { e2: e2.c },
 					then: ({ values: { e2 }, R }) => R.updateState(state => state + e2),
 				}),
-				e3: makeUpdater({
+				e3: createUpdater({
 					dependsOn: {},
 					when: { e3: e3.c },
 					then: ({ values: { e3 }, R }) => R.updateState(state => state + e3),
 				}),
-				b: makeUpdater({
+				b: createUpdater({
 					dependsOn: {},
 					when: { _b: b.c },
 					then: ({ R }) => R.updateState(() => 0),

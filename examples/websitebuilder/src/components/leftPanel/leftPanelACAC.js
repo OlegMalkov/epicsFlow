@@ -1,7 +1,7 @@
 // @flow strict
-import { makeSACAC } from '../../epics'
+import { createSACAC } from '../../epics'
 
-const leftPanelToggleExpansionButtonPressed = makeSACAC('LEFT_PANEL_TOGGLE_EXPANSION')
+const leftPanelToggleExpansionButtonPressed = createSACAC('LEFT_PANEL_TOGGLE_EXPANSION')
 
 export {
 	leftPanelToggleExpansionButtonPressed,

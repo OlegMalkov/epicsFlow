@@ -7,15 +7,15 @@ import { templateWidthCondition, templateAreaMouseDown } from '../template/templ
 import { componentInitialScope, type ComponentScope, initComponentMoveDnd, resetComponentMoveDnd, resetComponentResizeDnd, initComponentResizeDnd } from './componentScope'
 import { dndTypeIdle, dndTypeProgress } from '../shared/dnd'
 import { T, F } from '../../utils'
-import { makeEpicWithScope, type BuiltInEffectType, makeUpdater } from '../../epics'
+import { createEpicWithScope, type BuiltInEffectType, createUpdater } from '../../epics'
 
 const
-	componentEpic = makeEpicWithScope<ComponentStateType, ComponentScope, BuiltInEffectType, empty>({
+	componentEpic = createEpicWithScope<ComponentStateType, ComponentScope, BuiltInEffectType, empty>({
 		vat: componentVat,
 		initialState: componentInitialState,
 		initialScope: componentInitialScope,
 		updaters: {
-			dndMoveAndSelection: makeUpdater({
+			dndMoveAndSelection: createUpdater({
 				dependsOn: {
 					templateWidth: templateWidthCondition,
 					mouseDown: componentMouseDown.condition,
@@ -72,7 +72,7 @@ const
 						}))
 				},
 			}),
-			dndResize: makeUpdater({
+			dndResize: createUpdater({
 				dependsOn: {
 					templateWidth: templateWidthCondition,
 					resizeNMouseDown: componentResizeNMouseDown.condition,
@@ -123,7 +123,7 @@ const
 						.updateState(setComponentIsResizingTrue)
 				},
 			}),
-			deselection: makeUpdater({
+			deselection: createUpdater({
 				dependsOn: {},
 				when: { 
 					templateAreaMouseDown: templateAreaMouseDown.condition.toOptional(),

@@ -1,5 +1,5 @@
 // @flow strict
-import { makeCondition, makeEpic, makeUpdater, createStore, makeEpicCondition } from '../epics'
+import { createCondition, createEpic, createUpdater, createStore, createEpicCondition } from '../epics'
 
 type AType = {| o: {| flag: bool, v: {| flag: bool, n: number |} |}, type: 'a' |}
 
@@ -14,17 +14,17 @@ const aAC = (n, oFlag = true, vFlag = true): AType => ({
 		},
 	},
 })
-const aC = makeCondition<AType>(a)
+const aC = createCondition<AType>(a)
 const aoC = aC.wsk('o')
 const aovnC = aoC.wsk('v').wsk('n')
 
 describe('dependsOn', () => {
 	it('can chain selectors', () => {
-		const e1 = makeEpic<number, empty, empty>({
+		const e1 = createEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 1,
 			updaters: {
-				nChanged: makeUpdater({
+				nChanged: createUpdater({
 					dependsOn: {},
 					when: { n: aovnC },
 					then: ({ values: { n }, R }) => R.updateState(state => state + n),
@@ -53,11 +53,11 @@ describe('dependsOn', () => {
 	})
 
 	it('condition .withSelector works', () => {
-		const e1 = makeEpic<number, empty, empty>({
+		const e1 = createEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
-				nChanged: makeUpdater({
+				nChanged: createUpdater({
 					dependsOn: {},
 					when: {
 						n: aovnC.withSelector(n => { return { a: n } }),
@@ -77,11 +77,11 @@ describe('dependsOn', () => {
 	})
 
 	it('condition .withSelector + .withGuard works', () => {
-		const e1 = makeEpic<number, empty, empty>({
+		const e1 = createEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
-				nChanged: makeUpdater({
+				nChanged: createUpdater({
 					dependsOn: {},
 					when: {
 						n: aovnC.withSelector(n => { return { a: n } }).wg((value) => value.a > 5),
@@ -108,11 +108,11 @@ describe('dependsOn', () => {
 	})
 
 	it('condition .withGuard + .toOptional works', () => {
-		const e1 = makeEpic<number, empty, empty>({
+		const e1 = createEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
-				nChanged: makeUpdater({
+				nChanged: createUpdater({
 					dependsOn: {},
 					when: {
 						n: aovnC.wg(value => value > 5).toOptional(),
@@ -139,11 +139,11 @@ describe('dependsOn', () => {
 	})
 
 	it('condition .withGuard + .withSelector works', () => {
-		const e1 = makeEpic<number, empty, empty>({
+		const e1 = createEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
-				nChanged: makeUpdater({
+				nChanged: createUpdater({
 					dependsOn: {},
 					when: {
 						n: aovnC.wg((n) => n > 5).withSelector(n => { return { a: n } }),
@@ -170,11 +170,11 @@ describe('dependsOn', () => {
 	})
 
 	it('calls once if selector return same value by ref compare', () => {
-		const e1 = makeEpic<number, empty, empty>({
+		const e1 = createEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 1,
 			updaters: {
-				nChanged: makeUpdater({
+				nChanged: createUpdater({
 					dependsOn: {},
 					when: { n: aovnC },
 					then: ({ R, values: { n } }) => R.updateState(state => state + n),
@@ -190,11 +190,11 @@ describe('dependsOn', () => {
 	})
 
 	it('calls twice if selector return different values by ref compare', () => {
-		const e1 = makeEpic<number, empty, empty>({
+		const e1 = createEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 1,
 			updaters: {
-				nChanged: makeUpdater({
+				nChanged: createUpdater({
 					dependsOn: {},
 					when: { o: aoC },
 					then: ({ R, values: { o } }) => R.updateState(state => state + o.v.n),
@@ -210,11 +210,11 @@ describe('dependsOn', () => {
 	})
 
 	it('calls twice if no selector present, even same action reference dispatched twice', () => {
-		const e1 = makeEpic<number, empty, empty>({
+		const e1 = createEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 1,
 			updaters: {
-				nChanged: makeUpdater({
+				nChanged: createUpdater({
 					dependsOn: {},
 					when: { _: aC },
 					then: ({ R }) => R.updateState(state => state + 1),
@@ -231,7 +231,7 @@ describe('dependsOn', () => {
 	})
 
 	it('compute key correctly', () => {
-		const aC = makeCondition('AType')
+		const aC = createCondition('AType')
 		const aP1C = aC.wsk('p1')
 
 		// $FlowFixMe
@@ -239,14 +239,14 @@ describe('dependsOn', () => {
 	})
 
 	it('reuse existiting root dependsOn', () => {
-		const aC = makeCondition('AType')
-		const aC1 = makeCondition('AType')
+		const aC = createCondition('AType')
+		const aC1 = createCondition('AType')
 
 		expect(aC).toBe(aC1)
 	})
 
 	it('reuse existiting child dependsOn', () => {
-		const aC = makeCondition('AType')
+		const aC = createCondition('AType')
 		const aP1C = aC.wsk('p1')
 		const aP1C1 = aC.wsk('p1')
 		const selector = () => 1
@@ -262,8 +262,8 @@ describe('dependsOn', () => {
 	})
 
 	it('not reuse existiting child dependsOn', () => {
-		const akC = makeCondition('AType').wsk('k')
-		const akGC = makeCondition('AType').wsk('k').wg(() => true)
+		const akC = createCondition('AType').wsk('k')
+		const akGC = createCondition('AType').wsk('k').wg(() => true)
 		const akmC = akC.wsk('m')
 		const akGmC = akGC.wsk('m')
 		const akGmSC = akGC.wsk('m').ws(() => 1)
@@ -286,11 +286,11 @@ describe('dependsOn', () => {
 	it('can have nested guards', () => {
 		const aGC = aC.wg(({ o }) => o.flag)
 		const aoGC = aGC.wsk('o').wg(({ v }) => v.flag)
-		const e1 = makeEpic<number, empty, empty>({
+		const e1 = createEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
-				nChanged: makeUpdater({
+				nChanged: createUpdater({
 					dependsOn: {},
 					when: { a: aGC, o: aoGC },
 					then: ({ R, values: { a, o } }) => R.updateState(state => state + a.o.v.n + o.v.n),
@@ -322,11 +322,11 @@ describe('dependsOn', () => {
 	})
 
 	it('it is possible to have different guards for root level', () => {
-		const e1 = makeEpic<number, empty, empty>({
+		const e1 = createEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
-				aChangedWhenNMoreThan5: makeUpdater({
+				aChangedWhenNMoreThan5: createUpdater({
 					dependsOn: {},
 					when: {
 						a: aC.wg((value) => value.o.v.n > 5),
@@ -335,7 +335,7 @@ describe('dependsOn', () => {
 						return R.updateState(state => state + a.o.v.n)
 					},
 				}),
-				aChangedWhenNLessThan5: makeUpdater({
+				aChangedWhenNLessThan5: createUpdater({
 					dependsOn: {},
 					when: {
 						a: aC.wg((value) => value.o.v.n < 5),
@@ -344,7 +344,7 @@ describe('dependsOn', () => {
 						return R.updateState(state => state - a.o.v.n)
 					},
 				}),
-				aChangedWhenNEquals5: makeUpdater({
+				aChangedWhenNEquals5: createUpdater({
 					dependsOn: {},
 					when: {
 						a: aC.wg((value) => value.o.v.n === 5),
@@ -368,11 +368,11 @@ describe('dependsOn', () => {
 	})
 
 	it('it is possible to have different guards for not root level', () => {
-		const e1 = makeEpic<number, empty, empty>({
+		const e1 = createEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
-				nMoreThan5: makeUpdater({
+				nMoreThan5: createUpdater({
 					dependsOn: {},
 					when: {
 						n: aovnC.wg((value) => value > 5),
@@ -381,7 +381,7 @@ describe('dependsOn', () => {
 						return R.updateState(state => state + n)
 					},
 				}),
-				nLessThan5: makeUpdater({
+				nLessThan5: createUpdater({
 					dependsOn: {},
 					when: {
 						n: aovnC.wg((value) => value < 5),
@@ -390,7 +390,7 @@ describe('dependsOn', () => {
 						return R.updateState(state => state - n)
 					},
 				}),
-				nEquals5: makeUpdater({
+				nEquals5: createUpdater({
 					dependsOn: {},
 					when: {
 						n: aovnC.wg((value) => value === 5),
@@ -415,11 +415,11 @@ describe('dependsOn', () => {
 
 	it('can use prevValue inside selector of condition', () => {
 		const nDiffC = aC.ws((value, prevValue) => prevValue ? value.o.v.n - prevValue.o.v.n : 0)
-		const e1 = makeEpic<number, empty, empty>({
+		const e1 = createEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
-				nChanged: makeUpdater({
+				nChanged: createUpdater({
 					dependsOn: {},
 					when: { diff: nDiffC },
 					then: ({ R, values: { diff } }) => R.updateState(state => state + diff),
@@ -445,28 +445,28 @@ describe('dependsOn', () => {
 	})
 
 	it('if epic is changed multiple times during same action, but condition changed only once, updater should be called only once', () => {
-		const aC = makeCondition<AType>(a)
-		const e1 = makeEpic<{| flag: bool, value: number |}, empty, empty>({
+		const aC = createCondition<AType>(a)
+		const e1 = createEpic<{| flag: bool, value: number |}, empty, empty>({
 			vat: 'e1',
 			initialState: { value: 0, flag: false },
 			updaters: {
-				nChanged: makeUpdater({
+				nChanged: createUpdater({
 					dependsOn: {},
 					when: { a: aC },
 					then: ({ R }) => R.updateState(state => ({ ...state, flag: true })),
 				}),
-				e2Changed: makeUpdater({
+				e2Changed: createUpdater({
 					dependsOn: {},
-					when: { e2: makeEpicCondition<number>('e2') },
+					when: { e2: createEpicCondition<number>('e2') },
 					then: ({ R }) => R.updateState(state => ({ ...state, value: state.value + 1 })),
 				}),
 			},
 		})
-		const e2 = makeEpic<number, empty, empty>({
+		const e2 = createEpic<number, empty, empty>({
 			vat: 'e2',
 			initialState: 0,
 			updaters: {
-				e1Changed: makeUpdater({
+				e1Changed: createUpdater({
 					dependsOn: {},
 					when: { e1: e1.c.wsk('flag') },
 					then: ({ R }) => R.updateState(state => state + 1),

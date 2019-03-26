@@ -7,28 +7,28 @@ import { componentMainActionsEpicVat, componentsMainActionsIsVisibleCondition } 
 import {
 	propertiesPanelEpic,
 	type PropertiesPanelStateType,
-	makeComputePropertiesPanelBBoxWithRespectToTemplateArea,
+	createComputePropertiesPanelBBoxWithRespectToTemplateArea,
 } from '../propertiesPanel/propertiesPanelEpic'
 import { workspaceViewportEpic } from '../workspace/workspaceViewportEpic'
 import { templateWidthCondition } from '../template/templateACAC'
 import { areBBoxIntersect, computeBBoxFromPositionAndDimensions } from '../../utils'
 import { workspaceScroll } from '../workspace/workspaceACAC'
-import { makeUpdater, makeEpic } from '../../epics'
+import { createUpdater, createEpic } from '../../epics'
 
 const computeLeftAlignedPosition = ({ componentLeft, componentResizeHandleNTop, componentMainActionsHeight }) =>
 	({ left: componentLeft, top: componentResizeHandleNTop - 10 - componentMainActionsHeight })
 const computeRightAlignedPosition = ({ componentRight, componentResizeHandleNTop, componentMainActionsDimensions }) =>
 	({ left: componentRight - componentMainActionsDimensions.width, top: componentResizeHandleNTop - 10 - componentMainActionsDimensions.height })
-const componentMainActionsEpic = makeEpic<ComponentMainActionsState, *, *>({
+const componentMainActionsEpic = createEpic<ComponentMainActionsState, *, *>({
 	vat: componentMainActionsEpicVat,
 	initialState: componentMainActionsInitialState,
 	updaters: {
-		showHide: makeUpdater({
+		showHide: createUpdater({
 			dependsOn: {},
 			when: { resizeDecorationsVisible: componentResizeDecorationsVisibleCondition },
 			then: ({ values: { resizeDecorationsVisible }, R }) => R.updateState(componentMainActionsSetVisible(resizeDecorationsVisible)),
 		}),
-		computePosition: makeUpdater({
+		computePosition: createUpdater({
 			dependsOn: {
 				componentPosition: componentPositionCondition,
 				componentResizeHandleNTop: componentResizeHandleNTopCondition,
@@ -49,7 +49,7 @@ const componentMainActionsEpic = makeEpic<ComponentMainActionsState, *, *>({
 				return R.doNothing
 			},
 		}),
-		adjustPositionIfOverlapWithPropertiesPanel: makeUpdater({
+		adjustPositionIfOverlapWithPropertiesPanel: createUpdater({
 			dependsOn: {
 				componentRight: componentRightCondition,
 				componentResizeHandleNTop: componentResizeHandleNTopCondition,
@@ -62,7 +62,7 @@ const componentMainActionsEpic = makeEpic<ComponentMainActionsState, *, *>({
 				resetPropertiesPanelRTPositionAndHeightWhenPropPanelIsNotVisible: propertiesPanelEpic.condition.wg<PropertiesPanelStateType>(pp => !pp.visible).resetConditionsByKey(['propertiesPanelRTPositionAndHeight']).toOptional(),
 			},
 			then: ({ values: { workspaceScroll, componentRight, componentResizeHandleNTop, propertiesPanelRTPositionAndHeight, workspaceWidth, templateWidth }, R, state }) => {
-				const propertiesPanelBBoxWithRespectToTemplateArea = makeComputePropertiesPanelBBoxWithRespectToTemplateArea({
+				const propertiesPanelBBoxWithRespectToTemplateArea = createComputePropertiesPanelBBoxWithRespectToTemplateArea({
 					workspaceWidth,
 					templateWidth,
 					propertiesPanelHeight: propertiesPanelRTPositionAndHeight.height,

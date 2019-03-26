@@ -1,17 +1,17 @@
 // @flow strict
 
-import { makeACAC, makeEffectManager } from '../epics'
+import { createACAC, createEffectManager } from '../epics'
 
 type StateType = {| requestsByEpicVat: { [vat: string]: Request } |}
 type ScopeType = {| resolvePromiseByEpicVat: { [vat: string]: () => void } |}
 type RequestAnimationFrameEffectType = {| cmd: 'REQUEST' | 'CANCEL', type: typeof requestType |}
 
-const animationFrame = makeACAC<{| dateNow: number |}>('ANIMATION_FRAME')
+const animationFrame = createACAC<{| dateNow: number |}>('ANIMATION_FRAME')
 const requestType: 'request_animation_frame_effect' = 'request_animation_frame_effect'
 const requestAnimationFrameEC = (): RequestAnimationFrameEffectType => ({ type: requestType, cmd: 'REQUEST' })
 const cancelAnimationFrameEC = (): RequestAnimationFrameEffectType => ({	type: requestType, cmd: 'CANCEL' })
 
-const requestAnimationFrameEM = makeEffectManager<RequestAnimationFrameEffectType, StateType, ScopeType>({
+const requestAnimationFrameEM = createEffectManager<RequestAnimationFrameEffectType, StateType, ScopeType>({
 	requestType,
 	initialState: { requestsByEpicVat: {} },
 	initialScope: { resolvePromiseByEpicVat: {} },

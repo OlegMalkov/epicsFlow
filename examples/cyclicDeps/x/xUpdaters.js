@@ -1,5 +1,5 @@
 // @flow strict
-import { type UpdaterType, makeUpdater } from '../../../src/epics'
+import { type UpdaterType, createUpdater } from '../../../src/epics'
 import { zResultC } from '../z/zVAT'
 import { isEven } from '../utils'
 import { incX, decX, setXColor, type XStateType } from './xState'
@@ -7,7 +7,7 @@ import { xClicked } from './xAAC'
 
 type XUpdaterType = UpdaterType<XStateType, *, *, *>
 
-const xClickedUpdater: XUpdaterType = makeUpdater({
+const xClickedUpdater: XUpdaterType = createUpdater({
 	dependsOn: { zResult: zResultC },
 	when: {
 		_xClicked: xClicked.condition,
@@ -16,7 +16,7 @@ const xClickedUpdater: XUpdaterType = makeUpdater({
 })
 
 
-const zResultChanged: XUpdaterType = makeUpdater({
+const zResultChanged: XUpdaterType = createUpdater({
 	dependsOn: { },
 	when: { zResult: zResultC },
 	then: ({ values: { zResult }, R }) => R.updateState(setXColor(isEven(zResult) ? 'green' : 'red')),

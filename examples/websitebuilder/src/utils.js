@@ -42,15 +42,15 @@ const
 		return newState
 	}
 const _setPath = _setPathF((x, y) => x === y)
-const _makeDeepCompareSetter = _setPathF(deepEqual)
+const _createDeepCompareSetter = _setPathF(deepEqual)
 const setProp: SetPropType = p => _setPath([p])
-const setPropDeepCompare: SetPropType = p => _makeDeepCompareSetter([p])
+const setPropDeepCompare: SetPropType = p => _createDeepCompareSetter([p])
 const setPath2: SetPath2Type = (p1, p2) => _setPath([p1, p2])
-const setPathDeepCompare2: SetPath2Type = (p1, p2) => _makeDeepCompareSetter([p1, p2])
+const setPathDeepCompare2: SetPath2Type = (p1, p2) => _createDeepCompareSetter([p1, p2])
 const setPath3: SetPath3Type = (p1, p2, p3) => _setPath([p1, p2, p3])
-const setPathDeepCompare3: SetPath3Type = (p1, p2, p3) => _makeDeepCompareSetter([p1, p2, p3])
+const setPathDeepCompare3: SetPath3Type = (p1, p2, p3) => _createDeepCompareSetter([p1, p2, p3])
 const setPath4: SetPath4Type = (p1, p2, p3, p4) => _setPath([p1, p2, p3, p4])
-const setPathDeepCompare4: SetPath4Type = (p1, p2, p3, p4) => _makeDeepCompareSetter([p1, p2, p3, p4])
+const setPathDeepCompare4: SetPath4Type = (p1, p2, p3, p4) => _createDeepCompareSetter([p1, p2, p3, p4])
 // For value transformation
 
 class $ValueContainer<V> {

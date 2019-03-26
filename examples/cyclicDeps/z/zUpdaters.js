@@ -1,15 +1,15 @@
 // @flow strict
-import { type UpdaterType, makeUpdater, makeSACAC } from '../../../src/epics'
+import { type UpdaterType, createUpdater, createSACAC } from '../../../src/epics'
 import { xValueCondition } from '../x/xAAC'
 import { yValueC } from '../y/yAAC'
 
 import { zComputeResult, zIncMultiplier, type ZStateType } from './zState'
 
-const zClicked = makeSACAC('Z_CLICKED')
+const zClicked = createSACAC('Z_CLICKED')
 
 type ZUpdaterType = UpdaterType<ZStateType, *, *, *>
 const
-	zClickedUpdater: ZUpdaterType = makeUpdater({
+	zClickedUpdater: ZUpdaterType = createUpdater({
 		dependsOn: {
 			x: xValueCondition,
 			y: yValueC,
@@ -23,7 +23,7 @@ const
 	})
 
 
-const xOrYChanged: ZUpdaterType = makeUpdater({
+const xOrYChanged: ZUpdaterType = createUpdater({
 	dependsOn: {},
 	when: {
 		x: xValueCondition,

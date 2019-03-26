@@ -1,11 +1,11 @@
 // @flow
 
 import { type ComponentMainActionsState } from './componentMainActionsState'
-import { makeSACAC, makeEpicCondition } from '../../epics'
+import { createSACAC, createEpicCondition } from '../../epics'
 
 const componentMainActionsEpicVat = 'COMPONENT_MAIN_ACTIONS_VAT'
-const componentMainActionsEditButtonPress = makeSACAC('COMPONENT_MAIN_ACTIONS_EDIT_PRESSED')
-const componentMainActionsCondition = makeEpicCondition<ComponentMainActionsState>(componentMainActionsEpicVat)
+const componentMainActionsEditButtonPress = createSACAC('COMPONENT_MAIN_ACTIONS_EDIT_PRESSED')
+const componentMainActionsCondition = createEpicCondition<ComponentMainActionsState>(componentMainActionsEpicVat)
 const componentsMainActionsIsVisibleCondition = componentMainActionsCondition.withSelectorKey('visible')
 const componentsMainActionsWhenVisibleCondition = componentMainActionsCondition.withGuard<ComponentMainActionsState>(s => s.visible)
 const componentsMainActionsPositionWhenVisibleCondition = componentsMainActionsWhenVisibleCondition.wsk('position')

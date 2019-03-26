@@ -1,30 +1,30 @@
 // @flow strict
 
 import {
-	makeEpic,
-	makeUpdater,
+	createEpic,
+	createUpdater,
 	createStore,
-	makeSACAC,
+	createSACAC,
 	type PluginType,
 	storeCreated,
-	makePluginStateKey,
+	createPluginStateKey,
 	type EpicType,
 } from '../epics'
 import { type LocalStorageEffectType } from '../effectManagers/localStorageEM'
 
 type PluginConfigType = {| injectStateIncOnCreateStore: bool |}
 
-const a = makeSACAC('A')
+const a = createSACAC('A')
 
 describe('plugin', () => {
 	it('can inject epics and then initialization on storeCreated', async () => {
 		const plugin: PluginType = ({ injectEpics }) => {
 			injectEpics({
-				e1: makeEpic<number, LocalStorageEffectType, empty>({
+				e1: createEpic<number, LocalStorageEffectType, empty>({
 					vat: 'E1_VAT',
 					initialState: 0,
 					updaters: {
-						init: makeUpdater({
+						init: createUpdater({
 							dependsOn: {},
 							when: { _: storeCreated.condition },
 							then: ({ R }) => {
@@ -33,11 +33,11 @@ describe('plugin', () => {
 						}),
 					},
 				}),
-				e2: makeEpic<number, LocalStorageEffectType, empty>({
+				e2: createEpic<number, LocalStorageEffectType, empty>({
 					vat: 'E2_VAT',
 					initialState: 0,
 					updaters: {
-						init: makeUpdater({
+						init: createUpdater({
 							dependsOn: {},
 							when: { _: storeCreated.condition },
 							then: ({ R }) => {
@@ -55,15 +55,15 @@ describe('plugin', () => {
 			},
 		})
 
-		expect(store.getState()[makePluginStateKey('e1')]).toBe(1)
-		expect(store.getState()[makePluginStateKey('e2')]).toBe(2)
+		expect(store.getState()[createPluginStateKey('e1')]).toBe(1)
+		expect(store.getState()[createPluginStateKey('e2')]).toBe(2)
 	})
 	it('can inject updaters, updaters name spaced by plugin key', async () => {
-		const e1 = makeEpic<number, empty, PluginConfigType>({
+		const e1 = createEpic<number, empty, PluginConfigType>({
 			vat: 'e1',
 			initialState: 0,
 			updaters: {
-				a: makeUpdater({
+				a: createUpdater({
 					dependsOn: {},
 					when: { _a: a.c },
 					then: ({ R }) => R.updateState(() => -1),
@@ -71,22 +71,22 @@ describe('plugin', () => {
 			},
 			pluginConfig: { injectStateIncOnCreateStore: true },
 		})
-		const e2 = makeEpic<number, empty, empty>({
+		const e2 = createEpic<number, empty, empty>({
 			vat: 'e2',
 			initialState: 0,
 			updaters: {
-				a: makeUpdater({
+				a: createUpdater({
 					dependsOn: {},
 					when: { _a: a.c },
 					then: ({ R }) => R.updateState(() => 2),
 				}),
 			},
 		})
-		const e3 = makeEpic<number, empty, PluginConfigType>({
+		const e3 = createEpic<number, empty, PluginConfigType>({
 			vat: 'e3',
 			initialState: 0,
 			updaters: {
-				a: makeUpdater({
+				a: createUpdater({
 					dependsOn: {},
 					when: { _a: a.c },
 					then: ({ R }) => R.updateState(() => 3),
@@ -101,7 +101,7 @@ describe('plugin', () => {
 				if (!pluginConfig || !pluginConfig.injectStateIncOnCreateStore) return
 
 				return {
-					inc: makeUpdater<number, *, *, *, *>({
+					inc: createUpdater<number, *, *, *, *>({
 						dependsOn: {},
 						when: { _: storeCreated.condition },
 						then: ({ R }) => R.updateState(state => state + 1),

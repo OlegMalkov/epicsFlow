@@ -1,7 +1,7 @@
 // @flow
-import { makeACAC } from '../../epics'
+import { createACAC } from '../../epics'
 
-const workspaceScroll = makeACAC<{| top: number |}>('WORKSPACE_SCROLL')
+const workspaceScroll = createACAC<{| top: number |}>('WORKSPACE_SCROLL')
 
 export {
 	workspaceScroll,

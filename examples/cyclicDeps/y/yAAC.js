@@ -1,12 +1,12 @@
 // @flow strict
 import { type YStateType } from './yState'
-import { makeSACAC, makeEpicCondition } from '../../../src/epics'
+import { createSACAC, createEpicCondition } from '../../../src/epics'
 
 const yVat = 'Y_VAT'
-const yC = makeEpicCondition<YStateType>(yVat)
+const yC = createEpicCondition<YStateType>(yVat)
 const yValueC = yC.wsk('value')
 const yColorC = yC.wsk('color')
-const yClicked = makeSACAC('Y_CLICKED')
+const yClicked = createSACAC('Y_CLICKED')
 
 export {
 	yVat,

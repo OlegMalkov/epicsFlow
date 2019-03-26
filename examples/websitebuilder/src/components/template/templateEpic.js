@@ -5,14 +5,14 @@ import { type TemplateStateType, templateInitialState, setTemplateWidth } from '
 import { componentRightCondition } from '../component/componentACAC'
 import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateVat } from './templateACAC'
 import { templateInitialScope, type TemplateScopeType, resetTemplateDnd, templateInitDnd } from './templateScope'
-import { makeEpicWithScope, makeUpdater } from '../../epics'
+import { createEpicWithScope, createUpdater } from '../../epics'
 
-const templateEpic = makeEpicWithScope<TemplateStateType, TemplateScopeType, empty, empty>({
+const templateEpic = createEpicWithScope<TemplateStateType, TemplateScopeType, empty, empty>({
 	vat: templateVat,
 	initialState: templateInitialState,
 	initialScope: templateInitialScope,
 	updaters: {
-		dnd: makeUpdater({
+		dnd: createUpdater({
 			dependsOn: {
 				componentRight: componentRightCondition,
 				leftDown: templateWidthLeftResizeHandleMouseDown.condition.toOptional(),

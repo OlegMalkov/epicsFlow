@@ -5,18 +5,18 @@ import { browserDimensions } from '../env/envACAC'
 import { leftPanelEpic } from '../leftPanel/leftPanelEpic'
 import { TopBarHeight } from '../topBar/topBarConstants'
 import { setPropDeepCompare } from '../../utils'
-import { makeEpic, makeUpdater } from '../../epics'
+import { createEpic, createUpdater } from '../../epics'
 
 type WorkspaceViewportStateType = {|
     dimensions: DimensionsType,
 |}
 
 const setDimensions = setPropDeepCompare<WorkspaceViewportStateType, *>('dimensions')
-const workspaceViewportEpic = makeEpic<WorkspaceViewportStateType, empty, empty>({
+const workspaceViewportEpic = createEpic<WorkspaceViewportStateType, empty, empty>({
 	vat: 'WORKSPACE_VIEWPORT_VAT',
 	initialState: { dimensions: { width: 0, height: 0 } },
 	updaters: {
-		compute: makeUpdater({
+		compute: createUpdater({
 			dependsOn: {},
 			when: {
 				browserDimensions: browserDimensions.condition,
