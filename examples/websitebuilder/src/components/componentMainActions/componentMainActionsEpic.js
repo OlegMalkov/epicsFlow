@@ -26,7 +26,7 @@ const componentMainActionsEpic = createEpic<ComponentMainActionsState, *, *>({
 		showHide: createUpdater({
 			given: {},
 			when: { resizeDecorationsVisible: componentResizeDecorationsVisibleCondition },
-			then: ({ values: { resizeDecorationsVisible }, R }) => R.updateState(componentMainActionsSetVisible(resizeDecorationsVisible)),
+			then: ({ values: { resizeDecorationsVisible }, R }) => R.mapState(componentMainActionsSetVisible(resizeDecorationsVisible)),
 		}),
 		computePosition: createUpdater({
 			given: {
@@ -44,7 +44,7 @@ const componentMainActionsEpic = createEpic<ComponentMainActionsState, *, *>({
 						componentMainActionsHeight: state.dimensions.height,
 					})
 
-					return R.updateState(componentMainActionsSetPosition(position))
+					return R.mapState(componentMainActionsSetPosition(position))
 				}
 				return R.doNothing
 			},
@@ -78,7 +78,7 @@ const componentMainActionsEpic = createEpic<ComponentMainActionsState, *, *>({
 						componentMainActionsDimensions: state.dimensions,
 					})
 
-					return R.updateState(componentMainActionsSetPosition(position))
+					return R.mapState(componentMainActionsSetPosition(position))
 				}
 
 				return R.doNothing

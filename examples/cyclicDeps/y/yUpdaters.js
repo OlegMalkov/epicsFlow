@@ -12,14 +12,14 @@ const yClickedUpdater: YUpdaterType = createUpdater({
 	when: {
 		_yClicked: yClicked.condition,
 	},
-	then: ({ values: { zResult }, R }) => R.updateState(isOdd(zResult)? incY: decY),
+	then: ({ values: { zResult }, R }) => R.mapState(isOdd(zResult)? incY: decY),
 })
 
 
 const zRezultChanged: YUpdaterType = createUpdater({
 	given: {},
 	when: { zResult: zResultC },
-	then: ({ values: { zResult }, R }) => R.updateState(setYColor(isOdd(zResult) ? 'green' : 'red')),
+	then: ({ values: { zResult }, R }) => R.mapState(setYColor(isOdd(zResult) ? 'green' : 'red')),
 })
 
 export const yUpdaters = {

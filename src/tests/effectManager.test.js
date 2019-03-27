@@ -4,7 +4,7 @@ import {
 	createEpic,
 	createUpdater,
 	createStore,
-	createSACAC,
+	makeSimpleActionCreatorAndCondition,
 	type BuiltInEffectType,
 	storeCreated,
 	dispatchBatchedActionsEffectCreator,
@@ -14,8 +14,8 @@ import { waitEffectManagers } from './utils'
 
 type CustomEpicEffectType = RequestAnimationFrameEffectType
 
-const a = createSACAC('A')
-const b = createSACAC('B')
+const a = makeSimpleActionCreatorAndCondition('A')
+const b = makeSimpleActionCreatorAndCondition('B')
 
 describe('effectManager', () => {
 	it('only epic that requested effect can receive response from effect manager (animation frame)', async () => {
@@ -27,7 +27,7 @@ describe('effectManager', () => {
 					af: createUpdater({
 						given: {},
 						when: { _af: animationFrame.condition },
-						then: ({ R }) => R.updateState(() => 1),
+						then: ({ R }) => R.mapState(() => 1),
 					}),
 				},
 			})
@@ -45,7 +45,7 @@ describe('effectManager', () => {
 				af: createUpdater({
 					given: {},
 					when: { _af: animationFrame.condition },
-					then: ({ R }) => R.updateState(state => state + 1),
+					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 			},
 		})
@@ -89,12 +89,12 @@ describe('effectManager', () => {
 				a: createUpdater({
 					given: {},
 					when: { _a: a.c },
-					then: ({ R }) => R.updateState(state => state + 1),
+					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 				b: createUpdater({
 					given: {},
 					when: { _a: b.c },
-					then: ({ R }) => R.updateState(() => 10),
+					then: ({ R }) => R.mapState(() => 10),
 				}),
 			},
 		})
@@ -106,12 +106,12 @@ describe('effectManager', () => {
 				a: createUpdater({
 					given: {},
 					when: { _a: a.c },
-					then: ({ R }) => R.updateState(state => state + 1),
+					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 				b: createUpdater({
 					given: {},
 					when: { _b: b.c },
-					then: ({ R }) => R.updateState(() => 10),
+					then: ({ R }) => R.mapState(() => 10),
 				}),
 			},
 		})
@@ -123,17 +123,17 @@ describe('effectManager', () => {
 				e2: createUpdater({
 					given: {},
 					when: { e2: e2.c },
-					then: ({ values: { e2 }, R }) => R.updateState(state => state + e2),
+					then: ({ values: { e2 }, R }) => R.mapState(state => state + e2),
 				}),
 				e3: createUpdater({
 					given: {},
 					when: { e3: e3.c },
-					then: ({ values: { e3 }, R }) => R.updateState(state => state + e3),
+					then: ({ values: { e3 }, R }) => R.mapState(state => state + e3),
 				}),
 				b: createUpdater({
 					given: {},
 					when: { _b: b.c },
-					then: ({ R }) => R.updateState(() => 0),
+					then: ({ R }) => R.mapState(() => 0),
 				}),
 			},
 		})

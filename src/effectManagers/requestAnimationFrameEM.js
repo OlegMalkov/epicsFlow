@@ -1,12 +1,12 @@
 // @flow strict
 
-import { createACAC, createEffectManager } from '../epics'
+import { makeActionCreatorAndCondition, createEffectManager } from '../epics'
 
 type StateType = {| requestsByEpicVat: { [vat: string]: Request } |}
 type ScopeType = {| resolvePromiseByEpicVat: { [vat: string]: () => void } |}
 type RequestAnimationFrameEffectType = {| cmd: 'REQUEST' | 'CANCEL', type: typeof requestType |}
 
-const animationFrame = createACAC<{| dateNow: number |}>('ANIMATION_FRAME')
+const animationFrame = makeActionCreatorAndCondition<{| dateNow: number |}>('ANIMATION_FRAME')
 const requestType: 'request_animation_frame_effect' = 'request_animation_frame_effect'
 const requestAnimationFrameEC = (): RequestAnimationFrameEffectType => ({ type: requestType, cmd: 'REQUEST' })
 const cancelAnimationFrameEC = (): RequestAnimationFrameEffectType => ({	type: requestType, cmd: 'CANCEL' })
@@ -33,7 +33,7 @@ const requestAnimationFrameEM = createEffectManager<RequestAnimationFrameEffectT
 
 			return R
 				.withEffectPromise(promise)
-				.updateState(() => ({
+				.mapState(() => ({
 					...state,
 					requestsByEpicVat: {
 						...state.requestsByEpicVat,
@@ -44,7 +44,7 @@ const requestAnimationFrameEM = createEffectManager<RequestAnimationFrameEffectT
 			window.cancelAnimationFrame(state.requestsByEpicVat[requesterEpicVat])
 			scope.resolvePromiseByEpicVat[requesterEpicVat]()
 
-			return R.updateState(() => ({
+			return R.mapState(() => ({
 				...state,
 				requestsByEpicVat: {
 					...state.requestsByEpicVat,

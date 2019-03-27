@@ -20,8 +20,8 @@ export const leftPanelEpic = createEpic<LeftPanelStateType, empty, empty>({
 			when: { _: leftPanelToggleExpansionButtonPressed.condition },
 			then: ({ R, state }) => {
 				return R
-					.updateState(setWidth(state.expanded ? LeftPanelWidthCollapsed : LeftPanelWidthExpanded))
-					.updateState(setExpanded(expanded => !expanded))
+					.mapState(setWidth(state.expanded ? LeftPanelWidthCollapsed : LeftPanelWidthExpanded))
+					.mapState(setExpanded(expanded => !expanded))
 			},
 		}),
 	},

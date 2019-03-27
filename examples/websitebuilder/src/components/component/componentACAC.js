@@ -1,11 +1,11 @@
 // @flow strict
 
 import { type ComponentStateType } from './componentState'
-import { createSACAC, createEpicCondition } from '../../../../../src/epics'
+import { makeSimpleActionCreatorAndCondition, createEpicCondition } from '../../../../../src/epics'
 
 const componentVat = 'COMPONENT_VAT'
-const componentMouseDown = createSACAC('COMPONENT_MOUSE_DOWN')
-const componentResizeNMouseDown = createSACAC('COMPONENT_RESIZE_N_MOUSE_DOWN')
+const componentMouseDown = makeSimpleActionCreatorAndCondition('COMPONENT_MOUSE_DOWN')
+const componentResizeNMouseDown = makeSimpleActionCreatorAndCondition('COMPONENT_RESIZE_N_MOUSE_DOWN')
 const componentCondition = createEpicCondition<ComponentStateType>(componentVat)
 const componentRightCondition = componentCondition.withSelector<number>(({ position: { left }, dimensions: { width } }) => left + width)
 const componentPositionCondition = componentCondition.withSelectorKey('position')

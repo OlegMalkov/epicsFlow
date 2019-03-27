@@ -2,7 +2,7 @@
 
 import { type ComponentStateType, componentInitialState, updateComponentBBox, setComponentSelected, setComponentIsMovingFalse, setComponentIsMovingTrue, setComponentIsResizingFalse, setComponentIsResizingTrue } from './componentState'
 import { componentVat, componentMouseDown, componentResizeNMouseDown } from './componentACAC'
-import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC'
+import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition, windowMouseMove } from '../../globalACAC'
 import { templateWidthCondition, templateAreaMouseDown } from '../template/templateACAC'
 import { componentInitialScope, type ComponentScope, initComponentMoveDnd, resetComponentMoveDnd, resetComponentResizeDnd, initComponentResizeDnd } from './componentScope'
 import { dndTypeIdle, dndTypeProgress } from '../shared/dnd'
@@ -21,7 +21,7 @@ const
 					mouseDown: componentMouseDown.condition,
 				},
 				when: {
-					mousePosition: windowMousePositionCondition,
+					mousePosition: MakeCondition(windowMouseMove).withSelectorKey('position').toOptional(),
 					cancel: keyboardEscDownCondition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
 					mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
 				},
@@ -37,22 +37,22 @@ const
 							const { componentStartPos } = scope.movingDnd
 
 							return R
-								.updateState(updateComponentBBox({ bboxUpdate: { ...componentStartPos }, templateWidth }))
-								.updateState(setComponentIsMovingFalse)
-								.updateScope(resetComponentMoveDnd)
+								.mapState(updateComponentBBox({ bboxUpdate: { ...componentStartPos }, templateWidth }))
+								.mapState(setComponentIsMovingFalse)
+								.mapScope(resetComponentMoveDnd)
 						}
 						return R.doNothing
 					}
 
 					if (mouseUp) {
 						return R
-							.updateState(setComponentIsMovingFalse)
-							.updateState(setComponentSelected(T))
-							.updateScope(resetComponentMoveDnd)
+							.mapState(setComponentIsMovingFalse)
+							.mapState(setComponentSelected(T))
+							.mapScope(resetComponentMoveDnd)
 					}
 
 					if (scope.movingDnd.type === dndTypeIdle) {
-						return R.updateScope(initComponentMoveDnd({ componentStartPos: position, mouseStartPosition: mousePosition }))
+						return R.mapScope(initComponentMoveDnd({ componentStartPos: position, mouseStartPosition: mousePosition }))
 					}
 
 					const { componentStartPos, mouseStartPosition } = scope.movingDnd
@@ -60,8 +60,8 @@ const
 					const diffTop = mouseStartPosition.top - mousePosition.top
 
 					return R
-						.updateState(setComponentIsMovingTrue)
-						.updateState(updateComponentBBox({
+						.mapState(setComponentIsMovingTrue)
+						.mapState(updateComponentBBox({
 							bboxUpdate: { left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop },
 							templateWidth,
 						}))
@@ -90,21 +90,21 @@ const
 							const { componentStartPosition, componentStartDimensions } = scope.resizeDnd
 
 							return R
-								.updateState(updateComponentBBox({ bboxUpdate: { ...componentStartPosition, ...componentStartDimensions }, templateWidth }))
-								.updateState(setComponentIsResizingFalse)
-								.updateScope(resetComponentResizeDnd)
+								.mapState(updateComponentBBox({ bboxUpdate: { ...componentStartPosition, ...componentStartDimensions }, templateWidth }))
+								.mapState(setComponentIsResizingFalse)
+								.mapScope(resetComponentResizeDnd)
 						}
 						return R.doNothing
 					}
 
 					if (mouseUp) {
 						return R
-							.updateState(setComponentIsResizingFalse)
-							.updateScope(resetComponentResizeDnd)
+							.mapState(setComponentIsResizingFalse)
+							.mapScope(resetComponentResizeDnd)
 					}
 
 					if (scope.resizeDnd.type === dndTypeIdle) {
-						return R.updateScope(initComponentResizeDnd({ componentStartDimensions: state.dimensions, componentStartPosition: state.position, mouseStartPosition: mousePosition }))
+						return R.mapScope(initComponentResizeDnd({ componentStartDimensions: state.dimensions, componentStartPosition: state.position, mouseStartPosition: mousePosition }))
 					}
 
 					const
@@ -114,8 +114,8 @@ const
 					const diffTop = mouseStartPosition.top - mousePosition.top
 
 					return R
-						.updateState(updateComponentBBox({ bboxUpdate: { top: componentStartPosition.top - diffTop, height: componentStartDimensions.height + diffTop }, templateWidth }))
-						.updateState(setComponentIsResizingTrue)
+						.mapState(updateComponentBBox({ bboxUpdate: { top: componentStartPosition.top - diffTop, height: componentStartDimensions.height + diffTop }, templateWidth }))
+						.mapState(setComponentIsResizingTrue)
 				},
 			}),
 			deselection: createUpdater({
@@ -124,7 +124,7 @@ const
 					templateAreaMouseDown: templateAreaMouseDown.condition.toOptional(),
 					escPressed: keyboardEscDownCondition.toOptional(),
 				},
-				then: ({ R }) => R.updateState(setComponentSelected(F)),
+				then: ({ R }) => R.mapState(setComponentSelected(F)),
 			}),
 		},
 	})

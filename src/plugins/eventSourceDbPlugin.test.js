@@ -4,7 +4,7 @@ import {
 	createEpic,
 	createUpdater,
 	createStore,
-	createSACAC,
+	makeSimpleActionCreatorAndCondition,
 	createPluginStateKey,
 } from '../epics'
 import { localStorageEM } from '../effectManagers/localStorageEM'
@@ -17,9 +17,9 @@ import {
 } from './eventSourceDbPlugin'
 import { setNow } from '../tests/mocks'
 
-const a = createSACAC('A')
-const b = createSACAC('B')
-const z = createSACAC('Z')
+const a = makeSimpleActionCreatorAndCondition('A')
+const b = makeSimpleActionCreatorAndCondition('B')
+const z = makeSimpleActionCreatorAndCondition('Z')
 
 const inc = x => x + 1
 
@@ -36,7 +36,7 @@ describe('eventSourceDbPlugin', () => {
 				inc: createUpdater({
 					given: {},
 					when: { _a: a.c },
-					then: ({ R }) => R.updateState(inc),
+					then: ({ R }) => R.mapState(inc),
 				}),
 			},
 			pluginConfig: { esdbAggregate: true },
@@ -48,7 +48,7 @@ describe('eventSourceDbPlugin', () => {
 				inc: createUpdater({
 					given: {},
 					when: { _b: b.c },
-					then: ({ R }) => R.updateState(inc),
+					then: ({ R }) => R.mapState(inc),
 				}),
 			},
 			pluginConfig: { esdbAggregate: true },
@@ -60,7 +60,7 @@ describe('eventSourceDbPlugin', () => {
 				inc: createUpdater({
 					given: {},
 					when: { _a: a.c.to(), _b: b.c.to() },
-					then: ({ R }) => R.updateState(inc),
+					then: ({ R }) => R.mapState(inc),
 				}),
 			},
 			pluginConfig: { esdbAggregate: true },

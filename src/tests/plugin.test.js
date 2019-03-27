@@ -4,7 +4,7 @@ import {
 	createEpic,
 	createUpdater,
 	createStore,
-	createSACAC,
+	makeSimpleActionCreatorAndCondition,
 	type PluginType,
 	storeCreated,
 	createPluginStateKey,
@@ -14,7 +14,7 @@ import { type LocalStorageEffectType } from '../effectManagers/localStorageEM'
 
 type PluginConfigType = {| injectStateIncOnCreateStore: bool |}
 
-const a = createSACAC('A')
+const a = makeSimpleActionCreatorAndCondition('A')
 
 describe('plugin', () => {
 	it('can inject epics and then initialization on storeCreated', async () => {
@@ -28,7 +28,7 @@ describe('plugin', () => {
 							given: {},
 							when: { _: storeCreated.condition },
 							then: ({ R }) => {
-								return R.updateState(() => 1)
+								return R.mapState(() => 1)
 							},
 						}),
 					},
@@ -41,7 +41,7 @@ describe('plugin', () => {
 							given: {},
 							when: { _: storeCreated.condition },
 							then: ({ R }) => {
-								return R.updateState(() => 2)
+								return R.mapState(() => 2)
 							},
 						}),
 					},
@@ -66,7 +66,7 @@ describe('plugin', () => {
 				a: createUpdater({
 					given: {},
 					when: { _a: a.c },
-					then: ({ R }) => R.updateState(() => -1),
+					then: ({ R }) => R.mapState(() => -1),
 				}),
 			},
 			pluginConfig: { injectStateIncOnCreateStore: true },
@@ -78,7 +78,7 @@ describe('plugin', () => {
 				a: createUpdater({
 					given: {},
 					when: { _a: a.c },
-					then: ({ R }) => R.updateState(() => 2),
+					then: ({ R }) => R.mapState(() => 2),
 				}),
 			},
 		})
@@ -89,7 +89,7 @@ describe('plugin', () => {
 				a: createUpdater({
 					given: {},
 					when: { _a: a.c },
-					then: ({ R }) => R.updateState(() => 3),
+					then: ({ R }) => R.mapState(() => 3),
 				}),
 			},
 			pluginConfig: { injectStateIncOnCreateStore: true },
@@ -104,7 +104,7 @@ describe('plugin', () => {
 					inc: createUpdater<number, *, *, *, *>({
 						given: {},
 						when: { _: storeCreated.condition },
-						then: ({ R }) => R.updateState(state => state + 1),
+						then: ({ R }) => R.mapState(state => state + 1),
 					}),
 				}
 			})

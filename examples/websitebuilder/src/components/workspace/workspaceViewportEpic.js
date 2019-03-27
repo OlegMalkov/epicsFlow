@@ -23,7 +23,7 @@ const workspaceViewportEpic = createEpic<WorkspaceViewportStateType, empty, empt
 				leftPanelWidth: leftPanelEpic.condition.withSelectorKey('width'),
 			},
 			then: ({ values: { browserDimensions, leftPanelWidth }, R }) =>
-				R.updateState(setDimensions({
+				R.mapState(setDimensions({
 					width: browserDimensions.width - leftPanelWidth,
 					height: browserDimensions.height - TopBarHeight,
 				})),

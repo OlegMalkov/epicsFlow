@@ -43,11 +43,11 @@ const componentResizeDecorationsEpic = createEpic<ComponentResizeDecorationsStat
 			},
 			then: ({ values: { nMouseDown, componentIsResizing }, R, changedActiveConditionsKeysMap }) => {
 				if (changedActiveConditionsKeysMap.componentIsResizing && componentIsResizing === false) {
-					return R.updateState(resetActiveHandleKey)
+					return R.mapState(resetActiveHandleKey)
 				}
 
 				if (nMouseDown) {
-					return R.updateState(setActiveHandleKey('n'))
+					return R.mapState(setActiveHandleKey('n'))
 				}
 
 				return R.doNothing
@@ -61,7 +61,7 @@ const componentResizeDecorationsEpic = createEpic<ComponentResizeDecorationsStat
 				componentSelected: componentSelectedCondition,
 			},
 			then: ({ values: { componentIsMoving, componentIsResizing, componentSelected }, R }) =>
-				R.updateState(setVisible(componentSelected && !componentIsMoving && !componentIsResizing)),
+				R.mapState(setVisible(componentSelected && !componentIsMoving && !componentIsResizing)),
 		}),
 		computePositionsForHandles: createUpdater({
 			given: {},
@@ -73,7 +73,7 @@ const componentResizeDecorationsEpic = createEpic<ComponentResizeDecorationsStat
 			},
 			then: ({ values: { componentPosition, componentDimensions, isVisible, activeHandleKey }, R }) => {
 				if (isVisible || activeHandleKey === 'n') {
-					return R.updateState(setResizeNHandlePosition({
+					return R.mapState(setResizeNHandlePosition({
 						left: componentPosition.left + componentDimensions.width / 2 - HalfResizeHandleSidePx,
 						top: componentPosition.top - HalfResizeHandleSidePx - Math.max(0, (verticalResizeHandleTreshold - componentDimensions.height)),
 					}))

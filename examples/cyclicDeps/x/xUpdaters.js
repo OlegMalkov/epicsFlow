@@ -12,14 +12,14 @@ const xClickedUpdater: XUpdaterType = createUpdater({
 	when: {
 		_xClicked: xClicked.condition,
 	},
-	then: ({ values: { zResult }, R }) => R.updateState(isEven(zResult)? incX : decX),
+	then: ({ values: { zResult }, R }) => R.mapState(isEven(zResult)? incX : decX),
 })
 
 
 const zResultChanged: XUpdaterType = createUpdater({
 	given: { },
 	when: { zResult: zResultC },
-	then: ({ values: { zResult }, R }) => R.updateState(setXColor(isEven(zResult) ? 'green' : 'red')),
+	then: ({ values: { zResult }, R }) => R.mapState(setXColor(isEven(zResult) ? 'green' : 'red')),
 })
 
 export const xUpdaters = {

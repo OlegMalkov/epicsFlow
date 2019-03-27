@@ -27,7 +27,7 @@ describe('given', () => {
 				nChanged: createUpdater({
 					given: {},
 					when: { n: aovnC },
-					then: ({ values: { n }, R }) => R.updateState(state => state + n),
+					then: ({ values: { n }, R }) => R.mapState(state => state + n),
 				}),
 			},
 		})
@@ -64,7 +64,7 @@ describe('given', () => {
 						n1: aovnC.ws(() => { return { a11: 11 } }),
 					},
 					then: ({ R, values: { n, n1 } }) => {
-						return R.updateState(state => state + n.a + n1.a11)
+						return R.mapState(state => state + n.a + n1.a11)
 					},
 				}),
 			},
@@ -87,7 +87,7 @@ describe('given', () => {
 						n: aovnC.withSelector(n => { return { a: n } }).wg((value) => value.a > 5),
 					},
 					then: ({ R, values: { n } }) => {
-						return R.updateState(state => state + n.a)
+						return R.mapState(state => state + n.a)
 					},
 				}),
 			},
@@ -118,7 +118,7 @@ describe('given', () => {
 						n: aovnC.wg(value => value > 5).toOptional(),
 					},
 					then: ({ R, values: { n } }) => {
-						return R.updateState(state => state + n)
+						return R.mapState(state => state + n)
 					},
 				}),
 			},
@@ -149,7 +149,7 @@ describe('given', () => {
 						n: aovnC.wg((n) => n > 5).withSelector(n => { return { a: n } }),
 					},
 					then: ({ R, values: { n } }) => {
-						return R.updateState(state => state + n.a)
+						return R.mapState(state => state + n.a)
 					},
 				}),
 			},
@@ -177,7 +177,7 @@ describe('given', () => {
 				nChanged: createUpdater({
 					given: {},
 					when: { n: aovnC },
-					then: ({ R, values: { n } }) => R.updateState(state => state + n),
+					then: ({ R, values: { n } }) => R.mapState(state => state + n),
 				}),
 			},
 		})
@@ -197,7 +197,7 @@ describe('given', () => {
 				nChanged: createUpdater({
 					given: {},
 					when: { o: aoC },
-					then: ({ R, values: { o } }) => R.updateState(state => state + o.v.n),
+					then: ({ R, values: { o } }) => R.mapState(state => state + o.v.n),
 				}),
 			},
 		})
@@ -217,7 +217,7 @@ describe('given', () => {
 				nChanged: createUpdater({
 					given: {},
 					when: { _: aC },
-					then: ({ R }) => R.updateState(state => state + 1),
+					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 			},
 		})
@@ -293,7 +293,7 @@ describe('given', () => {
 				nChanged: createUpdater({
 					given: {},
 					when: { a: aGC, o: aoGC },
-					then: ({ R, values: { a, o } }) => R.updateState(state => state + a.o.v.n + o.v.n),
+					then: ({ R, values: { a, o } }) => R.mapState(state => state + a.o.v.n + o.v.n),
 				}),
 			},
 		})
@@ -332,7 +332,7 @@ describe('given', () => {
 						a: aC.wg((value) => value.o.v.n > 5),
 					},
 					then: ({ R, values: { a } }) => {
-						return R.updateState(state => state + a.o.v.n)
+						return R.mapState(state => state + a.o.v.n)
 					},
 				}),
 				aChangedWhenNLessThan5: createUpdater({
@@ -341,7 +341,7 @@ describe('given', () => {
 						a: aC.wg((value) => value.o.v.n < 5),
 					},
 					then: ({ R, values: { a } }) => {
-						return R.updateState(state => state - a.o.v.n)
+						return R.mapState(state => state - a.o.v.n)
 					},
 				}),
 				aChangedWhenNEquals5: createUpdater({
@@ -350,7 +350,7 @@ describe('given', () => {
 						a: aC.wg((value) => value.o.v.n === 5),
 					},
 					then: ({ R }) => {
-						return R.updateState(state => state === 0 ? 1 : state * 2)
+						return R.mapState(state => state === 0 ? 1 : state * 2)
 					},
 				}),
 			},
@@ -378,7 +378,7 @@ describe('given', () => {
 						n: aovnC.wg((value) => value > 5),
 					},
 					then: ({ R, values: { n } }) => {
-						return R.updateState(state => state + n)
+						return R.mapState(state => state + n)
 					},
 				}),
 				nLessThan5: createUpdater({
@@ -387,7 +387,7 @@ describe('given', () => {
 						n: aovnC.wg((value) => value < 5),
 					},
 					then: ({ R, values: { n } }) => {
-						return R.updateState(state => state - n)
+						return R.mapState(state => state - n)
 					},
 				}),
 				nEquals5: createUpdater({
@@ -396,7 +396,7 @@ describe('given', () => {
 						n: aovnC.wg((value) => value === 5),
 					},
 					then: ({ R }) => {
-						return R.updateState(state => state === 0 ? 1 : state * 2)
+						return R.mapState(state => state === 0 ? 1 : state * 2)
 					},
 				}),
 			},
@@ -422,7 +422,7 @@ describe('given', () => {
 				nChanged: createUpdater({
 					given: {},
 					when: { diff: nDiffC },
-					then: ({ R, values: { diff } }) => R.updateState(state => state + diff),
+					then: ({ R, values: { diff } }) => R.mapState(state => state + diff),
 				}),
 			},
 		})
@@ -453,12 +453,12 @@ describe('given', () => {
 				nChanged: createUpdater({
 					given: {},
 					when: { a: aC },
-					then: ({ R }) => R.updateState(state => ({ ...state, flag: true })),
+					then: ({ R }) => R.mapState(state => ({ ...state, flag: true })),
 				}),
 				e2Changed: createUpdater({
 					given: {},
 					when: { e2: createEpicCondition<number>('e2') },
-					then: ({ R }) => R.updateState(state => ({ ...state, value: state.value + 1 })),
+					then: ({ R }) => R.mapState(state => ({ ...state, value: state.value + 1 })),
 				}),
 			},
 		})
@@ -469,7 +469,7 @@ describe('given', () => {
 				e1Changed: createUpdater({
 					given: {},
 					when: { e1: e1.c.wsk('flag') },
-					then: ({ R }) => R.updateState(state => state + 1),
+					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 			},
 		})

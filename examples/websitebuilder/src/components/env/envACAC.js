@@ -1,9 +1,9 @@
 // @flow strict
 
 import { type DimensionsType } from '../../types'
-import { createACAC } from '../../../../../src/epics'
+import { makeActionCreatorAndCondition } from '../../../../../src/epics'
 
-const browserDimensions = createACAC<DimensionsType>('BROWSER_DIMENSIONS')
+const browserDimensions = makeActionCreatorAndCondition<DimensionsType>('BROWSER_DIMENSIONS')
 
 export {
 	browserDimensions,

@@ -1,14 +1,14 @@
 // @flow strict
 
 import { type TemplateStateType } from './templateState'
-import { createEpicCondition, createSACAC } from '../../../../../src/epics'
+import { createEpicCondition, makeSimpleActionCreatorAndCondition } from '../../../../../src/epics'
 
 const templateVat = 'TEMPLATE_VAT'
 const templateCondition = createEpicCondition<TemplateStateType>(templateVat)
 const templateWidthCondition = templateCondition.withSelectorKey('width')
-const templateWidthLeftResizeHandleMouseDown = createSACAC('TEMPLATE_WIDTH_LEFT_RESIZE_HANDLE_MOUSE_DOWN')
-const templateWidthRightResizeHandleMouseDown = createSACAC('TEMPLATE_WIDTH_RIGHT_RESIZE_HANDLE_MOUSE_DOWN')
-const templateAreaMouseDown = createSACAC('TEMPLATE_AREA_MOUSE_DOWN')
+const templateWidthLeftResizeHandleMouseDown = makeSimpleActionCreatorAndCondition('TEMPLATE_WIDTH_LEFT_RESIZE_HANDLE_MOUSE_DOWN')
+const templateWidthRightResizeHandleMouseDown = makeSimpleActionCreatorAndCondition('TEMPLATE_WIDTH_RIGHT_RESIZE_HANDLE_MOUSE_DOWN')
+const templateAreaMouseDown = makeSimpleActionCreatorAndCondition('TEMPLATE_AREA_MOUSE_DOWN')
 
 export {
 	templateVat,

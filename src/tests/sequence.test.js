@@ -27,7 +27,7 @@ describe('sequence', () => {
 				a: createUpdater<StateType, *, *, *, *>({
 					given: {},
 					when: { x: xCondition.wsk('value'), y: yC.wsk('value') },
-					then: ({ R, values: { x, y } }) => R.updateState(state => ({ a: state.a + x + y })),
+					then: ({ R, values: { x, y } }) => R.mapState(state => ({ a: state.a + x + y })),
 				}),
 			},
 		})
@@ -51,7 +51,7 @@ describe('sequence', () => {
 				a: createUpdater<number, *, *, *, *>({
 					given: {},
 					when: { whatever: aC },
-					then: ({ R }) => R.updateState(state => state + 1),
+					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 			},
 		})
@@ -62,7 +62,7 @@ describe('sequence', () => {
 				a: createUpdater<number, *, *, *, *>({
 					given: {},
 					when: { whatever: aC },
-					then: ({ R }) => R.updateState(state => state + 1),
+					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 			},
 		})
@@ -73,7 +73,7 @@ describe('sequence', () => {
 				e1ORe2Changed: createUpdater<number, *, *, *, *>({
 					given: {},
 					when: { e1: e1.c, e2: e2.c },
-					then: ({ R }) => R.updateState(state => state + 1),
+					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 			},
 		})
@@ -96,7 +96,7 @@ describe('sequence', () => {
 				a: createUpdater<StateType, *, *, *, *>({
 					given: {},
 					when: { _a: aC },
-					then: ({ R }) => R.updateState(state => ({ a: state.a + 1, b: state.b - 1 })),
+					then: ({ R }) => R.mapState(state => ({ a: state.a + 1, b: state.b - 1 })),
 				}),
 			},
 		})
@@ -110,7 +110,7 @@ describe('sequence', () => {
 						_a: e1.c.wsk('a'),
 						_b: e1.c.wsk('b'),
 					},
-					then: ({ R }) => R.updateState(state => state + 1),
+					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 			},
 		})
@@ -132,7 +132,7 @@ describe('sequence', () => {
 				a: createUpdater<{| i: string, m: { [string]: {| kind: string |} } |}, *, *, *, *>({
 					given: {},
 					when: { whatever: aC },
-					then: ({ R }) => R.updateState(() => ({ m: { a: { kind: 'text' }, b: { kind: 'button' } }, i: 'a' })),
+					then: ({ R }) => R.mapState(() => ({ m: { a: { kind: 'text' }, b: { kind: 'button' } }, i: 'a' })),
 				}),
 			},
 		})
@@ -143,7 +143,7 @@ describe('sequence', () => {
 				e1m: createUpdater<Array<string>, *, *, *, *>({
 					given: {},
 					when: { e1m: e1.c.wsk('m') },
-					then: ({ values: { e1m }, R }) => R.updateState(() => Object.keys(e1m)),
+					then: ({ values: { e1m }, R }) => R.mapState(() => Object.keys(e1m)),
 				}),
 			},
 		})
@@ -154,7 +154,7 @@ describe('sequence', () => {
 				e1iORe2Changed: createUpdater<string, *, *, *, *>({
 					given: { e1mRO: e1.c.wsk('m') },
 					when: { e1i: e1.c.wsk('i'), e2: e2.c },
-					then: ({ values: { e1mRO, e1i, e2 }, R }) => R.updateState(state => state + e1i + e1mRO[e1i].kind + e2.length),
+					then: ({ values: { e1mRO, e1i, e2 }, R }) => R.mapState(state => state + e1i + e1mRO[e1i].kind + e2.length),
 				}),
 			},
 		})
@@ -176,7 +176,7 @@ describe('sequence', () => {
 				a: createUpdater<{| i: string, m: { [string]: {| kind: string |} } |}, *, *, *, *>({
 					given: {},
 					when: { whatever: aC },
-					then: ({ R }) => R.updateState(() => ({ m: { a: { kind: 'text' }, b: { kind: 'button' } }, i: 'a' })),
+					then: ({ R }) => R.mapState(() => ({ m: { a: { kind: 'text' }, b: { kind: 'button' } }, i: 'a' })),
 				}),
 			},
 		})
@@ -187,7 +187,7 @@ describe('sequence', () => {
 				e1m: createUpdater<Array<string>, *, *, *, *>({
 					given: {},
 					when: { e1m: e1.c.wsk('m') },
-					then: ({ values: { e1m }, R }) => R.updateState(() => Object.keys(e1m)),
+					then: ({ values: { e1m }, R }) => R.mapState(() => Object.keys(e1m)),
 				}),
 			},
 		})
@@ -198,7 +198,7 @@ describe('sequence', () => {
 				e1iORe2Changed: createUpdater<string, *, *, *, *>({
 					given: {},
 					when: { e1mRO: e1.c.wsk('m'), e1i: e1.c.wsk('i'), e2: e2.c },
-					then: ({ values: { e1mRO, e1i, e2 }, R }) => R.updateState(state => state + e1i + e1mRO[e1i].kind + e2.length),
+					then: ({ values: { e1mRO, e1i, e2 }, R }) => R.mapState(state => state + e1i + e1mRO[e1i].kind + e2.length),
 				}),
 			},
 		})
@@ -221,17 +221,17 @@ describe('sequence', () => {
 				a: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
 					given: {},
 					when: { whatever: aC },
-					then: ({ R }) => R.updateState(state => ({ ...state, n: state.n + 1 })),
+					then: ({ R }) => R.mapState(state => ({ ...state, n: state.n + 1 })),
 				}),
 				e1nChanged: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
 					given: {},
 					when: { e1n: e1C.wsk('n').wg(n => n === 1) },
-					then: ({ R, values: { e1n } }) => R.updateState(state => ({ ...state, m: state.m + e1n })),
+					then: ({ R, values: { e1n } }) => R.mapState(state => ({ ...state, m: state.m + e1n })),
 				}),
 				e1mChanged: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
 					given: {},
 					when: { e1m: e1C.wsk('m').wg(m => m === 1) },
-					then: ({ R, values: { e1m } }) => R.updateState(state => ({ ...state, i: state.i + e1m })),
+					then: ({ R, values: { e1m } }) => R.mapState(state => ({ ...state, i: state.i + e1m })),
 				}),
 			},
 		})
@@ -242,12 +242,12 @@ describe('sequence', () => {
 				e1: createUpdater<{| a: string, b: string |}, *, *, *, *>({
 					given: {},
 					when: { e1: e1.c },
-					then: ({ values: { e1 }, R }) => R.updateState(state => ({ ...state, a: state.a + e1.i })),
+					then: ({ values: { e1 }, R }) => R.mapState(state => ({ ...state, a: state.a + e1.i })),
 				}),
 				e1n: createUpdater<{| a: string, b: string |}, *, *, *, *>({
 					given: {},
 					when: { n: e1.c.wsk('n') },
-					then: ({ values: { n }, R }) => R.updateState(state => ({ ...state, b: state.b + n })),
+					then: ({ values: { n }, R }) => R.mapState(state => ({ ...state, b: state.b + n })),
 				}),
 			},
 		})
@@ -275,19 +275,19 @@ describe('sequence', () => {
 					when: { whatever: aC },
 					then: ({ R }) => R
 						.sideEffect(dispatchActionEffectCreator({ type: b }))
-						.updateState(state => ({ ...state, n: state.n + 1 })),
+						.mapState(state => ({ ...state, n: state.n + 1 })),
 				}),
 				b: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
 					given: {},
 					when: { b: bC },
 					then: ({ R }) => R
-						.updateState(state => ({ ...state, m: state.m + 1 }))
+						.mapState(state => ({ ...state, m: state.m + 1 }))
 						.sideEffect(dispatchActionEffectCreator({ type: x })),
 				}),
 				x: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
 					given: {},
 					when: { x: xCondition },
-					then: ({ R }) => R.updateState(state => ({ ...state, i: state.i + 1 })),
+					then: ({ R }) => R.mapState(state => ({ ...state, i: state.i + 1 })),
 				}),
 			},
 		})
@@ -298,12 +298,12 @@ describe('sequence', () => {
 				e1: createUpdater<{| a: string, b: string |}, *, *, *, *>({
 					given: {},
 					when: { e1: e1.c },
-					then: ({ values: { e1 }, R }) => R.updateState(state => ({ ...state, a: state.a + e1.i })),
+					then: ({ values: { e1 }, R }) => R.mapState(state => ({ ...state, a: state.a + e1.i })),
 				}),
 				e1n: createUpdater<{| a: string, b: string |}, *, *, *, *>({
 					given: {},
 					when: { n: e1.c.wsk('n') },
-					then: ({ values: { n }, R }) => R.updateState(state => ({ ...state, b: state.b + n })),
+					then: ({ values: { n }, R }) => R.mapState(state => ({ ...state, b: state.b + n })),
 				}),
 			},
 		})

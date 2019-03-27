@@ -1,7 +1,7 @@
 // @flow
-import { createACAC } from '../../../../../src/epics'
+import { makeActionCreatorAndCondition } from '../../../../../src/epics'
 
-const workspaceScroll = createACAC<{| top: number |}>('WORKSPACE_SCROLL')
+const workspaceScroll = makeActionCreatorAndCondition<{| top: number |}>('WORKSPACE_SCROLL')
 
 export {
 	workspaceScroll,

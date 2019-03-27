@@ -26,20 +26,20 @@ const templateEpic = createEpicWithScope<TemplateStateType, TemplateScopeType, e
 				if (!leftDown && !rightDown) return R.doNothing
 
 				if (changedActiveConditionsKeysMap.mouseUp) {
-					return R.updateScope(resetTemplateDnd)
+					return R.mapScope(resetTemplateDnd)
 				}
 
 				const { dnd } = scope
 
 				if (dnd.type === 'idle') {
-					return R.updateScope(templateInitDnd({ startWidth: state.width, mouseStartLeft: mouseLeft }))
+					return R.mapScope(templateInitDnd({ startWidth: state.width, mouseStartLeft: mouseLeft }))
 				}
 
 				const { startWidth, mouseStartLeft } = dnd
 				const leftDiff = mouseStartLeft - mouseLeft
 				const nextWidth = Math.max(300, componentRight, leftDown ? startWidth + 2 * leftDiff : startWidth - 2 * leftDiff)
 
-				return R.updateState(state => setTemplateWidth(nextWidth)(state))
+				return R.mapState(state => setTemplateWidth(nextWidth)(state))
 			},
 		}),
 	},

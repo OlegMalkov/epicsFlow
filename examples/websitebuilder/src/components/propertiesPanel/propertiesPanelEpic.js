@@ -125,7 +125,7 @@ const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, Proper
 		showHide: createUpdater({
 			given: {},
 			when: { componentMainActionsVisible: componentsMainActionsIsVisibleCondition },
-			then: ({ values: { componentMainActionsVisible }, R }) => R.updateState(setVisible(componentMainActionsVisible)),
+			then: ({ values: { componentMainActionsVisible }, R }) => R.mapState(setVisible(componentMainActionsVisible)),
 		}),
 		computePosition: createUpdater({
 			given: {
@@ -177,7 +177,7 @@ const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, Proper
 						return possiblePositionRT
 					}, null) || computeRightTopPositionRT(computePositionProps)
 
-					return R.updateState(setPosition({ workspaceViewportDimensions, propertiesPanelPositionRT, propertiesPanelHeight: state.height }))
+					return R.mapState(setPosition({ workspaceViewportDimensions, propertiesPanelPositionRT, propertiesPanelHeight: state.height }))
 				}
 				return R.doNothing
 			},
@@ -204,25 +204,25 @@ const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, Proper
 						const { propertiesPanelStartPosition } = scope.moveDnd
 
 						return R
-							.updateState(_setPosition(propertiesPanelStartPosition))
-							.updateScope(resetMoveDnd)
+							.mapState(_setPosition(propertiesPanelStartPosition))
+							.mapScope(resetMoveDnd)
 					}
 					return R.doNothing
 				}
 
 				if (mouseUp) {
-					return R.updateScope(resetMoveDnd)
+					return R.mapScope(resetMoveDnd)
 				}
 
 				if (scope.moveDnd.type === dndTypeIdle) {
-					return R.updateScope(initMoveDnd({ propertiesPanelStartPosition: state.positonRT, mouseStartPosition: mousePosition }))
+					return R.mapScope(initMoveDnd({ propertiesPanelStartPosition: state.positonRT, mouseStartPosition: mousePosition }))
 				}
 
 				const { propertiesPanelStartPosition, mouseStartPosition } = scope.moveDnd
 				const leftDiff = mouseStartPosition.left - mousePosition.left
 				const topDiff = mouseStartPosition.top - mousePosition.top
 
-				return R.updateState(setPosition({
+				return R.mapState(setPosition({
 					workspaceViewportDimensions,
 					propertiesPanelPositionRT: { right: propertiesPanelStartPosition.right + leftDiff, top: propertiesPanelStartPosition.top - topDiff },
 					propertiesPanelHeight: state.height,
@@ -235,7 +235,7 @@ const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, Proper
 				workspaceViewportDimensions: workspaceViewportEpic.condition.wsk('dimensions'),
 			},
 			then: ({ values: { workspaceViewportDimensions }, R, state }) =>
-				R.updateState(
+				R.mapState(
 					setPosition({
 						workspaceViewportDimensions,
 						propertiesPanelPositionRT: state.positonRT,
@@ -246,12 +246,12 @@ const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, Proper
 		resetStateOnComponentDeselection: createUpdater({
 			given: {},
 			when: { componentDeselected: componentSelectedCondition.withGuard<bool>(selected => selected === false) },
-			then: ({ R }) => R.updateState(() => initialState),
+			then: ({ R }) => R.mapState(() => initialState),
 		}),
 		setHeightForNextPage: createUpdater({
 			given: {},
 			when: { propertiesPanelNextPagePressed: propertiesPanelNextPageButtonPress.condition },
-			then: ({ R }) => R.updateState(setHeight(h => h + 50)),
+			then: ({ R }) => R.mapState(setHeight(h => h + 50)),
 		}),
 	},
 })

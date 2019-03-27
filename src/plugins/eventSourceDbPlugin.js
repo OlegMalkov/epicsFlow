@@ -2,7 +2,7 @@
 import {
 	type PluginType,
 	storeCreated,
-	createSACAC,
+	makeSimpleActionCreatorAndCondition,
 	createUpdater,
 	dispatchActionEffectCreator,
 	type BuiltInEffectType,
@@ -12,7 +12,7 @@ import {
 	type AnyActionType,
 	createCondition,
 	createEpicWithScope,
-	createACAC,
+	makeActionCreatorAndCondition,
 } from '../epics'
 import {
 	type LocalStorageEffectType,
@@ -25,9 +25,9 @@ import { setPath2, setProp } from '../utils'
 type EffectType = BuiltInEffectType | LocalStorageEffectType
 type EsdbPluginConfigType = {| esdbAggregate: true |}
 
-const esdbRehydrateRequest = createSACAC('REHYDRADE_REQUEST')
-const esdbRehydrateAggregates = createACAC<{| aggregatesStatesByVat: { [vat: string]: AnyValueType } |}>('REHYDRADE_AGGREGATES')
-const esdbSave = createSACAC('SAVE')
+const esdbRehydrateRequest = makeSimpleActionCreatorAndCondition('REHYDRADE_REQUEST')
+const esdbRehydrateAggregates = makeActionCreatorAndCondition<{| aggregatesStatesByVat: { [vat: string]: AnyValueType } |}>('REHYDRADE_AGGREGATES')
+const esdbSave = makeSimpleActionCreatorAndCondition('SAVE')
 const esdbCreateActionsLocalStorageKey = (now: number) => `esdb:${now}`
 const esdbAggregatesStateLocalStorageKey = 'esdb_aggregates_states'
 
@@ -68,7 +68,7 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 					given: {},
 					when: { aggregatesStatesByVat: esdbRehydrateAggregates.c.wsk('aggregatesStatesByVat') },
 					then: ({ values: { aggregatesStatesByVat }, R }) => {
-						return aggregatesStatesByVat.hasOwnProperty(epic.vat) ? R.updateState(() => aggregatesStatesByVat[epic.vat]) : R.doNothing
+						return aggregatesStatesByVat.hasOwnProperty(epic.vat) ? R.mapState(() => aggregatesStatesByVat[epic.vat]) : R.doNothing
 					},
 				}),
 			}
@@ -104,7 +104,7 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 						const aggregatesStatesByVat: { [vat: string]: AnyValueType } = JSON.parse(aggregatesStates)
 
 						return R
-							.updateScope(setAggregatesStates(aggregatesStatesByVat))
+							.mapScope(setAggregatesStates(aggregatesStatesByVat))
 							.sideEffect(dispatchActionEffectCreator(esdbRehydrateAggregates.ac({ aggregatesStatesByVat })))
 					},
 				}),
@@ -114,13 +114,13 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 					then: ({ R, scope }) => R.sideEffect(localStorageSetItemsEC({
 						[esdbCreateActionsLocalStorageKey(Date.now())]: scope.notSavedActions,
 						[esdbAggregatesStateLocalStorageKey]: scope.aggregatesStates,
-					})).updateScope(s => ({ ...s, notSavedActions: {} })),
+					})).mapScope(s => ({ ...s, notSavedActions: {} })),
 				}),
 				...epicAggregates.reduce((updaters, { key, vat, condition }) => {
 					updaters[`${key}_aggregate_changed`] = createUpdater({
 						given: {},
 						when: { aggregateState: condition },
-						then: ({ values: { aggregateState }, R }) => R.updateScope(setAggregateState(vat)(aggregateState)),
+						then: ({ values: { aggregateState }, R }) => R.mapScope(setAggregateState(vat)(aggregateState)),
 					})
 					return updaters
 				}, {}),
@@ -129,7 +129,7 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 						updaters[`remember_${actionType}`] = createUpdater({
 							given: {},
 							when: { action: createCondition<AnyActionType>(actionType, false) },
-							then: ({ values: { action }, R }) => R.updateScope(addNotSavedAction(action)),
+							then: ({ values: { action }, R }) => R.mapScope(addNotSavedAction(action)),
 						})
 					}
 					return updaters

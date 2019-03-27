@@ -289,7 +289,7 @@ class ReducerResult<S, SC, SE> {
 		return this
 	}
 	// update reason will be taken only if updater returned updated state
-	updateState(updater: S => S, updateReason?: string): ReducerResult<S, SC, SE> {
+	mapState(updater: S => S, updateReason?: string): ReducerResult<S, SC, SE> {
 		const nextState = updater(this._state)
 
 		if (updateReason && (nextState !== this._state)) {
@@ -298,7 +298,7 @@ class ReducerResult<S, SC, SE> {
 		this._state = nextState
 		return this
 	}
-	updateScope(updater: SC => SC): ReducerResult<S, SC, SE> {
+	mapScope(updater: SC => SC): ReducerResult<S, SC, SE> {
 		const nextScope = updater(this._scope)
 
 		this._scope = nextScope
@@ -363,7 +363,7 @@ class EffectManagerResultType<S> {
 		this.doNothing = this
 	}
 	doNothing: EffectManagerResultType<S>
-	updateState(updater: S => S): EffectManagerResultType<S> {
+	mapState(updater: S => S): EffectManagerResultType<S> {
 		this._state = updater(this._state)
 		return this
 	}
@@ -1891,7 +1891,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		warn,
 	}
 }
-function createACAC<ActionExtraFields>(actionType: string): {|
+function makeActionCreatorAndCondition<ActionExtraFields>(actionType: string): {|
 	ac: ActionExtraFields => {| ...ActionExtraFields, type: string |},
 	actionCreator: ActionExtraFields => {| ...ActionExtraFields, type: string |},
 	c: Condition<{| ...ActionExtraFields, type: string |}>,
@@ -1909,7 +1909,7 @@ function createACAC<ActionExtraFields>(actionType: string): {|
 		type: actionType,
 	})
 }
-function createSACAC(actionType: string): {|
+function makeSimpleActionCreatorAndCondition(actionType: string): {|
 	ac: () => {| type: string |},
 	actionCreator: () => {| type: string |},
 	c: Condition<{| type: string |}>,
@@ -1928,7 +1928,10 @@ function createSACAC(actionType: string): {|
 	})
 }
 
-const storeCreated = createSACAC('@STORE_CREATED')
+const makeSACnC = makeSimpleActionCreatorAndCondition
+const makeACnC = makeActionCreatorAndCondition
+
+const storeCreated = makeSimpleActionCreatorAndCondition('@STORE_CREATED')
 
 export type { // eslint-disable-line import/group-exports
 	Condition,
@@ -1947,8 +1950,10 @@ export type { // eslint-disable-line import/group-exports
 }
 
 export { // eslint-disable-line import/group-exports
-	createSACAC,
-	createACAC,
+	makeSimpleActionCreatorAndCondition,
+	makeSACnC,
+	makeActionCreatorAndCondition,
+	makeACnC,
 	createEpic,
 	createEpicWithScope,
 	matchAnyActionCondition,
