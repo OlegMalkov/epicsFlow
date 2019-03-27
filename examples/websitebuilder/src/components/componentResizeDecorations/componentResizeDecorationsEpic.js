@@ -35,7 +35,7 @@ const componentResizeDecorationsEpic = createEpic<ComponentResizeDecorationsStat
 	initialState: { activeHandleKey: null, handles: initialResizeHandlesState, visible: false },
 	updaters: {
 		detectActiveHandleKey: createUpdater({
-			dependsOn: {
+			given: {
 				nMouseDown: componentResizeNMouseDown.condition.toOptional(),
 			},
 			when: {
@@ -54,7 +54,7 @@ const componentResizeDecorationsEpic = createEpic<ComponentResizeDecorationsStat
 			},
 		}),
 		computeVisibile: createUpdater({
-			dependsOn: {},
+			given: {},
 			when: {
 				componentIsMoving: componentIsMovingCondition,
 				componentIsResizing: componentIsResizingCondition,
@@ -64,7 +64,7 @@ const componentResizeDecorationsEpic = createEpic<ComponentResizeDecorationsStat
 				R.updateState(setVisible(componentSelected && !componentIsMoving && !componentIsResizing)),
 		}),
 		computePositionsForHandles: createUpdater({
-			dependsOn: {},
+			given: {},
 			when: {
 				componentPosition: componentPositionCondition,
 				componentDimensions: componentDimensionsCondition,

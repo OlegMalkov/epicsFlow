@@ -17,7 +17,7 @@ const workspaceViewportEpic = createEpic<WorkspaceViewportStateType, empty, empt
 	initialState: { dimensions: { width: 0, height: 0 } },
 	updaters: {
 		compute: createUpdater({
-			dependsOn: {},
+			given: {},
 			when: {
 				browserDimensions: browserDimensions.condition,
 				leftPanelWidth: leftPanelEpic.condition.withSelectorKey('width'),

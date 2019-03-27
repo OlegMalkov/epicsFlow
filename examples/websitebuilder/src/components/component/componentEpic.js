@@ -16,7 +16,7 @@ const
 		initialScope: componentInitialScope,
 		updaters: {
 			dndMoveAndSelection: createUpdater({
-				dependsOn: {
+				given: {
 					templateWidth: templateWidthCondition,
 					mouseDown: componentMouseDown.condition,
 				},
@@ -68,7 +68,7 @@ const
 				},
 			}),
 			dndResize: createUpdater({
-				dependsOn: {
+				given: {
 					templateWidth: templateWidthCondition,
 					resizeNMouseDown: componentResizeNMouseDown.condition,
 				},
@@ -119,7 +119,7 @@ const
 				},
 			}),
 			deselection: createUpdater({
-				dependsOn: {},
+				given: {},
 				when: {
 					templateAreaMouseDown: templateAreaMouseDown.condition.toOptional(),
 					escPressed: keyboardEscDownCondition.toOptional(),

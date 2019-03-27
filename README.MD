@@ -1,6 +1,6 @@
 Acronyms
 
-AAC - actions and dependsOn
+AAC - actions and given
 AC - action creator
 U - updater
 

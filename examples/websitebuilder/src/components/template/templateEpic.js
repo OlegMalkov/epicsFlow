@@ -13,7 +13,7 @@ const templateEpic = createEpicWithScope<TemplateStateType, TemplateScopeType, e
 	initialScope: templateInitialScope,
 	updaters: {
 		dnd: createUpdater({
-			dependsOn: {
+			given: {
 				componentRight: componentRightCondition,
 				leftDown: templateWidthLeftResizeHandleMouseDown.condition.toOptional(),
 				rightDown: templateWidthRightResizeHandleMouseDown.condition.toOptional(),
@@ -39,7 +39,7 @@ const templateEpic = createEpicWithScope<TemplateStateType, TemplateScopeType, e
 				const leftDiff = mouseStartLeft - mouseLeft
 				const nextWidth = Math.max(300, componentRight, leftDown ? startWidth + 2 * leftDiff : startWidth - 2 * leftDiff)
 
-				return R.updateState(setTemplateWidth(nextWidth))
+				return R.updateState(state => setTemplateWidth(nextWidth)(state))
 			},
 		}),
 	},

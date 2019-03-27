@@ -8,7 +8,7 @@ import { xClicked } from './xAAC'
 type XUpdaterType = UpdaterType<XStateType, *, *, *>
 
 const xClickedUpdater: XUpdaterType = createUpdater({
-	dependsOn: { zResult: zResultC },
+	given: { zResult: zResultC },
 	when: {
 		_xClicked: xClicked.condition,
 	},
@@ -17,7 +17,7 @@ const xClickedUpdater: XUpdaterType = createUpdater({
 
 
 const zResultChanged: XUpdaterType = createUpdater({
-	dependsOn: { },
+	given: { },
 	when: { zResult: zResultC },
 	then: ({ values: { zResult }, R }) => R.updateState(setXColor(isEven(zResult) ? 'green' : 'red')),
 })

@@ -10,7 +10,7 @@ const zClicked = createSACAC('Z_CLICKED')
 type ZUpdaterType = UpdaterType<ZStateType, *, *, *>
 const
 	zClickedUpdater: ZUpdaterType = createUpdater({
-		dependsOn: {
+		given: {
 			x: xValueCondition,
 			y: yValueC,
 		},
@@ -24,7 +24,7 @@ const
 
 
 const xOrYChanged: ZUpdaterType = createUpdater({
-	dependsOn: {},
+	given: {},
 	when: {
 		x: xValueCondition,
 		y: yValueC,

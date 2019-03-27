@@ -25,7 +25,7 @@ describe('effectManager', () => {
 				initialState: 0,
 				updaters: {
 					af: createUpdater({
-						dependsOn: {},
+						given: {},
 						when: { _af: animationFrame.condition },
 						then: ({ R }) => R.updateState(() => 1),
 					}),
@@ -38,12 +38,12 @@ describe('effectManager', () => {
 			initialState: 0,
 			updaters: {
 				a: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _a: a.c },
 					then: ({ R }) => R.sideEffect(requestAnimationFrameEC()),
 				}),
 				af: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _af: animationFrame.condition },
 					then: ({ R }) => R.updateState(state => state + 1),
 				}),
@@ -71,7 +71,7 @@ describe('effectManager', () => {
 				initialState: 0,
 				updaters: {
 					storeCreatedOrB: createUpdater({
-						dependsOn: {},
+						given: {},
 						when: { _: storeCreated.condition.to(), _b: b.c.to() },
 						then: ({ R }) => R.sideEffect(dispatchBatchedActionsEffectCreator([
 							{ actions: [a.ac(), a.ac()], targetEpicVat: 'e2' },
@@ -87,12 +87,12 @@ describe('effectManager', () => {
 			initialState: 0,
 			updaters: {
 				a: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _a: a.c },
 					then: ({ R }) => R.updateState(state => state + 1),
 				}),
 				b: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _a: b.c },
 					then: ({ R }) => R.updateState(() => 10),
 				}),
@@ -104,12 +104,12 @@ describe('effectManager', () => {
 			initialState: 0,
 			updaters: {
 				a: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _a: a.c },
 					then: ({ R }) => R.updateState(state => state + 1),
 				}),
 				b: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _b: b.c },
 					then: ({ R }) => R.updateState(() => 10),
 				}),
@@ -121,17 +121,17 @@ describe('effectManager', () => {
 			initialState: 0,
 			updaters: {
 				e2: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { e2: e2.c },
 					then: ({ values: { e2 }, R }) => R.updateState(state => state + e2),
 				}),
 				e3: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { e3: e3.c },
 					then: ({ values: { e3 }, R }) => R.updateState(state => state + e3),
 				}),
 				b: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _b: b.c },
 					then: ({ R }) => R.updateState(() => 0),
 				}),

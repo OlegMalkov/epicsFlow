@@ -34,7 +34,7 @@ describe('eventSourceDbPlugin', () => {
 			vat: 'COUNT_OF_A_VAT',
 			updaters: {
 				inc: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _a: a.c },
 					then: ({ R }) => R.updateState(inc),
 				}),
@@ -46,7 +46,7 @@ describe('eventSourceDbPlugin', () => {
 			vat: 'COUNT_OF_B_VAT',
 			updaters: {
 				inc: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _b: b.c },
 					then: ({ R }) => R.updateState(inc),
 				}),
@@ -58,7 +58,7 @@ describe('eventSourceDbPlugin', () => {
 			vat: 'COUNT_OF_A_OR_B_VAT',
 			updaters: {
 				inc: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _a: a.c.to(), _b: b.c.to() },
 					then: ({ R }) => R.updateState(inc),
 				}),

@@ -123,12 +123,12 @@ const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, Proper
 	initialScope: { moveDnd: dndInitialState },
 	updaters: {
 		showHide: createUpdater({
-			dependsOn: {},
+			given: {},
 			when: { componentMainActionsVisible: componentsMainActionsIsVisibleCondition },
 			then: ({ values: { componentMainActionsVisible }, R }) => R.updateState(setVisible(componentMainActionsVisible)),
 		}),
 		computePosition: createUpdater({
-			dependsOn: {
+			given: {
 				componentPosition: componentPositionCondition,
 				componentDimensions: componentDimensionsCondition,
 				componentsMainActionsPosition: componentsMainActionsPositionWhenVisibleCondition,
@@ -183,7 +183,7 @@ const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, Proper
 			},
 		}),
 		moveDnd: createUpdater({
-			dependsOn: {
+			given: {
 				workspaceViewportDimensions: workspaceViewportEpic.condition.wsk('dimensions'),
 				propertiesPanelDragMouseDown: propertiesPanelDragMouseDown.condition,
 			},
@@ -230,7 +230,7 @@ const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, Proper
 			},
 		}),
 		validateAndFixPosition: createUpdater({
-			dependsOn: {},
+			given: {},
 			when: {
 				workspaceViewportDimensions: workspaceViewportEpic.condition.wsk('dimensions'),
 			},
@@ -244,12 +244,12 @@ const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, Proper
 				),
 		}),
 		resetStateOnComponentDeselection: createUpdater({
-			dependsOn: {},
+			given: {},
 			when: { componentDeselected: componentSelectedCondition.withGuard<bool>(selected => selected === false) },
 			then: ({ R }) => R.updateState(() => initialState),
 		}),
 		setHeightForNextPage: createUpdater({
-			dependsOn: {},
+			given: {},
 			when: { propertiesPanelNextPagePressed: propertiesPanelNextPageButtonPress.condition },
 			then: ({ R }) => R.updateState(setHeight(h => h + 50)),
 		}),

@@ -283,7 +283,7 @@ class ReducerResult<S, SC, SE> {
 		this._sideEffects = []
 		this.doNothing = this
 	}
-	doNothing: ReducerResult<S, SC, SE>
+	doNothing: ReducerResult<S, SC, SE> // TODO make not chainable, throw on mixed and variance
 	sideEffect(effect: SE): ReducerResult<S, SC, SE> {
 		this._sideEffects.push(effect)
 		return this
@@ -307,15 +307,15 @@ class ReducerResult<S, SC, SE> {
 }
 
 type MergeType<T, T1> = {| ...$Exact<T>, ...$Exact<T1> |}
-function createUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: string } & Object }, ReactsTo: { [string]: { actionType: string } & Object }, E> ({ dependsOn, when, then }: {|
-	dependsOn: DO,
+function createUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: string } & Object }, ReactsTo: { [string]: { actionType: string } & Object }, E> ({ given, when, then }: {|
+	given: DO,
 	when: ReactsTo,
 	then: ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<MergeType<DO, ReactsTo>, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: $Exact<$ObjMap<MergeType<DO, ReactsTo>, typeof extractConditionV>> |}) => ReducerResult<S, SC, E>,
 |}): UpdaterType<S, SC, any, E> {
 	let noActiveConditions = true
 	const conditionKeysToConditionUpdaterKeys = []
 	const compulsoryConditionsKeys = []
-	const conditions = dependsOn ? ({ ...Object.keys(dependsOn).reduce((r, k: string) => ({ ...r, [k]: dependsOn[k].toPassive() }), {}), ...when }) : when
+	const conditions = given ? ({ ...Object.keys(given).reduce((r, k: string) => ({ ...r, [k]: given[k].toPassive() }), {}), ...when }) : when
 
 	Object.keys(when).forEach(reactsToKey => {
 		if (when[reactsToKey].passive) {
@@ -338,9 +338,9 @@ function createUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType
 		throw new Error('createUpdater requires at least one condition to be active')
 	}
 
-	if (dependsOn) {
-		Object.keys(dependsOn).forEach(k => {
-			if (when[k]) throw new Error(`dependsOn can not contain same key as reacts to: ${k}`)
+	if (given) {
+		Object.keys(given).forEach(k => {
+			if (when[k]) throw new Error(`given can not contain same key as reacts to: ${k}`)
 		})
 	}
 

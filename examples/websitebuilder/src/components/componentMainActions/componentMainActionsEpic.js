@@ -24,12 +24,12 @@ const componentMainActionsEpic = createEpic<ComponentMainActionsState, *, *>({
 	initialState: componentMainActionsInitialState,
 	updaters: {
 		showHide: createUpdater({
-			dependsOn: {},
+			given: {},
 			when: { resizeDecorationsVisible: componentResizeDecorationsVisibleCondition },
 			then: ({ values: { resizeDecorationsVisible }, R }) => R.updateState(componentMainActionsSetVisible(resizeDecorationsVisible)),
 		}),
 		computePosition: createUpdater({
-			dependsOn: {
+			given: {
 				componentPosition: componentPositionCondition,
 				componentResizeHandleNTop: componentResizeHandleNTopCondition,
 			},
@@ -50,7 +50,7 @@ const componentMainActionsEpic = createEpic<ComponentMainActionsState, *, *>({
 			},
 		}),
 		adjustPositionIfOverlapWithPropertiesPanel: createUpdater({
-			dependsOn: {
+			given: {
 				componentRight: componentRightCondition,
 				componentResizeHandleNTop: componentResizeHandleNTopCondition,
 			},

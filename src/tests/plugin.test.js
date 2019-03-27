@@ -25,7 +25,7 @@ describe('plugin', () => {
 					initialState: 0,
 					updaters: {
 						init: createUpdater({
-							dependsOn: {},
+							given: {},
 							when: { _: storeCreated.condition },
 							then: ({ R }) => {
 								return R.updateState(() => 1)
@@ -38,7 +38,7 @@ describe('plugin', () => {
 					initialState: 0,
 					updaters: {
 						init: createUpdater({
-							dependsOn: {},
+							given: {},
 							when: { _: storeCreated.condition },
 							then: ({ R }) => {
 								return R.updateState(() => 2)
@@ -64,7 +64,7 @@ describe('plugin', () => {
 			initialState: 0,
 			updaters: {
 				a: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _a: a.c },
 					then: ({ R }) => R.updateState(() => -1),
 				}),
@@ -76,7 +76,7 @@ describe('plugin', () => {
 			initialState: 0,
 			updaters: {
 				a: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _a: a.c },
 					then: ({ R }) => R.updateState(() => 2),
 				}),
@@ -87,7 +87,7 @@ describe('plugin', () => {
 			initialState: 0,
 			updaters: {
 				a: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _a: a.c },
 					then: ({ R }) => R.updateState(() => 3),
 				}),
@@ -102,7 +102,7 @@ describe('plugin', () => {
 
 				return {
 					inc: createUpdater<number, *, *, *, *>({
-						dependsOn: {},
+						given: {},
 						when: { _: storeCreated.condition },
 						then: ({ R }) => R.updateState(state => state + 1),
 					}),

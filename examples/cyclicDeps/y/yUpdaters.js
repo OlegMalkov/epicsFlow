@@ -8,7 +8,7 @@ import { yClicked } from './yAAC'
 type YUpdaterType = UpdaterType<YStateType, *, *, *>
 
 const yClickedUpdater: YUpdaterType = createUpdater({
-	dependsOn: { zResult: zResultC },
+	given: { zResult: zResultC },
 	when: {
 		_yClicked: yClicked.condition,
 	},
@@ -17,7 +17,7 @@ const yClickedUpdater: YUpdaterType = createUpdater({
 
 
 const zRezultChanged: YUpdaterType = createUpdater({
-	dependsOn: {},
+	given: {},
 	when: { zResult: zResultC },
 	then: ({ values: { zResult }, R }) => R.updateState(setYColor(isOdd(zResult) ? 'green' : 'red')),
 })

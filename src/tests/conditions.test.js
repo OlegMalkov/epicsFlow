@@ -18,14 +18,14 @@ const aC = createCondition<AType>(a)
 const aoC = aC.wsk('o')
 const aovnC = aoC.wsk('v').wsk('n')
 
-describe('dependsOn', () => {
+describe('given', () => {
 	it('can chain selectors', () => {
 		const e1 = createEpic<number, empty, empty>({
 			vat: 'e1',
 			initialState: 1,
 			updaters: {
 				nChanged: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { n: aovnC },
 					then: ({ values: { n }, R }) => R.updateState(state => state + n),
 				}),
@@ -58,7 +58,7 @@ describe('dependsOn', () => {
 			initialState: 0,
 			updaters: {
 				nChanged: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: {
 						n: aovnC.withSelector(n => { return { a: n } }),
 						n1: aovnC.ws(() => { return { a11: 11 } }),
@@ -82,7 +82,7 @@ describe('dependsOn', () => {
 			initialState: 0,
 			updaters: {
 				nChanged: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: {
 						n: aovnC.withSelector(n => { return { a: n } }).wg((value) => value.a > 5),
 					},
@@ -113,7 +113,7 @@ describe('dependsOn', () => {
 			initialState: 0,
 			updaters: {
 				nChanged: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: {
 						n: aovnC.wg(value => value > 5).toOptional(),
 					},
@@ -144,7 +144,7 @@ describe('dependsOn', () => {
 			initialState: 0,
 			updaters: {
 				nChanged: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: {
 						n: aovnC.wg((n) => n > 5).withSelector(n => { return { a: n } }),
 					},
@@ -175,7 +175,7 @@ describe('dependsOn', () => {
 			initialState: 1,
 			updaters: {
 				nChanged: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { n: aovnC },
 					then: ({ R, values: { n } }) => R.updateState(state => state + n),
 				}),
@@ -195,7 +195,7 @@ describe('dependsOn', () => {
 			initialState: 1,
 			updaters: {
 				nChanged: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { o: aoC },
 					then: ({ R, values: { o } }) => R.updateState(state => state + o.v.n),
 				}),
@@ -215,7 +215,7 @@ describe('dependsOn', () => {
 			initialState: 1,
 			updaters: {
 				nChanged: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { _: aC },
 					then: ({ R }) => R.updateState(state => state + 1),
 				}),
@@ -238,14 +238,14 @@ describe('dependsOn', () => {
 		expect(aP1C.valueKey).toBe('AType.p1')
 	})
 
-	it('reuse existiting root dependsOn', () => {
+	it('reuse existiting root given', () => {
 		const aC = createCondition('AType')
 		const aC1 = createCondition('AType')
 
 		expect(aC).toBe(aC1)
 	})
 
-	it('reuse existiting child dependsOn', () => {
+	it('reuse existiting child given', () => {
 		const aC = createCondition('AType')
 		const aP1C = aC.wsk('p1')
 		const aP1C1 = aC.wsk('p1')
@@ -261,7 +261,7 @@ describe('dependsOn', () => {
 		expect(aGC).toBe(aGC1)
 	})
 
-	it('not reuse existiting child dependsOn', () => {
+	it('not reuse existiting child given', () => {
 		const akC = createCondition('AType').wsk('k')
 		const akGC = createCondition('AType').wsk('k').wg(() => true)
 		const akmC = akC.wsk('m')
@@ -291,7 +291,7 @@ describe('dependsOn', () => {
 			initialState: 0,
 			updaters: {
 				nChanged: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { a: aGC, o: aoGC },
 					then: ({ R, values: { a, o } }) => R.updateState(state => state + a.o.v.n + o.v.n),
 				}),
@@ -311,7 +311,7 @@ describe('dependsOn', () => {
 		store.dispatch(aAC(5, true, true))
 		expect(store.getState().e1).toBe(10)
 
-		store.dispatch(aAC(5, false, true)) // if oFlag is false, child dependsOn are not evaluated
+		store.dispatch(aAC(5, false, true)) // if oFlag is false, child given are not evaluated
 		expect(store.getState().e1).toBe(10)
 
 		store.dispatch(aAC(5, true, false)) // o is already happend, so we using it's value when a changed
@@ -327,7 +327,7 @@ describe('dependsOn', () => {
 			initialState: 0,
 			updaters: {
 				aChangedWhenNMoreThan5: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: {
 						a: aC.wg((value) => value.o.v.n > 5),
 					},
@@ -336,7 +336,7 @@ describe('dependsOn', () => {
 					},
 				}),
 				aChangedWhenNLessThan5: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: {
 						a: aC.wg((value) => value.o.v.n < 5),
 					},
@@ -345,7 +345,7 @@ describe('dependsOn', () => {
 					},
 				}),
 				aChangedWhenNEquals5: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: {
 						a: aC.wg((value) => value.o.v.n === 5),
 					},
@@ -373,7 +373,7 @@ describe('dependsOn', () => {
 			initialState: 0,
 			updaters: {
 				nMoreThan5: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: {
 						n: aovnC.wg((value) => value > 5),
 					},
@@ -382,7 +382,7 @@ describe('dependsOn', () => {
 					},
 				}),
 				nLessThan5: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: {
 						n: aovnC.wg((value) => value < 5),
 					},
@@ -391,7 +391,7 @@ describe('dependsOn', () => {
 					},
 				}),
 				nEquals5: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: {
 						n: aovnC.wg((value) => value === 5),
 					},
@@ -420,7 +420,7 @@ describe('dependsOn', () => {
 			initialState: 0,
 			updaters: {
 				nChanged: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { diff: nDiffC },
 					then: ({ R, values: { diff } }) => R.updateState(state => state + diff),
 				}),
@@ -451,12 +451,12 @@ describe('dependsOn', () => {
 			initialState: { value: 0, flag: false },
 			updaters: {
 				nChanged: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { a: aC },
 					then: ({ R }) => R.updateState(state => ({ ...state, flag: true })),
 				}),
 				e2Changed: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { e2: createEpicCondition<number>('e2') },
 					then: ({ R }) => R.updateState(state => ({ ...state, value: state.value + 1 })),
 				}),
@@ -467,7 +467,7 @@ describe('dependsOn', () => {
 			initialState: 0,
 			updaters: {
 				e1Changed: createUpdater({
-					dependsOn: {},
+					given: {},
 					when: { e1: e1.c.wsk('flag') },
 					then: ({ R }) => R.updateState(state => state + 1),
 				}),

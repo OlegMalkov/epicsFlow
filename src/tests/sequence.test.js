@@ -25,7 +25,7 @@ describe('sequence', () => {
 			initialState: { a: 0 },
 			updaters: {
 				a: createUpdater<StateType, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { x: xCondition.wsk('value'), y: yC.wsk('value') },
 					then: ({ R, values: { x, y } }) => R.updateState(state => ({ a: state.a + x + y })),
 				}),
@@ -49,7 +49,7 @@ describe('sequence', () => {
 			initialState: 1,
 			updaters: {
 				a: createUpdater<number, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { whatever: aC },
 					then: ({ R }) => R.updateState(state => state + 1),
 				}),
@@ -60,7 +60,7 @@ describe('sequence', () => {
 			initialState: 1,
 			updaters: {
 				a: createUpdater<number, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { whatever: aC },
 					then: ({ R }) => R.updateState(state => state + 1),
 				}),
@@ -71,7 +71,7 @@ describe('sequence', () => {
 			initialState: 0,
 			updaters: {
 				e1ORe2Changed: createUpdater<number, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { e1: e1.c, e2: e2.c },
 					then: ({ R }) => R.updateState(state => state + 1),
 				}),
@@ -85,7 +85,7 @@ describe('sequence', () => {
 		expect(store.getState().e3).toBe(2)
 	})
 
-	it('should call e2 once if e1 changed e2 has to active dependsOn with selectors to it', () => {
+	it('should call e2 once if e1 changed e2 has to active given with selectors to it', () => {
 		type StateType = {| a: number, b: number |}
 		const a = 'a'
 		const aC = createCondition<{ type: 'a' }>(a)
@@ -94,7 +94,7 @@ describe('sequence', () => {
 			initialState: { a: 1, b: 1 },
 			updaters: {
 				a: createUpdater<StateType, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { _a: aC },
 					then: ({ R }) => R.updateState(state => ({ a: state.a + 1, b: state.b - 1 })),
 				}),
@@ -105,7 +105,7 @@ describe('sequence', () => {
 			initialState: 0,
 			updaters: {
 				aORb: createUpdater<number, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: {
 						_a: e1.c.wsk('a'),
 						_b: e1.c.wsk('b'),
@@ -130,7 +130,7 @@ describe('sequence', () => {
 			initialState: { m: { x: { kind: 'dummy' } }, i: 'x' },
 			updaters: {
 				a: createUpdater<{| i: string, m: { [string]: {| kind: string |} } |}, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { whatever: aC },
 					then: ({ R }) => R.updateState(() => ({ m: { a: { kind: 'text' }, b: { kind: 'button' } }, i: 'a' })),
 				}),
@@ -141,7 +141,7 @@ describe('sequence', () => {
 			initialState: [],
 			updaters: {
 				e1m: createUpdater<Array<string>, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { e1m: e1.c.wsk('m') },
 					then: ({ values: { e1m }, R }) => R.updateState(() => Object.keys(e1m)),
 				}),
@@ -152,7 +152,7 @@ describe('sequence', () => {
 			initialState: '',
 			updaters: {
 				e1iORe2Changed: createUpdater<string, *, *, *, *>({
-					dependsOn: { e1mRO: e1.c.wsk('m') },
+					given: { e1mRO: e1.c.wsk('m') },
 					when: { e1i: e1.c.wsk('i'), e2: e2.c },
 					then: ({ values: { e1mRO, e1i, e2 }, R }) => R.updateState(state => state + e1i + e1mRO[e1i].kind + e2.length),
 				}),
@@ -174,7 +174,7 @@ describe('sequence', () => {
 			initialState: { m: { x: { kind: 'dummy' } }, i: 'x' },
 			updaters: {
 				a: createUpdater<{| i: string, m: { [string]: {| kind: string |} } |}, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { whatever: aC },
 					then: ({ R }) => R.updateState(() => ({ m: { a: { kind: 'text' }, b: { kind: 'button' } }, i: 'a' })),
 				}),
@@ -185,7 +185,7 @@ describe('sequence', () => {
 			initialState: [],
 			updaters: {
 				e1m: createUpdater<Array<string>, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { e1m: e1.c.wsk('m') },
 					then: ({ values: { e1m }, R }) => R.updateState(() => Object.keys(e1m)),
 				}),
@@ -196,7 +196,7 @@ describe('sequence', () => {
 			initialState: '',
 			updaters: {
 				e1iORe2Changed: createUpdater<string, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { e1mRO: e1.c.wsk('m'), e1i: e1.c.wsk('i'), e2: e2.c },
 					then: ({ values: { e1mRO, e1i, e2 }, R }) => R.updateState(state => state + e1i + e1mRO[e1i].kind + e2.length),
 				}),
@@ -219,17 +219,17 @@ describe('sequence', () => {
 			initialState: { n: 0, m: 0, i: 'x' },
 			updaters: {
 				a: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { whatever: aC },
 					then: ({ R }) => R.updateState(state => ({ ...state, n: state.n + 1 })),
 				}),
 				e1nChanged: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { e1n: e1C.wsk('n').wg(n => n === 1) },
 					then: ({ R, values: { e1n } }) => R.updateState(state => ({ ...state, m: state.m + e1n })),
 				}),
 				e1mChanged: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { e1m: e1C.wsk('m').wg(m => m === 1) },
 					then: ({ R, values: { e1m } }) => R.updateState(state => ({ ...state, i: state.i + e1m })),
 				}),
@@ -240,12 +240,12 @@ describe('sequence', () => {
 			initialState: { a: '', b: '' },
 			updaters: {
 				e1: createUpdater<{| a: string, b: string |}, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { e1: e1.c },
 					then: ({ values: { e1 }, R }) => R.updateState(state => ({ ...state, a: state.a + e1.i })),
 				}),
 				e1n: createUpdater<{| a: string, b: string |}, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { n: e1.c.wsk('n') },
 					then: ({ values: { n }, R }) => R.updateState(state => ({ ...state, b: state.b + n })),
 				}),
@@ -271,21 +271,21 @@ describe('sequence', () => {
 			initialState: { n: 0, m: 0, i: 'x' },
 			updaters: {
 				a: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { whatever: aC },
 					then: ({ R }) => R
 						.sideEffect(dispatchActionEffectCreator({ type: b }))
 						.updateState(state => ({ ...state, n: state.n + 1 })),
 				}),
 				b: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { b: bC },
 					then: ({ R }) => R
 						.updateState(state => ({ ...state, m: state.m + 1 }))
 						.sideEffect(dispatchActionEffectCreator({ type: x })),
 				}),
 				x: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { x: xCondition },
 					then: ({ R }) => R.updateState(state => ({ ...state, i: state.i + 1 })),
 				}),
@@ -296,12 +296,12 @@ describe('sequence', () => {
 			initialState: { a: '', b: '' },
 			updaters: {
 				e1: createUpdater<{| a: string, b: string |}, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { e1: e1.c },
 					then: ({ values: { e1 }, R }) => R.updateState(state => ({ ...state, a: state.a + e1.i })),
 				}),
 				e1n: createUpdater<{| a: string, b: string |}, *, *, *, *>({
-					dependsOn: {},
+					given: {},
 					when: { n: e1.c.wsk('n') },
 					then: ({ values: { n }, R }) => R.updateState(state => ({ ...state, b: state.b + n })),
 				}),
