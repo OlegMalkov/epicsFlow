@@ -13,7 +13,7 @@ import { workspaceViewportEpic } from '../workspace/workspaceViewportEpic'
 import { templateWidthCondition } from '../template/templateACAC'
 import { areBBoxIntersect, computeBBoxFromPositionAndDimensions } from '../../utils'
 import { workspaceScroll } from '../workspace/workspaceACAC'
-import { createUpdater, createEpic } from '../../epics'
+import { createEpic, createUpdater } from '../../../../../src/epics'
 
 const computeLeftAlignedPosition = ({ componentLeft, componentResizeHandleNTop, componentMainActionsHeight }) =>
 	({ left: componentLeft, top: componentResizeHandleNTop - 10 - componentMainActionsHeight })

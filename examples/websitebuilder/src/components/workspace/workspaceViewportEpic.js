@@ -4,8 +4,8 @@ import { type DimensionsType } from '../../types'
 import { browserDimensions } from '../env/envACAC'
 import { leftPanelEpic } from '../leftPanel/leftPanelEpic'
 import { TopBarHeight } from '../topBar/topBarConstants'
-import { setPropDeepCompare } from '../../utils'
-import { createEpic, createUpdater } from '../../epics'
+import { setPropDeepCompare } from '../../../../../src/utils'
+import { createEpic, createUpdater } from '../../../../../src/epics'
 
 type WorkspaceViewportStateType = {|
     dimensions: DimensionsType,

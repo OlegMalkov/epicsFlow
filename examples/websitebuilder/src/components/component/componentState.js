@@ -1,13 +1,8 @@
 // @flow strict
 
 import { type LTPositionType, type DimensionsType } from '../../types'
-import {
-	setPropDeepCompare,
-	T,
-	F,
-	SingleTypeContainer,
-} from '../../utils'
 import './component.css'
+import { setPropDeepCompare, T, F, SingleTypeContainer } from '../../../../../src/utils'
 
 type DimensionsUpdateType = {| height?: number, width?: number |}
 type PositionUpdateType = {| left?: number, top?: number |}

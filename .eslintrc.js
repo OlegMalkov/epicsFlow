@@ -35,7 +35,6 @@ module.exports = {
 
         // global flow types: https://github.com/zertosh/eslint-plugin-flow-vars
         "flow-vars/define-flow-type": 1,
-        "flow-vars/use-flow-type": 1,
         "comma-dangle": [
             "error",
             "always-multiline"

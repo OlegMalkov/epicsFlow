@@ -1,7 +1,7 @@
 // @flow strict
 
 import { type TemplateStateType } from './templateState'
-import { createEpicCondition, createSACAC } from '../../epics'
+import { createEpicCondition, createSACAC } from '../../../../../src/epics'
 
 const templateVat = 'TEMPLATE_VAT'
 const templateCondition = createEpicCondition<TemplateStateType>(templateVat)

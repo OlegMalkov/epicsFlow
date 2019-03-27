@@ -1,7 +1,7 @@
 // @flow strict
 
 import { type LTPositionType, type DimensionsType } from '../../types'
-import { setPropDeepCompare } from '../../utils'
+import { setPropDeepCompare } from '../../../../../src/utils'
 
 opaque type ComponentMainActionsState: {| dimensions: *, position: *, visible: * |} = {|
     dimensions: DimensionsType,

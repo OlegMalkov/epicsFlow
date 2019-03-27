@@ -1,8 +1,7 @@
 // @flow strict
 
 import { type ComponentStateType } from './componentState'
-import { createSACAC } from '../../epics'
-import { createEpicCondition } from '../../epics'
+import { createSACAC, createEpicCondition } from '../../../../../src/epics'
 
 const componentVat = 'COMPONENT_VAT'
 const componentMouseDown = createSACAC('COMPONENT_MOUSE_DOWN')

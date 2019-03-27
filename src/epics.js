@@ -55,7 +55,7 @@ opaque type Condition<V: Object>: {
 	wsk: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
 |}
 type AnyConditionType = Condition<AnyValueType>
-type MakeConditionPropsType = {|
+type CreateConditionPropsType = {|
 	...CompulsoryConditionFieldsType,
 	guard?: AnyValueType => bool,
 	parentCondition?: AnyConditionType,
@@ -100,14 +100,14 @@ opaque type EpicType<S, SC, E, PC>: { c: Condition<S>, condition: Condition<S>, 
 	updaters: { [string]: UpdaterType<S, SC, *, E> },
 	vat: string,
 |}
-type MakeEpicWithScopePropsType<S, SC, E, PC> = {|
+type CreateEpicWithScopePropsType<S, SC, E, PC> = {|
 	initialScope: SC,
 	initialState: S,
 	pluginConfig?: PC,
 	updaters: { [string]: UpdaterType<S, SC, *, E> },
 	vat: string,
 |}
-type MakeEpicPropsType<S, E, PC> = {|
+type CreateEpicPropsType<S, E, PC> = {|
 	initialState: S,
 	pluginConfig?: PC,
 	updaters: { [string]: UpdaterType<S, void, *, E> },
@@ -132,13 +132,13 @@ type EffectManagerStateType<S, E> = {|
 type EffectManagersStateType<S, E> = { [string]: EffectManagerStateType<S, E> }
 type EffectManagerStateUpdateType = {| pendingEffects?: Array<PendingEffectType<any>>, state?: AnyValueType |}
 type EffectManagersStateUpdateType = { [string]: EffectManagerStateUpdateType }
-type MakeEffectManagerPropsType<E, S, SC> = {|
+type CreateEffectManagerPropsType<E, S, SC> = {|
 	initialScope?: SC,
 	initialState?: S,
 	onEffectRequest: OnEffectRequestType<S, SC, E>,
 	requestType: string,
 |}
-type MakeEffectManagerType = <E, S, SC>(MakeEffectManagerPropsType<E, S, SC>) => EffectManager<S, SC, E>
+type CreateEffectManagerType = <E, S, SC>(CreateEffectManagerPropsType<E, S, SC>) => EffectManager<S, SC, E>
 type PluginPropsType = {|
 	getEpics: () => { [string]: EpicType<any, any, any, any> },
 	getEpicsWithPluginConfig: () => Array<{| key: string, ...EpicType<any, any, any, any>, pluginConfig: Object |}>,
@@ -210,7 +210,7 @@ type ExecuteActionPropsType = {|
 	messagesToSendOutside: Array<AnyActionType>,
 	prevConditionsValues: ConditonsValuesType,
 |}
-type MakeExecuteActionPropsType = {|
+type CreateExecuteActionPropsType = {|
 	dispatch: DispatchType,
 	effectManagers: { [string]: EffectManager<any, any, any> },
 	epicKeyByVat: { [string]: string },
@@ -227,12 +227,13 @@ opaque type EpicsStoreType<Epics: Object>: {
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	subscribeOnMessage: any => any,
 	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
+	replaceConfig: (CreateStorePropsType<Epics>) => void,
 	warn: Function,
 } = {|
 	_getNextStateForActionWithoutUpdatingStoreState: (AnyActionType) => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	_getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
 	_setState: ServiceStateType => void,
-	_dispose: () => void,
+	replaceConfig: (CreateStorePropsType<Epics>) => void,
 	dispatch: DispatchType,
 	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
@@ -384,7 +385,7 @@ function createEffectManager<E, S, SC>({
 	initialScope,
 	onEffectRequest,
 	requestType,
-}: MakeEffectManagerPropsType<E, S, SC>): EffectManager<S, SC, E> {
+}: CreateEffectManagerPropsType<E, S, SC>): EffectManager<S, SC, E> {
 	return {
 		requestType,
 		initialState,
@@ -709,7 +710,7 @@ const createExecuteAction = ({
 	effectManagers,
 	dispatch,
 	rootConditionsByActionType,
-}: MakeExecuteActionPropsType) => {
+}: CreateExecuteActionPropsType) => {
 	const effectManagersByRequestType: { [string]: EffectManager<*, *, *> } = Object.keys(effectManagers).reduce((m, emk) => {
 		const effectManager = { ...effectManagers[emk] }
 
@@ -1343,7 +1344,7 @@ function validateEpicConditions(epics) {
 		})
 	})
 }
-type MakeConditionType = <V: Object>(actionType: string) => Condition<V>
+type CreateConditionType = <V: Object>(actionType: string) => Condition<V>
 const globalRootConditionsByActionType = {}
 const globalSelectorsInUse = []
 const globalGuardsInUse = []
@@ -1360,7 +1361,7 @@ function _createCondition({
 	selector,
 	sealed,
 	isEpicCondition,
-}: MakeConditionPropsType, calledFromRoot) {
+}: CreateConditionPropsType, calledFromRoot) {
 // skipping parents without selectors or guards, as they are useless during changed conditions computation
 	if (parentCondition && !parentCondition.selectorKey && !parentCondition.selector && !parentCondition.guard && parentCondition.parentCondition) {
 		// eslint-disable-next-line no-param-reassign
@@ -1486,7 +1487,7 @@ function createEpicConditionReceiveFullAction<State>(vat: string): Condition<Epi
 function createEpicCondition<State>(vat: string): Condition<State> {
 	return createEpicConditionReceiveFullAction(vat).withSelectorKey('value')
 }
-function createEpicWithScope<S, SC, E, PC>({ vat, updaters, initialState, initialScope, pluginConfig }: MakeEpicWithScopePropsType<S, SC, E, PC>): EpicType<S, SC, E, PC> {
+function createEpicWithScope<S, SC, E, PC>({ vat, updaters, initialState, initialScope, pluginConfig }: CreateEpicWithScopePropsType<S, SC, E, PC>): EpicType<S, SC, E, PC> {
 	const c = createEpicCondition<S>(vat)
 
 	return ({
@@ -1499,7 +1500,7 @@ function createEpicWithScope<S, SC, E, PC>({ vat, updaters, initialState, initia
 		pluginConfig,
 	})
 }
-function createEpic<S, E, PC>({ vat, updaters, initialState, pluginConfig }: MakeEpicPropsType<S, E, PC>): EpicType<S, void, E, PC> {
+function createEpic<S, E, PC>({ vat, updaters, initialState, pluginConfig }: CreateEpicPropsType<S, E, PC>): EpicType<S, void, E, PC> {
 	return createEpicWithScope({
 		vat,
 		updaters,
@@ -1528,19 +1529,22 @@ type ServiceStateType = {|
 |}
 
 type DevToolsConfigType = Object
+
+type CreateStorePropsType<Epics> = {|
+	debug?: true | {| devTools?: { config: DevToolsConfigType }, trace?: Function, warn?: Function |},
+	effectManagers?: { [string]: EffectManager<*, *, *> },
+	epics: Epics,
+	plugins?: { [string]: PluginType },
+	isSubStore?: true,
+|}
+
 function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 	epics,
 	effectManagers = {},
 	plugins = {},
 	debug,
 	isSubStore,
-}: {|
-	debug?: true | {| devTools?: { config: DevToolsConfigType }, trace?: Function, warn?: Function |},
-	effectManagers?: { [string]: EffectManager<*, *, *> },
-	epics: Epics,
-	plugins?: { [string]: PluginType },
-	isSubStore?: true,
-|}): EpicsStoreType<Epics> {
+}: CreateStorePropsType<Epics>): EpicsStoreType<Epics> {
 	// eslint-disable-next-line no-console
 	const { warn = (() => null: Function), trace, devTools: devToolsConfig } = debug === true ? { devTools: { config: { } }, warn: undefined, trace: e => console.log(traceToString(e))} : (debug || {})
 
@@ -1694,7 +1698,6 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		}
 	}
 
-
 	const pluginInitializationComplete = false
 
 	getObjectKeys(plugins).forEach(pluginKey => {
@@ -1800,9 +1803,17 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		dispatch(storeCreated.ac())
 	}
 
+	let storeReplacement
+
 	return {
-		_getServiceState: () => serviceState,
+		_getServiceState: () => {
+			if (storeReplacement) return storeReplacement._getServiceState()
+			return serviceState
+		},
 		_getNextStateForActionWithoutUpdatingStoreState: (action) => {
+			if (storeReplacement) {
+				return storeReplacement._getNextStateForActionWithoutUpdatingStoreState(action)
+			}
 			const epicsStateUpdate = {}
 			const conditionsValuesUpdate = {}
 			const effectManagersStateUpdate = {}
@@ -1832,22 +1843,52 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			return (computeOutsideState(serviceState.epics): any)
 		},
 		_setState(_serviceState: ServiceStateType): void {
+			if (storeReplacement) {
+				storeReplacement._setState(_serviceState)
+			}
 			serviceState = _serviceState
 		},
 
-		dispatch,
+		replaceConfig: (creaceEpicsStoreConfig) => {
+			const currentState: any = storeReplacement ? storeReplacement._getServiceState() : serviceState
+
+			storeReplacement = createStore(creaceEpicsStoreConfig)
+			storeReplacement._setState(currentState)
+			stateChangedSubscribers.forEach(sub => storeReplacement.subscribeOnStateChange(sub))
+			msgSubscribers.forEach(sub => storeReplacement.subscribeOnMessage(sub))
+			// TODO dispose side effects
+		},
+		dispatch: (a: AnyActionType, meta?: MetaType) => {
+			if (storeReplacement) {
+				return storeReplacement.dispatch(a, meta)
+			}
+			return dispatch(a)
+		},
 		getState() {
+			if (storeReplacement) {
+				return storeReplacement.getState()
+			}
 			return (outsideState: any)
 		},
-		getAllPendingEffectsPromises,
-		warn,
-		subscribeOnStateChange: subscriber => stateChangedSubscribers.push(subscriber),
-		subscribeOnMessage: sub => msgSubscribers.push(sub),
-		_dispose: () => {
-			stateChangedSubscribers.length = 0
-			msgSubscribers.length = 0
-			// TODO cancel all side effects?
+		getAllPendingEffectsPromises: () => {
+			if (storeReplacement) {
+				return storeReplacement.getAllPendingEffectsPromises()
+			}
+			return getAllPendingEffectsPromises()
 		},
+		subscribeOnStateChange: subscriber => {
+			if (storeReplacement) {
+				storeReplacement.subscribeOnStateChange(subscriber)
+			}
+			stateChangedSubscribers.push(subscriber)
+		},
+		subscribeOnMessage: sub => {
+			if (storeReplacement) {
+				storeReplacement.subscribeOnStateChange(sub)
+			}
+			msgSubscribers.push(sub)
+		},
+		warn,
 	}
 }
 function createACAC<ActionExtraFields>(actionType: string): {|
@@ -1892,8 +1933,8 @@ const storeCreated = createSACAC('@STORE_CREATED')
 export type { // eslint-disable-line import/group-exports
 	Condition,
 	BuiltInEffectType,
-	MakeEffectManagerType,
-	MakeConditionType,
+	CreateEffectManagerType,
+	CreateConditionType,
 	UpdaterType,
 	EpicsStoreType,
 	EpicType,

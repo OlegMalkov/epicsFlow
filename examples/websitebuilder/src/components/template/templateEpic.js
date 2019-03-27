@@ -5,7 +5,7 @@ import { type TemplateStateType, templateInitialState, setTemplateWidth } from '
 import { componentRightCondition } from '../component/componentACAC'
 import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateVat } from './templateACAC'
 import { templateInitialScope, type TemplateScopeType, resetTemplateDnd, templateInitDnd } from './templateScope'
-import { createEpicWithScope, createUpdater } from '../../epics'
+import { createEpicWithScope, createUpdater } from '../../../../../src/epics'
 
 const templateEpic = createEpicWithScope<TemplateStateType, TemplateScopeType, empty, empty>({
 	vat: templateVat,

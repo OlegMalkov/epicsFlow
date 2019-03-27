@@ -1,5 +1,5 @@
 // @flow strict
-import { setProp } from '../../utils'
+import { setProp } from '../../../../../src/utils'
 
 type TemplateScopeType = {| dnd: {| type: 'idle' |} | {| mouseStartLeft: number, startWidth: number, type: 'progress' |} |}
 

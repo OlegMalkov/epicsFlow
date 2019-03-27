@@ -28,7 +28,7 @@ type EsdbPluginConfigType = {| esdbAggregate: true |}
 const esdbRehydrateRequest = createSACAC('REHYDRADE_REQUEST')
 const esdbRehydrateAggregates = createACAC<{| aggregatesStatesByVat: { [vat: string]: AnyValueType } |}>('REHYDRADE_AGGREGATES')
 const esdbSave = createSACAC('SAVE')
-const esdbMakeActionsLocalStorageKey = (now: number) => `esdb:${now}`
+const esdbCreateActionsLocalStorageKey = (now: number) => `esdb:${now}`
 const esdbAggregatesStateLocalStorageKey = 'esdb_aggregates_states'
 
 type ScopeType = {|
@@ -112,7 +112,7 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 					dependsOn: {},
 					when: { _: esdbSave.c },
 					then: ({ R, scope }) => R.sideEffect(localStorageSetItemsEC({
-						[esdbMakeActionsLocalStorageKey(Date.now())]: scope.notSavedActions,
+						[esdbCreateActionsLocalStorageKey(Date.now())]: scope.notSavedActions,
 						[esdbAggregatesStateLocalStorageKey]: scope.aggregatesStates,
 					})).updateScope(s => ({ ...s, notSavedActions: {} })),
 				}),
@@ -148,6 +148,6 @@ export type {
 export {
 	esdbPlugin,
 	esdbSave,
-	esdbMakeActionsLocalStorageKey,
+	esdbCreateActionsLocalStorageKey,
 	esdbAggregatesStateLocalStorageKey,
 }

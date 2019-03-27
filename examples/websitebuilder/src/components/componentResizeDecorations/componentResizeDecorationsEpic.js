@@ -2,8 +2,8 @@
 
 import { type LTPositionType, type DimensionsType } from '../../types'
 import { componentIsMovingCondition, componentSelectedCondition, componentIsResizingCondition, componentResizeNMouseDown, componentPositionCondition, componentDimensionsCondition } from '../component/componentACAC'
-import { setProp, setPathDeepCompare3 } from '../../utils'
-import { createEpicCondition, createEpic, createUpdater } from '../../epics'
+import { setProp, setPathDeepCompare3 } from '../../../../../src/utils'
+import { createEpicCondition, createEpic, createUpdater } from '../../../../../src/epics'
 
 type ResizeHandlesType = {|
     n: {| dimensions: DimensionsType, position: LTPositionType |},

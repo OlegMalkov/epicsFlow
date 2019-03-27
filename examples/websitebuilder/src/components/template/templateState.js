@@ -1,6 +1,5 @@
 // @flow strict
-
-import { setPropDeepCompare } from '../../utils'
+import { setPropDeepCompare } from '../../../../../src/utils'
 
 opaque type TemplateStateType: {| width: * |} = {| width: number |}
 

@@ -4,7 +4,7 @@ import React from 'react'
 import { type ComponentResizeDecorationsStateType } from './componentResizeDecorationsEpic'
 import { componentResizeNMouseDown } from '../component/componentACAC'
 import './componentResizeDecorations.css'
-import { type DispatchType } from '../../epics'
+import { type DispatchType } from '../../../../../src/epics'
 
 export const ResizeDecorationsView = ({ state, dispatch }: {| dispatch: DispatchType, state: ComponentResizeDecorationsStateType |}) => (
 	<div

@@ -1,6 +1,6 @@
 // @flow strict
 import { type LTPositionType } from './types'
-import { createACAC, createSACAC } from './epics'
+import { createACAC, createSACAC } from '../../../src/epics';
 
 const	windowMouseMove = createACAC<{| position: LTPositionType |}>('WINDOW_MOUSE_MOVE')
 const windowMousePositionCondition = windowMouseMove.condition.withSelectorKey('position')

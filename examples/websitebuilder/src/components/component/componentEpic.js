@@ -6,8 +6,8 @@ import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition }
 import { templateWidthCondition, templateAreaMouseDown } from '../template/templateACAC'
 import { componentInitialScope, type ComponentScope, initComponentMoveDnd, resetComponentMoveDnd, resetComponentResizeDnd, initComponentResizeDnd } from './componentScope'
 import { dndTypeIdle, dndTypeProgress } from '../shared/dnd'
-import { T, F } from '../../utils'
-import { createEpicWithScope, type BuiltInEffectType, createUpdater } from '../../epics'
+import { T, F } from '../../../../../src/utils'
+import { createEpicWithScope, type BuiltInEffectType, createUpdater } from '../../../../../src/epics'
 
 const
 	componentEpic = createEpicWithScope<ComponentStateType, ComponentScope, BuiltInEffectType, empty>({
@@ -55,13 +55,8 @@ const
 						return R.updateScope(initComponentMoveDnd({ componentStartPos: position, mouseStartPosition: mousePosition }))
 					}
 
-					const
-						{ componentStartPos, mouseStartPosition } = scope.movingDnd
-
-
+					const { componentStartPos, mouseStartPosition } = scope.movingDnd
 					const diffLeft = mouseStartPosition.left - mousePosition.left
-
-
 					const diffTop = mouseStartPosition.top - mousePosition.top
 
 					return R
@@ -125,9 +120,9 @@ const
 			}),
 			deselection: createUpdater({
 				dependsOn: {},
-				when: { 
+				when: {
 					templateAreaMouseDown: templateAreaMouseDown.condition.toOptional(),
-					escPressed: keyboardEscDownCondition.toOptional()
+					escPressed: keyboardEscDownCondition.toOptional(),
 				},
 				then: ({ R }) => R.updateState(setComponentSelected(F)),
 			}),

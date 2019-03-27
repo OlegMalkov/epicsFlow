@@ -4,7 +4,6 @@ import { type DndIdleType, dndTypeProgress, dndInitialState, dndTypeIdle } from 
 import { type RTPositionType, type LTPositionType, type DimensionsType } from '../../types'
 import { windowMousePositionCondition, keyboardEscDownCondition, windowMouseUp } from '../../globalACAC'
 import {
-	setPropDeepCompare,
 	areBBoxIntersect,
 	computeBBoxFromPositionAndDimensions,
 } from '../../utils'
@@ -13,8 +12,8 @@ import { componentPositionCondition, componentDimensionsCondition, componentSele
 import { templateWidthCondition } from '../template/templateACAC'
 import { propertiesPanelNextPageButtonPress, propertiesPanelDragMouseDown } from './propertiesPanelACAC'
 import { workspaceViewportEpic } from '../workspace/workspaceViewportEpic'
-import { workspaceScroll } from '../workspace/workspaceACAC'
-import { createEpicCondition, createEpicWithScope, createUpdater } from '../../epics'
+import { setPropDeepCompare } from '../../../../../src/utils'
+import { createEpicWithScope, createUpdater, createEpicCondition } from '../../../../../src/epics'
 
 type PropertiesPanelStateType = {|
     height: number,

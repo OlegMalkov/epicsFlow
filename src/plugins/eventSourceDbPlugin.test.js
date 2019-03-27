@@ -13,7 +13,7 @@ import {
 	type EsdbPluginConfigType,
 	esdbSave,
 	esdbAggregatesStateLocalStorageKey,
-	esdbMakeActionsLocalStorageKey,
+	esdbCreateActionsLocalStorageKey,
 } from './eventSourceDbPlugin'
 import { setNow } from '../tests/mocks'
 
@@ -99,7 +99,7 @@ describe('eventSourceDbPlugin', () => {
 
 		store.dispatch(esdbSave.ac())
 
-		const expectedActionsSaveKey = esdbMakeActionsLocalStorageKey(6)
+		const expectedActionsSaveKey = esdbCreateActionsLocalStorageKey(6)
 
 		expect(Object.keys(localStorage)).toEqual([expectedActionsSaveKey, esdbAggregatesStateLocalStorageKey])
 		expect(localStorage.getItem(expectedActionsSaveKey)).toEqual(JSON.stringify({

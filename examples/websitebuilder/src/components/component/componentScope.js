@@ -1,8 +1,8 @@
 // @flow strict
 
 import { type LTPositionType, type DimensionsType } from '../../types'
-import { setProp } from '../../utils'
 import { type DndIdleType, dndTypeProgress, dndInitialState } from '../shared/dnd'
+import { setProp } from '../../../../../src/utils'
 
 opaque type ComponentScope: { movingDnd: *, resizeDnd: * } = {|
     movingDnd: DndIdleType | {| componentStartPos: LTPositionType, mouseStartPosition: LTPositionType, type: typeof dndTypeProgress |},

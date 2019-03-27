@@ -25,7 +25,7 @@
 // 21. Properties panel should be dragable
 
 import React, { Component } from 'react'
-import { type DispatchType } from './epics'
+import { type DispatchType } from '../../../src/epics'
 import './app.css'
 import { windowMouseMove, windowMouseUp, keyDown } from './globalACAC'
 import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateAreaMouseDown } from './components/template/templateACAC'
@@ -37,7 +37,7 @@ import { TopBarHeight } from './components/topBar/topBarConstants'
 import { browserDimensions } from './components/env/envACAC'
 import { leftPanelToggleExpansionButtonPressed } from './components/leftPanel/leftPanelACAC'
 import { workspaceScroll } from './components/workspace/workspaceACAC'
-import { wsbStore } from './wsbStore';
+import { wsbStore } from './wsbStore'
 
 declare var window: EventTarget;
 const initialState = wsbStore.getState()
@@ -52,6 +52,8 @@ function getBrowserDimensions() {
 		height:  Math.max(clientHeight, innerHeight || 0),
 	}
 }
+
+
 export class App extends Component<{}, typeof initialState> {
 templateAreaRef: { current: HTMLDivElement | null }
 workspaceRef: { current: HTMLDivElement | null }
@@ -63,16 +65,6 @@ constructor(props: {}) {
 	this.workspaceRef = React.createRef<HTMLDivElement>()
 }
 componentDidMount() {
-	const m: { hot: { accept: (string, () => void) => void }} = (module: any)
-	if (m.hot){
-		m.hot.accept('./wsbStore', () => {
-			const currentState = (wsbStore: any)._getServiceState()
-			((wsbStore: any)._dispose())
-			const newWsbStore = require('./wsbStore').wsbStore;
-			this.dispatch = newWsbStore.dispatch
-			newWsbStore.subscribeOnStateChange(appState => this.setState(appState))
-		})
-	}
 	this.dispatch = wsbStore.dispatch
 	wsbStore.subscribeOnStateChange(appState => this.setState(appState))
 
@@ -89,7 +81,8 @@ componentDidMount() {
 	window.addEventListener('resize', () => this.dispatch(browserDimensions.actionCreator(getBrowserDimensions())))
 
 	const { current } = this.workspaceRef
-	if (current){
+
+	if (current) {
 		current.addEventListener('scroll', () => this.dispatch(workspaceScroll.actionCreator({ top: current.scrollTop })))
 		this.dispatch(workspaceScroll.actionCreator({ top: current.scrollTop }))
 	}

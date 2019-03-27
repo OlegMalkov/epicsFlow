@@ -1,7 +1,7 @@
 // @flow
 
 import { type ComponentMainActionsState } from './componentMainActionsState'
-import { createSACAC, createEpicCondition } from '../../epics'
+import { createSACAC, createEpicCondition } from '../../../../../src/epics'
 
 const componentMainActionsEpicVat = 'COMPONENT_MAIN_ACTIONS_VAT'
 const componentMainActionsEditButtonPress = createSACAC('COMPONENT_MAIN_ACTIONS_EDIT_PRESSED')

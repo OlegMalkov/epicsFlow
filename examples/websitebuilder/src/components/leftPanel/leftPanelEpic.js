@@ -1,8 +1,8 @@
 // @flow strict
 
 import { leftPanelToggleExpansionButtonPressed } from './leftPanelACAC'
-import { setProp } from '../../utils'
-import { createEpic, createUpdater } from '../../epics'
+import { setProp } from '../../../../../src/utils'
+import { createEpic, createUpdater } from '../../../../../src/epics'
 
 type LeftPanelStateType = {| expanded: bool, width: number |}
 
