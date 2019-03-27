@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { type ComponentResizeDecorationsStateType } from './componentResizeDecorationsEpic'
-import { componentResizeNMouseDown } from '../component/componentACAC'
+import { componentResizeNMouseDown } from '../component/componentACnC'
 import './componentResizeDecorations.css'
 import { type DispatchType } from '../../../../../src/epics'
 

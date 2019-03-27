@@ -2,7 +2,7 @@
 
 import { windowMousePositionCondition, windowMouseUp } from '../../globalACAC'
 import { type TemplateStateType, templateInitialState, setTemplateWidth } from './templateState'
-import { componentRightCondition } from '../component/componentACAC'
+import { componentRightCondition } from '../component/componentACnC'
 import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateVat } from './templateACAC'
 import { templateInitialScope, type TemplateScopeType, resetTemplateDnd, templateInitDnd } from './templateScope'
 import { createEpicWithScope, createUpdater } from '../../../../../src/epics'

@@ -8,7 +8,7 @@ import {
 	computeBBoxFromPositionAndDimensions,
 } from '../../utils'
 import { componentsMainActionsIsVisibleCondition, componentsMainActionsPositionWhenVisibleCondition, componentsMainActionsDimensionsWhenVisibleCondition } from '../componentMainActions/componentMainActionsACAC'
-import { componentPositionCondition, componentDimensionsCondition, componentSelectedCondition } from '../component/componentACAC'
+import { componentPositionCondition, componentDimensionsCondition, componentSelectedCondition } from '../component/componentACnC'
 import { templateWidthCondition } from '../template/templateACAC'
 import { propertiesPanelNextPageButtonPress, propertiesPanelDragMouseDown } from './propertiesPanelACAC'
 import { workspaceViewportEpic } from '../workspace/workspaceViewportEpic'

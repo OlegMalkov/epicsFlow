@@ -1,8 +1,8 @@
 // @flow strict
 
 import { type ComponentStateType, componentInitialState, updateComponentBBox, setComponentSelected, setComponentIsMovingFalse, setComponentIsMovingTrue, setComponentIsResizingFalse, setComponentIsResizingTrue } from './componentState'
-import { componentVat, componentMouseDown, componentResizeNMouseDown } from './componentACAC'
-import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition, windowMouseMove } from '../../globalACAC'
+import { componentVat, componentMouseDown, componentResizeNMouseDown } from './componentACnC'
+import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC'
 import { templateWidthCondition, templateAreaMouseDown } from '../template/templateACAC'
 import { componentInitialScope, type ComponentScope, initComponentMoveDnd, resetComponentMoveDnd, resetComponentResizeDnd, initComponentResizeDnd } from './componentScope'
 import { dndTypeIdle, dndTypeProgress } from '../shared/dnd'
@@ -21,7 +21,7 @@ const
 					mouseDown: componentMouseDown.condition,
 				},
 				when: {
-					mousePosition: MakeCondition(windowMouseMove).withSelectorKey('position').toOptional(),
+					mousePosition: windowMousePositionCondition,
 					cancel: keyboardEscDownCondition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
 					mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
 				},

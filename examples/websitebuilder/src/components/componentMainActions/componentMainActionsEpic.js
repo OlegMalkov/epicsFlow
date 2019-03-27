@@ -1,6 +1,6 @@
 // @flow strict
 
-import { componentPositionCondition, componentRightCondition } from '../component/componentACAC'
+import { componentPositionCondition, componentRightCondition } from '../component/componentACnC'
 import { componentResizeHandleNTopCondition, componentResizeDecorationsVisibleCondition } from '../componentResizeDecorations/componentResizeDecorationsEpic'
 import { componentMainActionsInitialState, type ComponentMainActionsState, componentMainActionsSetVisible, componentMainActionsSetPosition } from './componentMainActionsState'
 import { componentMainActionsEpicVat, componentsMainActionsIsVisibleCondition } from './componentMainActionsACAC'

@@ -1,7 +1,7 @@
 // @flow strict
 
 import { type LTPositionType, type DimensionsType } from '../../types'
-import { componentIsMovingCondition, componentSelectedCondition, componentIsResizingCondition, componentResizeNMouseDown, componentPositionCondition, componentDimensionsCondition } from '../component/componentACAC'
+import { componentIsMovingCondition, componentSelectedCondition, componentIsResizingCondition, componentResizeNMouseDown, componentPositionCondition, componentDimensionsCondition } from '../component/componentACnC'
 import { setProp, setPathDeepCompare3 } from '../../../../../src/utils'
 import { createEpicCondition, createEpic, createUpdater } from '../../../../../src/epics'
 

@@ -19,5 +19,7 @@ export const wsbStoreConfig = {
 
 		_workspaceViewport: workspaceViewportEpic,
 	},
+	effectManangers: {},
+	plugins: {},
 	debug: true,
 }
