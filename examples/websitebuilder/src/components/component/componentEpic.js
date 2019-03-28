@@ -3,7 +3,7 @@
 import { type ComponentStateType, componentInitialState, updateComponentBBox, setComponentSelected, setComponentIsMovingFalse, setComponentIsMovingTrue, setComponentIsResizingFalse, setComponentIsResizingTrue } from './componentState'
 import { componentVat, componentMouseDown } from './componentACnC'
 import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC'
-import { componentInitialScope, type ComponentScopeType, initComponentMoveDnd, resetComponentMoveDnd, resetResizeDnd, initResizeDnd } from './componentScope'
+import { componentInitialScope, type ComponentScopeType, componentInitMoveDnd, componentResetMoveDnd, componentResetResizeDnd, componentInitResizeDnd } from './componentScope'
 import { dndTypeIdle, dndTypeProgress } from '../shared/dnd'
 import { T, F } from '../../../../../src/utils'
 import { createEpicWithScope, type BuiltInEffectType, createUpdater } from '../../../../../src/epics'
@@ -40,7 +40,7 @@ const
 							return R
 								.mapState(updateComponentBBox({ bboxUpdate: { ...componentStartPos }, templateWidth }))
 								.mapState(setComponentIsMovingFalse)
-								.mapScope(resetComponentMoveDnd)
+								.mapScope(componentResetMoveDnd)
 						}
 						return R.doNothing
 					}
@@ -49,11 +49,11 @@ const
 						return R
 							.mapState(setComponentIsMovingFalse)
 							.mapState(setComponentSelected(T))
-							.mapScope(resetComponentMoveDnd)
+							.mapScope(componentResetMoveDnd)
 					}
 
 					if (scope.movingDnd.type === dndTypeIdle) {
-						return R.mapScope(initComponentMoveDnd({ componentStartPos: position, mouseStartPosition: mousePosition }))
+						return R.mapScope(componentInitMoveDnd({ componentStartPos: position, mouseStartPosition: mousePosition }))
 					}
 
 					const { componentStartPos, mouseStartPosition } = scope.movingDnd
@@ -93,7 +93,7 @@ const
 							return R
 								.mapState(updateComponentBBox({ bboxUpdate: { ...componentStartPosition, ...componentStartDimensions }, templateWidth }))
 								.mapState(setComponentIsResizingFalse)
-								.mapScope(resetResizeDnd)
+								.mapScope(componentResetResizeDnd)
 						}
 						return R.doNothing
 					}
@@ -101,11 +101,11 @@ const
 					if (mouseUp) {
 						return R
 							.mapState(setComponentIsResizingFalse)
-							.mapScope(resetResizeDnd)
+							.mapScope(componentResetResizeDnd)
 					}
 
 					if (scope.resizeDnd.type === dndTypeIdle) {
-						return R.mapScope(initResizeDnd({ componentStartDimensions: state.dimensions, componentStartPosition: state.position, mouseStartPosition: mousePosition }))
+						return R.mapScope(componentInitResizeDnd({ componentStartDimensions: state.dimensions, componentStartPosition: state.position, mouseStartPosition: mousePosition }))
 					}
 
 					const

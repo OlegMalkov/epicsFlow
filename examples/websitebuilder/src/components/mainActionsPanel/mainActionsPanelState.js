@@ -3,16 +3,16 @@
 import { type LTPositionType, type DimensionsType } from '../../types'
 import { setPropDeepCompare } from '../../../../../src/utils'
 
-opaque type MainActionsPanelState: {| dimensions: *, position: *, visible: * |} = {|
+opaque type MainActionsPanelStateType: {| dimensions: *, position: *, visible: * |} = {|
     dimensions: DimensionsType,
     position: LTPositionType,
     visible: bool,
 |}
 
 
-const _setPosition = setPropDeepCompare<MainActionsPanelState, *>('position')
-const mainActionsPanelInitialState: MainActionsPanelState = { position: { left: 0, top: -99999 }, dimensions: { width: 500, height: 30 }, visible: false }
-const mainActionsPanelSetVisible = setPropDeepCompare<MainActionsPanelState, *>('visible')
+const _setPosition = setPropDeepCompare<MainActionsPanelStateType, *>('position')
+const mainActionsPanelInitialState: MainActionsPanelStateType = { position: { left: 0, top: -99999 }, dimensions: { width: 500, height: 30 }, visible: false }
+const mainActionsPanelSetVisible = setPropDeepCompare<MainActionsPanelStateType, *>('visible')
 const mainActionsPanelSetPosition = (position: LTPositionType) => {
 	let { left, top } = position
 
@@ -33,7 +33,7 @@ const mainActionsPanelSetPosition = (position: LTPositionType) => {
 
 // eslint-disable-next-line import/group-exports
 export type {
-	MainActionsPanelState,
+	MainActionsPanelStateType,
 }
 
 // eslint-disable-next-line import/group-exports

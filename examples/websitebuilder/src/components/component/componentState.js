@@ -7,7 +7,7 @@ import { setPropDeepCompare, T, F, SingleTypeContainer } from '../../../../../sr
 type DimensionsUpdateType = {| height?: number, width?: number |}
 type PositionUpdateType = {| left?: number, top?: number |}
 
-opaque type ComponentStateType: { dimensions: *, isMoving: *, isResizing: *, position: *, selected: * } = {|
+opaque type ComponentStateType: {| dimensions: *, isMoving: *, isResizing: *, position: *, selected: * |} = {|
     dimensions: DimensionsType,
     isMoving: bool,
     isResizing: bool,

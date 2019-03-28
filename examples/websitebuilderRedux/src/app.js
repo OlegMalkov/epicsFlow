@@ -7,17 +7,7 @@ import './app.css'
 import { windowMouseMove, windowMouseUp, keyDown } from './globalACAC'
 import { reduxStore } from './reduxStore'
 import { type DispatchType } from '../../../src/epics'
-import { browserDimensions } from '../../websitebuilder/src/components/env/envACAC'
-import { workspaceScroll } from '../../websitebuilder/src/components/workspace/workspaceACAC'
 import { TopBarHeight } from '../../websitebuilder/src/components/topBar/topBarConstants'
-import {
-	addComponentPanelToggleExpansionButtonPressed,
-} from '../../websitebuilder/src/components/addComponentPanel/addComponentPanelACAC'
-import {
-	templateAreaMouseDown,
-	templateWidthLeftResizeHandleMouseDown,
-	templateWidthRightResizeHandleMouseDown,
-} from '../../websitebuilder/src/components/template/templateACAC'
 import { ComponentView } from '../../websitebuilder/src/components/component/componentView'
 import {
 	ResizeDecorationsView,
@@ -28,6 +18,16 @@ import {
 import {
 	PropertiesPanelView,
 } from '../../websitebuilder/src/components/propertiesPanel/propertiesPanelView'
+import { browserDimensions } from '../../websitebuilder/src/components/env/envACnC'
+import { workspaceScroll } from '../../websitebuilder/src/components/workspace/workspaceACnC'
+import {
+	addComponentPanelToggleExpansionButtonPressed,
+} from '../../websitebuilder/src/components/addComponentPanel/addComponentPanelACnC'
+import {
+	templateAreaMouseDown,
+	templateWidthLeftResizeHandleMouseDown,
+	templateWidthRightResizeHandleMouseDown,
+} from '../../websitebuilder/src/components/template/templateACnC'
 
 declare var window: EventTarget;
 const initialState = reduxStore.getState()
@@ -103,7 +103,7 @@ render() {
 							<MainActionsPanelView state={this.state.mainActionsPanel} dispatch={this.dispatch} />
 						</div>
 					</div>
-					<PropertiesPanelView state={this.state.propertiesPanel} dispatch={this.dispatch} />
+					<PropertiesPanelView state={this.state.propertiesPanel.state} dispatch={this.dispatch} />
 				</div>
 			</div>
 		</div>

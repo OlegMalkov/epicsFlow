@@ -1,7 +1,7 @@
 // @flow
 
 import { type BBoxType, type LTPositionType, type DimensionsType } from './types'
-import { deepEqual } from './epics'
+import { deepEqual } from '../../../src/epics';
 
 const T = () => true
 const F = () => false

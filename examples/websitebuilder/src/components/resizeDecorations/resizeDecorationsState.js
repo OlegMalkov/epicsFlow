@@ -6,7 +6,7 @@ type ResizeHandlesType = {|
     n: {| dimensions: DimensionsType, position: LTPositionType |},
 |}
 
-type ResizeDecorationsStateType = {|
+opaque type ResizeDecorationsStateType: {| activeHandleKey: *, handles: *, visible: * |} = {|
     activeHandleKey: $Keys<ResizeHandlesType> | null,
     handles: ResizeHandlesType,
     visible: bool,
