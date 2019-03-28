@@ -5,7 +5,6 @@ import { makeSimpleActionCreatorAndCondition, createEpicCondition } from '../../
 
 const componentVat = 'COMPONENT_VAT'
 const componentMouseDown = makeSimpleActionCreatorAndCondition('COMPONENT_MOUSE_DOWN')
-const componentResizeNMouseDown = makeSimpleActionCreatorAndCondition('COMPONENT_RESIZE_N_MOUSE_DOWN')
 const componentCondition = createEpicCondition<ComponentStateType>(componentVat)
 const componentRightCondition = componentCondition.withSelector<number>(({ position: { left }, dimensions: { width } }) => left + width)
 const componentPositionCondition = componentCondition.withSelectorKey('position')
@@ -17,7 +16,6 @@ const componentIsResizingCondition = componentCondition.withSelectorKey('isResiz
 export {
 	componentVat,
 	componentMouseDown,
-	componentResizeNMouseDown,
 	componentRightCondition,
 	componentPositionCondition,
 	componentDimensionsCondition,

@@ -1,4 +1,4 @@
-.ComponentMainActions {
+.MainActionsPanel {
     height: 35px;
     background-color: #c9c9c9;
     position: absolute;
@@ -11,6 +11,6 @@
     align-items: center;
 }
 
-.ComponentMainActions.visible {
+.MainActionsPanel.visible {
     opacity: 1;
 }

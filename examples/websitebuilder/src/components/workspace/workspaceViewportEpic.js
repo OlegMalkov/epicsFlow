@@ -1,11 +1,11 @@
 // @flow strict
 
 import { type DimensionsType } from '../../types'
-import { browserDimensions } from '../env/envACAC'
-import { leftPanelEpic } from '../leftPanel/leftPanelEpic'
+import { browserDimensions } from '../env/envACnC'
 import { TopBarHeight } from '../topBar/topBarConstants'
 import { setPropDeepCompare } from '../../../../../src/utils'
 import { createEpic, createUpdater } from '../../../../../src/epics'
+import { addComponentPanelEpic } from '../addComponentPanel/addComponentPanelEpic'
 
 type WorkspaceViewportStateType = {|
     dimensions: DimensionsType,
@@ -20,11 +20,11 @@ const workspaceViewportEpic = createEpic<WorkspaceViewportStateType, empty, empt
 			given: {},
 			when: {
 				browserDimensions: browserDimensions.condition,
-				leftPanelWidth: leftPanelEpic.condition.withSelectorKey('width'),
+				addComponentPanelWidth: addComponentPanelEpic.condition.withSelectorKey('width'),
 			},
-			then: ({ values: { browserDimensions, leftPanelWidth }, R }) =>
+			then: ({ values: { browserDimensions, addComponentPanelWidth }, R }) =>
 				R.mapState(setDimensions({
-					width: browserDimensions.width - leftPanelWidth,
+					width: browserDimensions.width - addComponentPanelWidth,
 					height: browserDimensions.height - TopBarHeight,
 				})),
 		}),

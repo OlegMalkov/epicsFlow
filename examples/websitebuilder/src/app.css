@@ -19,7 +19,7 @@
   flex-direction: row;
 }
 
-.LeftPanel {
+.AddComponentPanel {
   z-index: 2;
   height: 100%;
   background-color: #b3b3b3;

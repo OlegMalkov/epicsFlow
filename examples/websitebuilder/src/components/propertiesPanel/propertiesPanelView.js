@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { type PropertiesPanelStateType } from './propertiesPanelEpic'
-import { propertiesPanelNextPageButtonPress, propertiesPanelDragMouseDown } from './propertiesPanelACAC'
+import { propertiesPanelNextPageButtonPress, propertiesPanelDragMouseDown } from './propertiesPanelACnC'
 import './propertiesPanel.css'
 import { PropertiesPanelWidth } from './propertiesPanelEpic'
 import { type DispatchType } from '../../../../../src/epics'

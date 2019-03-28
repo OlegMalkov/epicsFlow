@@ -1,9 +1,9 @@
 // @flow strict
-import { type AnyActionType } from '../../epics'
 import { componentInitialScope, type ComponentScopeType } from '../../../../websitebuilder/src/components/component/componentScope'
 import {
 	componentInitialState, type ComponentStateType,
 } from '../../../../websitebuilder/src/components/component/componentState'
+import { type AnyActionType } from '../../../../../src/epics';
 
 type ReduxComponentStateType = {|
     state: ComponentStateType,

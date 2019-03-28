@@ -7,10 +7,10 @@ import {
 	areBBoxIntersect,
 	computeBBoxFromPositionAndDimensions,
 } from '../../utils'
-import { componentsMainActionsIsVisibleCondition, componentsMainActionsPositionWhenVisibleCondition, componentsMainActionsDimensionsWhenVisibleCondition } from '../componentMainActions/componentMainActionsACAC'
+import { mainActionsIsVisibleCondition, mainActionsPositionWhenVisibleCondition, mainActionsDimensionsWhenVisibleCondition } from '../mainActionsPanel/mainActionsPanelACnC'
 import { componentPositionCondition, componentDimensionsCondition, componentSelectedCondition } from '../component/componentACnC'
-import { templateWidthCondition } from '../template/templateACAC'
-import { propertiesPanelNextPageButtonPress, propertiesPanelDragMouseDown } from './propertiesPanelACAC'
+import { templateWidthCondition } from '../template/templateACnC'
+import { propertiesPanelNextPageButtonPress, propertiesPanelDragMouseDown } from './propertiesPanelACnC'
 import { workspaceViewportEpic } from '../workspace/workspaceViewportEpic'
 import { setPropDeepCompare } from '../../../../../src/utils'
 import { createEpicWithScope, createUpdater, createEpicCondition } from '../../../../../src/epics'
@@ -124,15 +124,15 @@ const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, Proper
 	updaters: {
 		showHide: createUpdater({
 			given: {},
-			when: { componentMainActionsVisible: componentsMainActionsIsVisibleCondition },
-			then: ({ values: { componentMainActionsVisible }, R }) => R.mapState(setVisible(componentMainActionsVisible)),
+			when: { mainActionsPanelVisible: mainActionsIsVisibleCondition },
+			then: ({ values: { mainActionsPanelVisible }, R }) => R.mapState(setVisible(mainActionsPanelVisible)),
 		}),
 		computePosition: createUpdater({
 			given: {
 				componentPosition: componentPositionCondition,
 				componentDimensions: componentDimensionsCondition,
-				componentsMainActionsPosition: componentsMainActionsPositionWhenVisibleCondition,
-				componentsMainActionsDimensions: componentsMainActionsDimensionsWhenVisibleCondition,
+				mainActionsPosition: mainActionsPositionWhenVisibleCondition,
+				mainActionsDimensions: mainActionsDimensionsWhenVisibleCondition,
 				templateWidth: templateWidthCondition,
 				workspaceViewportDimensions: workspaceViewportEpic.condition.wsk('dimensions'),
 			},
@@ -146,8 +146,8 @@ const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, Proper
 					templateWidth,
 					componentPosition,
 					componentDimensions,
-					componentsMainActionsPosition,
-					componentsMainActionsDimensions,
+					mainActionsPosition,
+					mainActionsDimensions,
 				},
 				R,
 				state,
@@ -161,9 +161,9 @@ const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, Proper
 						workspaceScroll: { top: 0 },
 					})
 					const componentBBox = computeBBoxFromPositionAndDimensions(componentPosition, componentDimensions)
-					const componentMainActionsBBox = computeBBoxFromPositionAndDimensions(componentsMainActionsPosition, componentsMainActionsDimensions)
+					const mainActionsPanelBBox = computeBBoxFromPositionAndDimensions(mainActionsPosition, mainActionsDimensions)
 					const intersectsWithComponent = (propertiesPanelBBox) => areBBoxIntersect(propertiesPanelBBox, componentBBox)
-					const intersectsWithComponentsMainActions = (propertiesPanelBBox) => areBBoxIntersect(propertiesPanelBBox, componentMainActionsBBox)
+					const intersectsWithComponentsMainActions = (propertiesPanelBBox) => areBBoxIntersect(propertiesPanelBBox, mainActionsPanelBBox)
 					const propertiesPanelPositionRT = possiblePositionsRTComputers.reduce((positonRT, positionRTComputer) => {
 						if (positonRT) return positonRT
 						const possiblePositionRT = positionRTComputer(computePositionProps)

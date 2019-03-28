@@ -1,6 +1,6 @@
 
 
-.ComponentResizeN {
+.ResizeN {
     background-color: #f5db58;
     position: absolute;
     z-index: 2;
@@ -9,12 +9,12 @@
     transition: opacity 0.2s ease;
 }
 
-.ComponentResizeN.active {
+.ResizeN.active {
     background-color: #fa741a;
     opacity: 1;
 }
 
-.ComponentResizeN.visible {
+.ResizeN.visible {
     opacity: 1;
 }
 
