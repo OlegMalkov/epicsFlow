@@ -1,6 +1,6 @@
 // @flow strict
 
-import { type ComponentStateType, componentInitialState, updateComponentBBox, setComponentSelected, setComponentIsMovingFalse, setComponentIsMovingTrue, setComponentIsResizingFalse, setComponentIsResizingTrue } from './componentState'
+import { type ComponentStateType, componentInitialState, componentUpdateBBox, componentSetSelected, componentSetIsMovingFalse, componentSetIsMovingTrue, setComponentIsResizingFalse, setComponentIsResizingTrue } from './componentState'
 import { componentVat, componentMouseDown } from './componentACnC'
 import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC'
 import { componentInitialScope, type ComponentScopeType, componentInitMoveDnd, componentResetMoveDnd, componentResetResizeDnd, componentInitResizeDnd } from './componentScope'
@@ -19,9 +19,9 @@ const
 			dndMoveAndSelection: createUpdater({
 				given: {
 					templateWidth: templateWidthCondition,
-					mouseDown: componentMouseDown.condition,
 				},
 				when: {
+					mouseDown: componentMouseDown.condition,
 					mousePosition: windowMousePositionCondition,
 					cancel: keyboardEscDownCondition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
 					mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
@@ -38,8 +38,8 @@ const
 							const { componentStartPos } = scope.movingDnd
 
 							return R
-								.mapState(updateComponentBBox({ bboxUpdate: { ...componentStartPos }, templateWidth }))
-								.mapState(setComponentIsMovingFalse)
+								.mapState(componentUpdateBBox({ bboxUpdate: { ...componentStartPos }, templateWidth }))
+								.mapState(componentSetIsMovingFalse)
 								.mapScope(componentResetMoveDnd)
 						}
 						return R.doNothing
@@ -47,8 +47,8 @@ const
 
 					if (mouseUp) {
 						return R
-							.mapState(setComponentIsMovingFalse)
-							.mapState(setComponentSelected(T))
+							.mapState(componentSetIsMovingFalse)
+							.mapState(componentSetSelected(T))
 							.mapScope(componentResetMoveDnd)
 					}
 
@@ -61,8 +61,8 @@ const
 					const diffTop = mouseStartPosition.top - mousePosition.top
 
 					return R
-						.mapState(setComponentIsMovingTrue)
-						.mapState(updateComponentBBox({
+						.mapState(componentSetIsMovingTrue)
+						.mapState(componentUpdateBBox({
 							bboxUpdate: { left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop },
 							templateWidth,
 						}))
@@ -91,7 +91,7 @@ const
 							const { componentStartPosition, componentStartDimensions } = scope.resizeDnd
 
 							return R
-								.mapState(updateComponentBBox({ bboxUpdate: { ...componentStartPosition, ...componentStartDimensions }, templateWidth }))
+								.mapState(componentUpdateBBox({ bboxUpdate: { ...componentStartPosition, ...componentStartDimensions }, templateWidth }))
 								.mapState(setComponentIsResizingFalse)
 								.mapScope(componentResetResizeDnd)
 						}
@@ -115,7 +115,7 @@ const
 					const diffTop = mouseStartPosition.top - mousePosition.top
 
 					return R
-						.mapState(updateComponentBBox({ bboxUpdate: { top: componentStartPosition.top - diffTop, height: componentStartDimensions.height + diffTop }, templateWidth }))
+						.mapState(componentUpdateBBox({ bboxUpdate: { top: componentStartPosition.top - diffTop, height: componentStartDimensions.height + diffTop }, templateWidth }))
 						.mapState(setComponentIsResizingTrue)
 				},
 			}),
@@ -125,7 +125,7 @@ const
 					templateAreaMouseDown: templateAreaMouseDown.condition.toOptional(),
 					escPressed: keyboardEscDownCondition.toOptional(),
 				},
-				then: ({ R }) => R.mapState(setComponentSelected(F)),
+				then: ({ R }) => R.mapState(componentSetSelected(F)),
 			}),
 		},
 	})

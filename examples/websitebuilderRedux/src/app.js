@@ -5,7 +5,7 @@
 import React, { Component } from 'react'
 import './app.css'
 import { windowMouseMove, windowMouseUp, keyDown } from './globalACAC'
-import { reduxStore } from './reduxStore'
+// import { reduxWsbStore } from './reduxWsbStore'
 import { type DispatchType } from '../../../src/epics'
 import { TopBarHeight } from '../../websitebuilder/src/components/topBar/topBarConstants'
 import { ComponentView } from '../../websitebuilder/src/components/component/componentView'
@@ -28,9 +28,10 @@ import {
 	templateWidthLeftResizeHandleMouseDown,
 	templateWidthRightResizeHandleMouseDown,
 } from '../../websitebuilder/src/components/template/templateACnC'
+import { reduxWsbStore } from './reduxWsbStore'
 
 declare var window: EventTarget;
-const initialState = reduxStore.getState()
+const initialState = reduxWsbStore.getState()
 
 function getBrowserDimensions() {
 	// $FlowFixMe
@@ -53,8 +54,8 @@ constructor(props: {}) {
 	this.workspaceRef = React.createRef<HTMLDivElement>()
 }
 componentDidMount() {
-	this.dispatch = reduxStore.dispatch
-	reduxStore.subscribe(appState => this.setState(appState))
+	this.dispatch = reduxWsbStore.dispatch
+	reduxWsbStore.subscribe(appState => this.setState(appState))
 
 	window.addEventListener(
 		'mousemove',

@@ -4,7 +4,7 @@
 import { createStore } from '../../../src/epics'
 import { wsbStoreConfig } from './wsbStoreConfig'
 
-export const wsbStore = createStore<*>(wsbStoreConfig)
+export const wsbStore = createStore<typeof wsbStoreConfig.epics>(wsbStoreConfig)
 
 // $FlowFixMe
 if (module.hot) {

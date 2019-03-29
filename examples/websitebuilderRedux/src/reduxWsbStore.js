@@ -3,8 +3,10 @@
 import { rootReducer, type AppStateType } from './rootReducer'
 import { type AnyActionType } from '../../../src/epics'
 
-const reduxStore = (() => {
-	let state: AppStateType = rootReducer(undefined, { type: '@INIT'})
+const reduxWsbStore = (() => {
+	const initialState = rootReducer(undefined, { type: '@INIT'})
+
+	let state: AppStateType = initialState
 	const subscribers = []
 
 	return {
@@ -14,12 +16,15 @@ const reduxStore = (() => {
 		},
 		getState: () => state,
 		subscribe: (sub: AppStateType => void) => subscribers.push(sub),
+		resetToInitialState: () => {
+			state = initialState
+		},
 	}
 })()
 
 window.$R = {}
-window.$R.store = reduxStore
+window.$R.store = reduxWsbStore
 
 export {
-	reduxStore,
+	reduxWsbStore,
 }

@@ -19,5 +19,5 @@ export const wsbStoreConfig = {
 
 		_workspaceViewport: workspaceViewportEpic,
 	},
-	debug: true,
+	debug: Boolean(process.env.NODE_ENV !== 'test' || process.env.TRACE),
 }

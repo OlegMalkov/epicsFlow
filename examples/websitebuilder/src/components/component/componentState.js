@@ -1,7 +1,6 @@
 // @flow strict
 
 import { type LTPositionType, type DimensionsType } from '../../types'
-import './component.css'
 import { setPropDeepCompare, T, F, SingleTypeContainer } from '../../../../../src/utils'
 
 type DimensionsUpdateType = {| height?: number, width?: number |}
@@ -19,7 +18,7 @@ const _setComponentPosition = setPropDeepCompare<ComponentStateType, *>('positio
 const _setComponentDimensions = setPropDeepCompare<ComponentStateType, *>('dimensions')
 const setComponentIsMoving = setPropDeepCompare<ComponentStateType, *>('isMoving')
 const setComponentIsResizing = setPropDeepCompare<ComponentStateType, *>('isResizing')
-const setComponentSelected = setPropDeepCompare<ComponentStateType, *>('selected')
+const componentSetSelected = setPropDeepCompare<ComponentStateType, *>('selected')
 const componentInitialState: ComponentStateType = {
 	position: { left: 100, top: 100 },
 	dimensions: { width: 300, height: 200 },
@@ -27,8 +26,8 @@ const componentInitialState: ComponentStateType = {
 	isMoving: false,
 	isResizing: false,
 }
-const setComponentIsMovingTrue = setComponentIsMoving(T)
-const setComponentIsMovingFalse = setComponentIsMoving(F)
+const componentSetIsMovingTrue = setComponentIsMoving(T)
+const componentSetIsMovingFalse = setComponentIsMoving(F)
 const setComponentIsResizingTrue = setComponentIsResizing(T)
 const setComponentIsResizingFalse = setComponentIsResizing(F)
 const adjustComponentPosition = ({ templateWidth, componentWidth }: {| componentWidth: number, templateWidth: number |}) =>
@@ -64,7 +63,7 @@ const adjustComponentDimensions = (dimensions: DimensionsType): DimensionsType =
 
 	return result
 }
-const updateComponentBBox = ({ bboxUpdate, templateWidth }: {| bboxUpdate: {| ...PositionUpdateType, ...DimensionsUpdateType |}, templateWidth: number |}) =>
+const componentUpdateBBox = ({ bboxUpdate, templateWidth }: {| bboxUpdate: {| ...PositionUpdateType, ...DimensionsUpdateType |}, templateWidth: number |}) =>
 	(componentState: ComponentStateType): ComponentStateType => {
 		const newDimensions = {
 			width: bboxUpdate.width || componentState.dimensions.width,
@@ -123,11 +122,11 @@ export type {
 
 // eslint-disable-next-line import/group-exports
 export {
-	setComponentSelected,
+	componentSetSelected,
 	componentInitialState,
-	setComponentIsMovingTrue,
-	setComponentIsMovingFalse,
+	componentSetIsMovingTrue,
+	componentSetIsMovingFalse,
 	setComponentIsResizingTrue,
 	setComponentIsResizingFalse,
-	updateComponentBBox,
+	componentUpdateBBox,
 }

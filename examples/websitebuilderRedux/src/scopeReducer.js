@@ -15,10 +15,15 @@ const initialScope: ScopeType = {
 
 const setMousePosition = setProp<ScopeType, *>('mousePosition')
 const matchMousePosition = matchCondition(windowMousePositionCondition)
-const updateMousePositionOnMatch = matchMousePosition((position) => setMousePosition(position))
 
 const scopeReducer = (state: ScopeType = initialScope, action: AnyActionType): ScopeType => {
-	return updateMousePositionOnMatch(action)(state)
+	const mousePosition = matchMousePosition(action)
+
+	if (mousePosition) {
+		return setMousePosition(mousePosition)(state)
+	}
+
+	return state
 }
 
 

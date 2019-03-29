@@ -57,7 +57,6 @@ function getBrowserDimensions() {
 	}
 }
 
-
 export class App extends Component<{}, typeof initialState> {
 templateAreaRef: { current: HTMLDivElement | null }
 workspaceRef: { current: HTMLDivElement | null }

@@ -228,12 +228,14 @@ opaque type EpicsStoreType<Epics: Object>: {
 	subscribeOnMessage: any => any,
 	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
 	replaceConfig: (CreateStorePropsType<Epics>) => void,
+	resetToInitialState: () => void,
 	warn: Function,
 } = {|
 	_getNextStateForActionWithoutUpdatingStoreState: (AnyActionType) => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	_getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
 	_setState: ServiceStateType => void,
 	replaceConfig: (CreateStorePropsType<Epics>) => void,
+	resetToInitialState: () => void,
 	dispatch: DispatchType,
 	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
@@ -1531,7 +1533,7 @@ type ServiceStateType = {|
 type DevToolsConfigType = Object
 
 type CreateStorePropsType<Epics> = {|
-	debug?: true | {| devTools?: { config: DevToolsConfigType }, trace?: Function, warn?: Function |},
+	debug?: bool | {| devTools?: { config: DevToolsConfigType }, trace?: Function, warn?: Function |},
 	effectManagers?: { [string]: EffectManager<*, *, *> },
 	epics: Epics,
 	plugins?: { [string]: PluginType },
@@ -1805,6 +1807,8 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 
 	let storeReplacement
 
+	const initialState = serviceState
+
 	return {
 		_getServiceState: () => {
 			if (storeReplacement) return storeReplacement._getServiceState()
@@ -1857,6 +1861,9 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			stateChangedSubscribers.forEach(sub => storeReplacement.subscribeOnStateChange(sub))
 			msgSubscribers.forEach(sub => storeReplacement.subscribeOnMessage(sub))
 			// TODO dispose side effects
+		},
+		resetToInitialState: () => {
+			serviceState = initialState
 		},
 		dispatch: (a: AnyActionType, meta?: MetaType) => {
 			if (storeReplacement) {

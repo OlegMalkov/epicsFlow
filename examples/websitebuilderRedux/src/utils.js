@@ -15,20 +15,12 @@ function buildValueSelector<V>(condition: Condition<V>, selectorPath = [], selec
 	return buildValueSelector((condition: any).parentCondition, (condition: any).selectorKey ? [(condition: any).selectorKey, ...selectorPath] : selectorPath, (condition: any).selector ? (condition: any).selector : selector)
 }
 
-const matchCondition = <S, V>(condition: Condition<V>): ((V => S => S) => (AnyActionType => S => S)) => {
+const matchCondition = <V>(condition: Condition<V>): (AnyActionType => V | void) => {
 	const valueSelector = buildValueSelector(condition)
 
-	return (updater: (value: V) => (state: S) => S) => {
-		return (action: AnyActionType) => (state: S): S => {
-			if (condition.actionType === action.type) {
-				const value: V = valueSelector((action: any))
-
-				if (value !== undefined) {
-					return updater(value)(state)
-				}
-			}
-
-			return state
+	return (action: AnyActionType): V | void => {
+		if (condition.actionType === action.type) {
+			return valueSelector((action: any))
 		}
 	}
 }
