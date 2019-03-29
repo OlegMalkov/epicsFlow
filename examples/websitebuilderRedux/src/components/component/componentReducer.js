@@ -42,12 +42,12 @@ const matchWindowMouseMove = matchCondition(windowMouseMove.condition)
 const matchWindowMouseUp = matchCondition(windowMouseUp.condition)
 const matchTemplateAreaMouseDown = matchCondition(templateAreaMouseDown.condition)
 
-type DepsType = {| mousePosition: LTPositionType, templateWidth: number |}
+type DepsType = {| mousePosition: LTPositionType|}
 
 const componentReducer = (
 	componentState: ReduxComponentStateType = componentIntialState,
 	action: AnyActionType,
-	{ mousePosition, templateWidth }: DepsType
+	{ mousePosition }: DepsType
 ): ReduxComponentStateType => {
 	if (matchComponentMouseDown(action)) {
 		// TODO when there are multiple components, it also should perform deselection
@@ -74,8 +74,7 @@ const componentReducer = (
 			const diffTop = mouseStartPosition.top - mousePosition.top
 
 			nextState = componentUpdateBBox({
-				bboxUpdate: { left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop },
-				templateWidth,
+				bboxUpdate: { left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop }
 			})(nextState)
 
 			return {

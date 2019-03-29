@@ -22,7 +22,7 @@ const rootReducer = (appState: AppStateType | void, action: AnyActionType): AppS
 		const initialScope = scopeReducer(undefined, action)
 
 		return {
-			component: componentReducer(undefined, action, { mousePosition: initialScope.mousePosition, templateWidth: 700 }), // TODO , templateWidth: 700
+			component: componentReducer(undefined, action, { mousePosition: initialScope.mousePosition }),
 			resizeDecorations: resizeDecorationsReducer(undefined, action),
 			mainActionsPanel: mainActionsPanelReducer(undefined, action),
 			propertiesPanel: propertiesPanelReducer(undefined, action),
@@ -31,7 +31,7 @@ const rootReducer = (appState: AppStateType | void, action: AnyActionType): AppS
 	}
 
 	const nextScope = scopeReducer(appState.scope, action)
-	const componentDeps = { mousePosition: nextScope.mousePosition, templateWidth: 700 } // TODO , templateWidth: 700
+	const componentDeps = { mousePosition: nextScope.mousePosition }
 	const nextComponentState = componentReducer(appState.component, action, componentDeps)
 	const nextResizeDecorationsState = resizeDecorationsReducer(appState.resizeDecorations, action)
 	const nextMainActionsPanelState = mainActionsPanelReducer(appState.mainActionsPanel, action)
