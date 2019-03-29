@@ -1,6 +1,6 @@
 // @flow strict
 
-import { componentsIsMovingCondition, componentsSelectedCondition, componentsIsResizingCondition, componentsPositionCondition, componentsDimensionsCondition } from '../components/componentsACnC'
+import { componentsIsMovingCondition, componentsIsResizingCondition } from '../components/componentsACnC'
 import { createEpicCondition, createEpic, createUpdater } from '../../../../../src/epics'
 import {
 	resizeDecorationsInitialState,

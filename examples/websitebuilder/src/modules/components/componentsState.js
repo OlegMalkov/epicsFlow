@@ -6,30 +6,36 @@ import { setPropDeepCompare, T, F, SingleTypeContainer } from '../../../../../sr
 type DimensionsUpdateType = {| height?: number, width?: number |}
 type PositionUpdateType = {| left?: number, top?: number |}
 
-opaque type ComponentsStateType: {| dimensions: *, isMoving: *, isResizing: *, position: *, selected: * |} = {|
-    dimensions: DimensionsType,
-    isMoving: bool,
-    isResizing: bool,
+opaque type ComponentStateType: {| dimensions: *, position: * |} = {|
+	dimensions: DimensionsType,
     position: LTPositionType,
-    selected: bool,
 |}
 
-const _setComponentsPosition = setPropDeepCompare<ComponentsStateType, *>('position')
-const _setComponentsDimensions = setPropDeepCompare<ComponentsStateType, *>('dimensions')
-const setComponentsIsMoving = setPropDeepCompare<ComponentsStateType, *>('isMoving')
-const setComponentsIsResizing = setPropDeepCompare<ComponentsStateType, *>('isResizing')
-const componentsSetSelected = setPropDeepCompare<ComponentsStateType, *>('selected')
+type ComponentsStatesByIdType = { [string]: ComponentStateType }
+
+opaque type ComponentsStateType: {| byId: *, isMoving: *, isResizing: *, selectedComponentsIds: * |} = {|
+	byId: ComponentsStatesByIdType,
+    isMoving: bool,
+    isResizing: bool,
+    selectedComponentsIds: Array<string>,
+|}
+
+const _setComponentPosition = setPropDeepCompare<ComponentStateType, *>('position')
+const _setComponentDimensions = setPropDeepCompare<ComponentStateType, *>('dimensions')
+const componentsSetIsMoving = setPropDeepCompare<ComponentsStateType, *>('isMoving')
+const componentsSetIsResizing = setPropDeepCompare<ComponentsStateType, *>('isResizing')
+const componentsSetSelectedComponentsIds = setPropDeepCompare<ComponentsStateType, *>('selectedComponentsIds')
+const componentSetByIdMap = setPropDeepCompare<ComponentsStateType, *>('byId')
 const componentsInitialState: ComponentsStateType = {
-	position: { left: 100, top: 100 },
-	dimensions: { width: 300, height: 200 },
-	selected: false,
+	byId: {},
+	selectedComponentsIds: [],
 	isMoving: false,
 	isResizing: false,
 }
-const componentsSetIsMovingTrue = setComponentsIsMoving(T)
-const componentsSetIsMovingFalse = setComponentsIsMoving(F)
-const setComponentsIsResizingTrue = setComponentsIsResizing(T)
-const setComponentsIsResizingFalse = setComponentsIsResizing(F)
+const componentsSetIsMovingTrue = componentsSetIsMoving(T)
+const componentsSetIsMovingFalse = componentsSetIsMoving(F)
+const componentsSetIsResizingTrue = componentsSetIsResizing(T)
+const componentsSetIsResizingFalse = componentsSetIsResizing(F)
 const adjustComponentsPosition = (position: LTPositionType): LTPositionType => {
 	let result = position
 
@@ -53,14 +59,14 @@ const adjustComponentsDimensions = (dimensions: DimensionsType): DimensionsType 
 
 	return result
 }
-const componentsUpdateBBox = ({ bboxUpdate }: {| bboxUpdate: {| ...PositionUpdateType, ...DimensionsUpdateType |} |}) =>
-	(componentsState: ComponentsStateType): ComponentsStateType => {
+const componentsUpdateBBoxes = ({ bboxUpdate }: {| bboxUpdate: {| ...PositionUpdateType, ...DimensionsUpdateType |} |}) =>
+	(componentState: ComponentStateType): ComponentStateType => {
 		const newDimensions = {
-			width: bboxUpdate.width || componentsState.dimensions.width,
-			height: bboxUpdate.height || componentsState.dimensions.height,
+			width: bboxUpdate.width || componentState.dimensions.width,
+			height: bboxUpdate.height || componentState.dimensions.height,
 		}
 		const adjustedDimensions = adjustComponentsDimensions(newDimensions)
-		const newPosition = { left: bboxUpdate.left || componentsState.position.left, top:  bboxUpdate.top || componentsState.position.top }
+		const newPosition = { left: bboxUpdate.left || componentState.position.left, top:  bboxUpdate.top || componentState.position.top }
 		const adjustedPosition = adjustComponentsPosition(newPosition)
 
 		let	finalPosition = adjustedPosition
@@ -70,13 +76,13 @@ const componentsUpdateBBox = ({ bboxUpdate }: {| bboxUpdate: {| ...PositionUpdat
 		if (newDimensions !== adjustedDimensions) {
 			const adjustedHeightDiff = adjustedDimensions.height - newDimensions.height
 
-			if (adjustedHeightDiff !== 0 && adjustedPosition.top !== componentsState.position.top) {
+			if (adjustedHeightDiff !== 0 && adjustedPosition.top !== componentState.position.top) {
 				finalPosition = { ...finalPosition, top: adjustedPosition.top - adjustedHeightDiff }
 			}
 
 			const adjustedWidthDiff = adjustedDimensions.width - newDimensions.width
 
-			if (adjustedWidthDiff !== 0 && adjustedPosition.left !== componentsState.position.left) {
+			if (adjustedWidthDiff !== 0 && adjustedPosition.left !== componentState.position.left) {
 				finalPosition = { ...finalPosition, left: adjustedPosition.left - adjustedWidthDiff }
 			}
 		}
@@ -84,31 +90,37 @@ const componentsUpdateBBox = ({ bboxUpdate }: {| bboxUpdate: {| ...PositionUpdat
 		if (newPosition !== adjustedPosition) {
 			const adjustedTopDiff = adjustedPosition.top - newPosition.top
 
-			if (adjustedTopDiff !== 0 && adjustedDimensions.height !== componentsState.dimensions.height) {
+			if (adjustedTopDiff !== 0 && adjustedDimensions.height !== componentState.dimensions.height) {
 				finalDimensions = { ...finalDimensions, height: adjustedDimensions.height - adjustedTopDiff }
 			}
 
 			const adjustedLeftDiff = adjustedPosition.left - newPosition.left
 
-			if (adjustedLeftDiff !== 0 && adjustedDimensions.width !== componentsState.dimensions.width) {
+			if (adjustedLeftDiff !== 0 && adjustedDimensions.width !== componentState.dimensions.width) {
 				finalDimensions = { ...finalDimensions, width: adjustedDimensions.width - adjustedTopDiff }
 			}
 		}
 
 		// if left was adjusted and width changed, width should be readjusted
 
-		return SingleTypeContainer(componentsState)
-			.pipe(_setComponentsPosition(finalPosition))
-			.pipe(_setComponentsDimensions(finalDimensions))
+		return SingleTypeContainer(componentState)
+			.pipe(_setComponentPosition(finalPosition))
+			.pipe(_setComponentDimensions(finalDimensions))
 			.value()
 	}
 
+// eslint-disable-next-line import/group-exports
+export type {
+	ComponentsStatesByIdType,
+}
+
+// eslint-disable-next-line import/group-exports
 export {
-	componentsSetSelected,
+	componentsSetSelectedComponentsIds,
 	componentsInitialState,
 	componentsSetIsMovingTrue,
 	componentsSetIsMovingFalse,
-	setComponentsIsResizingTrue,
-	setComponentsIsResizingFalse,
-	componentsUpdateBBox,
+	componentsSetIsResizingTrue,
+	componentsSetIsResizingFalse,
+	componentSetByIdMap,
 }

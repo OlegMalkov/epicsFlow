@@ -6,8 +6,17 @@ import { type DispatchType } from '../../../../../src/epics'
 import { componentsInitialState } from './componentsState'
 
 export const ComponentsView = ({ state }: {| dispatch: DispatchType, state: typeof componentsInitialState |}) => (
-	<div
-		className={`Components${state.selected ? ' ComponentsSeletedBorder' : ''}`}
-		style={{ ...state.position, ...state.dimensions }}
-	/>
+	<React.Fragment>
+		{
+			Object.keys(state.byId).map(id => {
+				const component = state.byId[id]
+
+				return <div
+					key={id}
+					className={`Components${state.selectedComponentsIds.includes(id) ? ' ComponentsSeletedBorder' : ''}`}
+					style={{ ...component.position, ...component.dimensions }}
+				/>
+			})
+		}
+	</React.Fragment>
 )

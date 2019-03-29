@@ -4,10 +4,10 @@ import ReactDOM from 'react-dom'
 import '../../websitebuilder/src/index.css'
 import { reduxWsbStore } from './reduxWsbStore'
 import { createApp, type AppStateForRenderType } from '../../websitebuilder/src/app'
+import { templateInitialState } from '../../websitebuilder/src/modules/template/templateState'
 import {
 	addComponentPanelInitialState,
 } from '../../websitebuilder/src/modules/addComponentPanel/addComponentPanelState'
-import { templateInitialState } from '../../websitebuilder/src/modules/template/templateState'
 
 const initialAppState = reduxWsbStore.getState()
 

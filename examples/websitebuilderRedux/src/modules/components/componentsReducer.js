@@ -4,7 +4,7 @@ import {
 	componentsSetIsMovingTrue,
 	componentsUpdateBBox,
 	componentsSetIsMovingFalse,
-	componentsSetSelected,
+	componentsSetSelectedComponentsIds,
 } from '../../../../websitebuilder/src/modules/components/componentsState'
 import {
 	componentsInitialScope,
@@ -55,7 +55,7 @@ const componentsReducer = (
 
 			if (state.selected) {
 				return {
-					state: componentsSetSelected(F)(state),
+					state: componentsSetSelectedComponentsIds(F)(state),
 					scope,
 				}
 			}
@@ -93,7 +93,7 @@ const componentsReducer = (
 
 		if (scope.movingDnd.type === dndTypeProgress) {
 			state = componentsSetIsMovingFalse(state)
-			state = componentsSetSelected(T)(state)
+			state = componentsSetSelectedComponentsIds(T)(state)
 			scope = componentsResetMoveDnd(scope)
 			return { state, scope }
 		}

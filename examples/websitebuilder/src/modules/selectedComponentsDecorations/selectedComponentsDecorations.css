@@ -1,0 +1,17 @@
+
+
+.SelectedComponentsBorder {
+    border: 1px solid #ff5e00;
+    position: absolute;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.SelectedComponentsBorder.visible {
+    opacity: 1;
+}
+
+.ComponentSeletedBorder {
+    border: 1px solid #ff5e00
+}
