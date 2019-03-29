@@ -1,7 +1,7 @@
 // @flow strict
 import { type DispatchType } from '../../../src/epics'
 import { windowMouseMove, windowMouseUp, windowMouseDown, keyDown } from './globalACAC'
-import { browserDimensions } from './components/env/envACnC'
+import { browserDimensions } from './modules/env/envACnC'
 
 function getBrowserDimensions() {
 	// $FlowFixMe

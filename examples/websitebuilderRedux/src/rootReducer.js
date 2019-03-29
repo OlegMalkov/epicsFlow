@@ -1,16 +1,16 @@
 // @flow strict
-import { componentReducer, type ReduxComponentStateType } from './components/component/componentReducer'
+import { componentsReducer, type ReduxComponentsStateType } from './modules/components/componentsReducer'
 import { type AnyActionType } from '../../../src/epics'
 import {
 	resizeDecorationsReducer,
 	type ReduxResizeDecorationsStateType,
-} from './components/resizeDecorations/resizeDecorationsReducer'
-import { mainActionsPanelReducer, type ReduxMainActionsPanelStateType } from './components/mainActionsPanel/mainActionsPanelReducer'
-import { propertiesPanelReducer, type ReduxPropertiesPanelStateType } from './components/propertiesPanel/propertiesPanelReducer'
+} from './modules/resizeDecorations/resizeDecorationsReducer'
+import { mainActionsPanelReducer, type ReduxMainActionsPanelStateType } from './modules/mainActionsPanel/mainActionsPanelReducer'
+import { propertiesPanelReducer, type ReduxPropertiesPanelStateType } from './modules/propertiesPanel/propertiesPanelReducer'
 import { scopeReducer, type ScopeType } from './scopeReducer'
 
 type AppStateType = {|
-	component: ReduxComponentStateType,
+	components: ReduxComponentsStateType,
 	resizeDecorations: ReduxResizeDecorationsStateType,
 	mainActionsPanel: ReduxMainActionsPanelStateType,
 	propertiesPanel: ReduxPropertiesPanelStateType,
@@ -23,7 +23,7 @@ const rootReducer = (appState: AppStateType | void, action: AnyActionType): AppS
 
 		// REDUX_ISSUE BOILERPLATE manual state initialization
 		return {
-			component: componentReducer(undefined, action, { mousePosition: initialScope.mousePosition }),
+			components: componentsReducer(undefined, action, { mousePosition: initialScope.mousePosition }),
 			resizeDecorations: resizeDecorationsReducer(undefined, action),
 			mainActionsPanel: mainActionsPanelReducer(undefined, action),
 			propertiesPanel: propertiesPanelReducer(undefined, action),
@@ -33,22 +33,22 @@ const rootReducer = (appState: AppStateType | void, action: AnyActionType): AppS
 
 	const nextScope = scopeReducer(appState.scope, action)
 	// REDUX_ISSUE BOILERPLATE need to manually construct dependencies
-	const componentDeps = { mousePosition: nextScope.mousePosition }
-	const nextComponentState = componentReducer(appState.component, action, componentDeps)
+	const componentsDeps = { mousePosition: nextScope.mousePosition }
+	const nextComponentsState = componentsReducer(appState.components, action, componentsDeps)
 	const nextResizeDecorationsState = resizeDecorationsReducer(appState.resizeDecorations, action)
 	const nextMainActionsPanelState = mainActionsPanelReducer(appState.mainActionsPanel, action)
 	const nextPropertiesPanelState = propertiesPanelReducer(appState.propertiesPanel, action)
 
 	// REDUX_ISSUE BOILERPLATE need to manually check if anything changed (giving up the combineReducers, as we passing dependencies as third argument to sub reducers)
 	if (
-		nextComponentState !== appState.component
+		nextComponentsState !== appState.components
 		|| nextResizeDecorationsState !== appState.resizeDecorations
 		|| nextMainActionsPanelState !== appState.mainActionsPanel
 		|| nextPropertiesPanelState !== appState.propertiesPanel
 		|| nextScope !== appState.scope
 	) {
 		return {
-			component: nextComponentState,
+			components: nextComponentsState,
 			resizeDecorations: nextResizeDecorationsState,
 			mainActionsPanel: nextMainActionsPanelState,
 			propertiesPanel: nextPropertiesPanelState,

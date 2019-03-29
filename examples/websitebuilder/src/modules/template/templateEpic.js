@@ -1,0 +1,50 @@
+// @flow strict
+
+import { windowMousePositionCondition, windowMouseUp } from '../../globalACAC'
+import { templateInitialState, setTemplateWidth } from './templateState'
+import { componentsRightCondition } from '../components/componentsACnC'
+import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateVat } from './templateACnC'
+import { templateInitialScope, resetTemplateDnd, templateInitDnd } from './templateScope'
+import { createEpicWithScope, createUpdater } from '../../../../../src/epics'
+
+const templateEpic = createEpicWithScope<typeof templateInitialState, typeof templateInitialScope, empty, empty>({
+	vat: templateVat,
+	initialState: templateInitialState,
+	initialScope: templateInitialScope,
+	updaters: {
+		dnd: createUpdater({
+			given: {
+				componentsRight: componentsRightCondition,
+				leftDown: templateWidthLeftResizeHandleMouseDown.condition.toOptional(),
+				rightDown: templateWidthRightResizeHandleMouseDown.condition.toOptional(),
+			},
+			when: {
+				mouseLeft: windowMousePositionCondition.withSelector(({ left }) => left),
+				mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['leftDown', 'rightDown']),
+			},
+			then: ({ state, scope, values: { mouseLeft, leftDown, rightDown, componentsRight }, changedActiveConditionsKeysMap, R }) => {
+				if (!leftDown && !rightDown) return R.doNothing
+
+				if (changedActiveConditionsKeysMap.mouseUp) {
+					return R.mapScope(resetTemplateDnd)
+				}
+
+				const { dnd } = scope
+
+				if (dnd.type === 'idle') {
+					return R.mapScope(templateInitDnd({ startWidth: state.width, mouseStartLeft: mouseLeft }))
+				}
+
+				const { startWidth, mouseStartLeft } = dnd
+				const leftDiff = mouseStartLeft - mouseLeft
+				const nextWidth = Math.max(300, componentsRight, leftDown ? startWidth + 2 * leftDiff : startWidth - 2 * leftDiff)
+
+				return R.mapState(state => setTemplateWidth(nextWidth)(state))
+			},
+		}),
+	},
+})
+
+export {
+	templateEpic,
+}

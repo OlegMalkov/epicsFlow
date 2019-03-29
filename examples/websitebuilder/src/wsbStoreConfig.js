@@ -1,16 +1,16 @@
 // @flow strict
 
-import { componentEpic } from './components/component/componentEpic'
-import { templateEpic } from './components/template/templateEpic'
-import { resizeDecorationsEpic } from './components/resizeDecorations/resizeDecorationsEpic'
-import { mainActionsPanelEpic } from './components/mainActionsPanel/mainActionsPanelEpic'
-import { propertiesPanelEpic } from './components/propertiesPanel/propertiesPanelEpic'
-import { workspaceViewportEpic } from './components/workspace/workspaceViewportEpic'
-import { addComponentPanelEpic } from './components/addComponentPanel/addComponentPanelEpic'
+import { componentsEpic } from './modules/components/componentsEpic'
+import { templateEpic } from './modules/template/templateEpic'
+import { resizeDecorationsEpic } from './modules/resizeDecorations/resizeDecorationsEpic'
+import { mainActionsPanelEpic } from './modules/mainActionsPanel/mainActionsPanelEpic'
+import { propertiesPanelEpic } from './modules/propertiesPanel/propertiesPanelEpic'
+import { workspaceViewportEpic } from './modules/workspace/workspaceViewportEpic'
+import { addComponentPanelEpic } from './modules/addComponentPanel/addComponentPanelEpic'
 
 export const wsbStoreConfig = {
 	epics: {
-		component: componentEpic,
+		components: componentsEpic,
 		mainActionsPanel: mainActionsPanelEpic,
 		resizeDecorations: resizeDecorationsEpic,
 		propertiesPanel: propertiesPanelEpic,

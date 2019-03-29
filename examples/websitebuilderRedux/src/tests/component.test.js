@@ -7,8 +7,8 @@ beforeEach(() => {
 	store.resetToInitialState()
 })
 
-describe('component', () => {
-	it('got selected on componentMouseDown + windowMouseUp', () => {
+describe('components', () => {
+	it('got selected on componentsMouseDown + windowMouseUp', () => {
 	})
 	it('got deselected on templateAreaMouseDown', () => {
 	})

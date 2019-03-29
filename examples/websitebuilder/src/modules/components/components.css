@@ -1,0 +1,12 @@
+
+
+.Components {
+    background-color: #dfd7ae;
+    position: absolute;
+    z-index: 1;
+    cursor: move;
+}
+
+.ComponentsSeletedBorder {
+    border: 1px solid #ff5e00
+}

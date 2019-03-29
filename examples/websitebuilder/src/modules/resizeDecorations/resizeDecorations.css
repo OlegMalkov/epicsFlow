@@ -1,0 +1,23 @@
+
+
+.ResizeN {
+    background-color: #f5db58;
+    position: absolute;
+    z-index: 2;
+    cursor: ns-resize;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.ResizeN.active {
+    background-color: #fa741a;
+    opacity: 1;
+}
+
+.ResizeN.visible {
+    opacity: 1;
+}
+
+.ComponentsSeletedBorder {
+    border: 1px solid #ff5e00
+}

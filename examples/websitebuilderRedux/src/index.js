@@ -6,8 +6,8 @@ import { reduxWsbStore } from './reduxWsbStore'
 import { createApp, type AppStateForRenderType } from '../../websitebuilder/src/app'
 import {
 	addComponentPanelInitialState,
-} from '../../websitebuilder/src/components/addComponentPanel/addComponentPanelState'
-import { templateInitialState } from '../../websitebuilder/src/components/template/templateState'
+} from '../../websitebuilder/src/modules/addComponentPanel/addComponentPanelState'
+import { templateInitialState } from '../../websitebuilder/src/modules/template/templateState'
 
 const initialAppState = reduxWsbStore.getState()
 
@@ -16,7 +16,7 @@ const initialAppState = reduxWsbStore.getState()
 function computeRenderState(appState: typeof initialAppState): AppStateForRenderType {
 	return {
 		addComponentPanel: addComponentPanelInitialState,
-		component: appState.component.state,
+		components: appState.components.state,
 		mainActionsPanel: appState.mainActionsPanel,
 		propertiesPanel: appState.propertiesPanel.state,
 		resizeDecorations: appState.resizeDecorations,
