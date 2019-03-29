@@ -9,12 +9,6 @@ const decX = (x: XStateType): XStateType => ({ ...x, value: dec(x.value)})
 const setXColor = (color: 'green' | 'red') => (x: XStateType): XStateType => ({ ...x, color })
 const initialXState: XStateType = { value: 4, color: 'green' }
 
-// eslint-disable-next-line import/group-exports
-export type {
-	XStateType,
-}
-
-// eslint-disable-next-line import/group-exports
 export {
 	incX,
 	decX,

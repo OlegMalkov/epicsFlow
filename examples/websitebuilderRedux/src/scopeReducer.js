@@ -10,6 +10,7 @@ opaque type ScopeType: {| mousePosition: * |} = {|
 |}
 
 const initialScope: ScopeType = {
+	// REDUX_ISSUE BOILERPLATE need to manually remember values of actions that will be used for future computations
 	mousePosition: { left: 0, top: 0 },
 }
 

@@ -77,21 +77,21 @@ const localStorageEM = createEffectManager<LocalStorageEffectType, StateType, nu
 	initialScope: null,
 	onEffectRequest: ({ effect, state, R }) => {
 		if (!state.available) {
-			return R.dispatchAction(localStorageUnavailableResult.ac())
+			return R.dispatchAction(localStorageUnavailableResult.actionCreator())
 		}
 
 		switch (effect.cmd.type) {
 		case 'CHECK':
 			if (state.quotaExceeded) {
-				return R.dispatchAction(localStorageQuotaExceededResult.ac())
+				return R.dispatchAction(localStorageQuotaExceededResult.actionCreator())
 			}
 			break
 		case 'GET_ITEM':
-			return R.dispatchAction(localStorageGetItemResult.ac({ value: localStorage.getItem(effect.cmd.key) }))
+			return R.dispatchAction(localStorageGetItemResult.actionCreator({ value: localStorage.getItem(effect.cmd.key) }))
 		case 'GET_ITEMS': {
 			const { keys } = effect.cmd
 
-			return R.dispatchAction(localStorageGetItemsResult.ac({
+			return R.dispatchAction(localStorageGetItemsResult.actionCreator({
 				values: keys.reduce((acc, key) => {
 					acc[key] = localStorage.getItem(key)
 					return acc
@@ -117,7 +117,7 @@ const localStorageEM = createEffectManager<LocalStorageEffectType, StateType, nu
 				itemsKeys.forEach(key => localStorage.removeItem(key))
 				return R
 					.mapState(setQuotaExceeded(true))
-					.dispatchAction(localStorageQuotaExceededResult.ac())
+					.dispatchAction(localStorageQuotaExceededResult.actionCreator())
 			}
 			break
 		}
@@ -131,7 +131,7 @@ const localStorageEM = createEffectManager<LocalStorageEffectType, StateType, nu
 			localStorage.clear()
 			return R.mapState(setQuotaExceeded(false))
 		case 'GET_KEYS':
-			return R.dispatchAction(localStorageGetKeysResult.ac({ keys: Object.keys(localStorage) }))
+			return R.dispatchAction(localStorageGetKeysResult.actionCreator({ keys: Object.keys(localStorage) }))
 		default:
 			// eslint-disable-next-line no-unused-expressions
 			(effect.cmd.type: empty)

@@ -9,12 +9,6 @@ const decY = (y: YStateType): YStateType => ({ ...y, value: dec(y.value)})
 const setYColor = (color: 'green' | 'red') => (y: YStateType): YStateType => ({ ...y, color })
 const initialYState: YStateType = { value: 2, color: 'red' }
 
-// eslint-disable-next-line import/group-exports
-export type {
-	YStateType,
-}
-
-// eslint-disable-next-line import/group-exports
 export {
 	incY,
 	decY,

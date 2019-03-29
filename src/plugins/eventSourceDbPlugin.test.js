@@ -74,17 +74,17 @@ describe('eventSourceDbPlugin', () => {
 			effectManagers: { localStorage: localStorageEM },
 		})
 
-		store.dispatch(a.ac())
+		store.dispatch(a.actionCreator())
 		setNow(1)
-		store.dispatch(b.ac())
+		store.dispatch(b.actionCreator())
 		setNow(2)
-		store.dispatch(b.ac())
+		store.dispatch(b.actionCreator())
 		setNow(3)
-		store.dispatch(z.ac())
+		store.dispatch(z.actionCreator())
 		setNow(4)
-		store.dispatch(a.ac())
+		store.dispatch(a.actionCreator())
 		setNow(5)
-		store.dispatch(b.ac())
+		store.dispatch(b.actionCreator())
 		setNow(6)
 
 		return store
@@ -97,17 +97,17 @@ describe('eventSourceDbPlugin', () => {
 		expect(store.getState().countOfB).toBe(3)
 		expect(store.getState().countOfAorB).toBe(5)
 
-		store.dispatch(esdbSave.ac())
+		store.dispatch(esdbSave.actionCreator())
 
 		const expectedActionsSaveKey = esdbCreateActionsLocalStorageKey(6)
 
 		expect(Object.keys(localStorage)).toEqual([expectedActionsSaveKey, esdbAggregatesStateLocalStorageKey])
 		expect(localStorage.getItem(expectedActionsSaveKey)).toEqual(JSON.stringify({
-			'0': a.ac(),
-			'1': b.ac(),
-			'2': b.ac(),
-			'4': a.ac(),
-			'5': b.ac(),
+			'0': a.actionCreator(),
+			'1': b.actionCreator(),
+			'2': b.actionCreator(),
+			'4': a.actionCreator(),
+			'5': b.actionCreator(),
 		}))
 		expect(localStorage.getItem(esdbAggregatesStateLocalStorageKey)).toEqual(JSON.stringify({
 			'COUNT_OF_A_VAT': 2,
@@ -119,7 +119,7 @@ describe('eventSourceDbPlugin', () => {
 	it('rehydrates store', async () => {
 		const store = createPopulatedStore()
 
-		store.dispatch(esdbSave.ac())
+		store.dispatch(esdbSave.actionCreator())
 
 		const rehydratedStore = createStore({
 			epics: countOfABEpics,

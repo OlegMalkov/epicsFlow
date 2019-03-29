@@ -1,27 +1,23 @@
 // @flow strict
 
-import { setProp } from '../../../../../src/utils'
 import { createEpic, createUpdater } from '../../../../../src/epics'
 import { addComponentPanelToggleExpansionButtonPressed } from './addComponentPanelACnC'
-
-type AddComponentPanelStateType = {| expanded: bool, width: number |}
+import { addComponentPanelInitialState, addComponentPanelSetWidth, addComponentPanelSetExpanded } from './addComponentPanelState'
 
 const AddComponentPanelWidthExpanded = 200
 const AddComponentPanelWidthCollapsed = 50
-const setWidth = setProp<AddComponentPanelStateType, *>('width')
-const setExpanded = setProp<AddComponentPanelStateType, *>('expanded')
 
-export const addComponentPanelEpic = createEpic<AddComponentPanelStateType, empty, empty>({
+export const addComponentPanelEpic = createEpic<typeof addComponentPanelInitialState, empty, empty>({
 	vat: 'LEFT_PANEL_VAT',
-	initialState: { width: 200, expanded: true },
+	initialState: addComponentPanelInitialState,
 	updaters: {
 		compute: createUpdater({
 			given: {},
 			when: { _: addComponentPanelToggleExpansionButtonPressed.condition },
 			then: ({ R, state }) => {
 				return R
-					.mapState(setWidth(state.expanded ? AddComponentPanelWidthCollapsed : AddComponentPanelWidthExpanded))
-					.mapState(setExpanded(expanded => !expanded))
+					.mapState(addComponentPanelSetWidth(state.expanded ? AddComponentPanelWidthCollapsed : AddComponentPanelWidthExpanded))
+					.mapState(addComponentPanelSetExpanded(expanded => !expanded))
 			},
 		}),
 	},

@@ -29,12 +29,6 @@ const resizeDecorationsSetResizeNHandlePosition = setPathDeepCompare3<ResizeDeco
 // Component can be resized using top resizing handle. Top resize handle is 20px above component top if component height > 50px, otherwise 20 + (50 - componentHeight) px.
 const resizeDecorationsVerticalResizeHandleTreshold = 50
 
-// eslint-disable-next-line import/group-exports
-export type {
-	ResizeDecorationsStateType,
-}
-
-// eslint-disable-next-line import/group-exports
 export {
 	resizeDecorationsInitialState,
 	resizeDecorationsSetVisible,

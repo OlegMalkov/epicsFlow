@@ -104,12 +104,6 @@ const propertiesPanelCreateComputePropertiesPanelBBoxWithRespectToTemplateArea =
 	return result
 }
 
-// eslint-disable-next-line import/group-exports
-export type {
-	PropertiesPanelStateType,
-}
-
-// eslint-disable-next-line import/group-exports
 export {
 	propertiesPanelSetPositionNoChecks,
 	propertiesPanelSetVisible,

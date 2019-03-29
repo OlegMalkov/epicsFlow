@@ -3,11 +3,11 @@ import { type UpdaterType, createUpdater, makeSimpleActionCreatorAndCondition } 
 import { xValueCondition } from '../x/xAAC'
 import { yValueC } from '../y/yAAC'
 
-import { zComputeResult, zIncMultiplier, type ZStateType } from './zState'
+import { zComputeResult, zIncMultiplier, initialZState } from './zState'
 
 const zClicked = makeSimpleActionCreatorAndCondition('Z_CLICKED')
 
-type ZUpdaterType = UpdaterType<ZStateType, *, *, *>
+type ZUpdaterType = UpdaterType<typeof initialZState, *, *, *>
 const
 	zClickedUpdater: ZUpdaterType = createUpdater({
 		given: {

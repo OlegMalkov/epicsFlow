@@ -1,13 +1,13 @@
 // @flow strict
 
 import { windowMousePositionCondition, windowMouseUp } from '../../globalACAC'
-import { type TemplateStateType, templateInitialState, setTemplateWidth } from './templateState'
+import { templateInitialState, setTemplateWidth } from './templateState'
 import { componentRightCondition } from '../component/componentACnC'
 import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateVat } from './templateACnC'
-import { templateInitialScope, type TemplateScopeType, resetTemplateDnd, templateInitDnd } from './templateScope'
+import { templateInitialScope, resetTemplateDnd, templateInitDnd } from './templateScope'
 import { createEpicWithScope, createUpdater } from '../../../../../src/epics'
 
-const templateEpic = createEpicWithScope<TemplateStateType, TemplateScopeType, empty, empty>({
+const templateEpic = createEpicWithScope<typeof templateInitialState, typeof templateInitialScope, empty, empty>({
 	vat: templateVat,
 	initialState: templateInitialState,
 	initialScope: templateInitialScope,

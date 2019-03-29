@@ -103,14 +103,6 @@ const componentUpdateBBox = ({ bboxUpdate }: {| bboxUpdate: {| ...PositionUpdate
 			.value()
 	}
 
-// eslint-disable-next-line import/group-exports
-export type {
-	DimensionsUpdateType,
-	PositionUpdateType,
-	ComponentStateType,
-}
-
-// eslint-disable-next-line import/group-exports
 export {
 	componentSetSelected,
 	componentInitialState,

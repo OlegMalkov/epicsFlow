@@ -1,9 +1,12 @@
 // @flow strict
 import { type AnyActionType } from '../../../../../src/epics'
-import { propertiesPanelInitialState, type PropertiesPanelStateType } from '../../../../websitebuilder/src/components/propertiesPanel/propertiesPanelState';
-import { propertiesPanelInitialScope, type PropertiesPanelScopeType } from '../../../../websitebuilder/src/components/propertiesPanel/propertiesPanelScope';
+import { propertiesPanelInitialState } from '../../../../websitebuilder/src/components/propertiesPanel/propertiesPanelState'
+import { propertiesPanelInitialScope } from '../../../../websitebuilder/src/components/propertiesPanel/propertiesPanelScope'
 
-type ReduxPropertiesPanelStateType = {| state: PropertiesPanelStateType, scope: PropertiesPanelScopeType |}
+type ReduxPropertiesPanelStateType = {|
+	state: typeof propertiesPanelInitialState,
+	scope: typeof propertiesPanelInitialScope,
+|}
 
 const reduxPropertiesPanelInitialState = { state: propertiesPanelInitialState, scope: propertiesPanelInitialScope }
 

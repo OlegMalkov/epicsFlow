@@ -88,7 +88,7 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 					given: {},
 					when: { _: storeCreated.c },
 					then: ({ R }) => {
-						return R.sideEffect(dispatchActionEffectCreator(esdbRehydrateRequest.ac()))
+						return R.sideEffect(dispatchActionEffectCreator(esdbRehydrateRequest.actionCreator()))
 					},
 				}),
 				rehydrate: createUpdater({
@@ -105,7 +105,7 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 
 						return R
 							.mapScope(setAggregatesStates(aggregatesStatesByVat))
-							.sideEffect(dispatchActionEffectCreator(esdbRehydrateAggregates.ac({ aggregatesStatesByVat })))
+							.sideEffect(dispatchActionEffectCreator(esdbRehydrateAggregates.actionCreator({ aggregatesStatesByVat })))
 					},
 				}),
 				save: createUpdater({

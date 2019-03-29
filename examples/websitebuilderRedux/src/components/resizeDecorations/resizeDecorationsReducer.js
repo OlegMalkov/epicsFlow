@@ -2,10 +2,9 @@
 import { type AnyActionType } from '../../../../../src/epics'
 import {
 	resizeDecorationsInitialState,
-	type ResizeDecorationsStateType,
 } from '../../../../websitebuilder/src/components/resizeDecorations/resizeDecorationsState'
 
-type ReduxResizeDecorationsStateType = ResizeDecorationsStateType
+type ReduxResizeDecorationsStateType = typeof resizeDecorationsInitialState
 
 const resizeDecorationsReducer = (
 	state: ReduxResizeDecorationsStateType = resizeDecorationsInitialState,

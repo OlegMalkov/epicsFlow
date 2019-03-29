@@ -10,12 +10,6 @@ const zComputeResult = (x: number, y: number) => (z: ZStateType): ZStateType => 
 }
 const initialZState: ZStateType = { result: -1, multiplier: 1 }
 
-// eslint-disable-next-line import/group-exports
-export type {
-	ZStateType,
-}
-
-// eslint-disable-next-line import/group-exports
 export {
 	zIncMultiplier,
 	zComputeResult,

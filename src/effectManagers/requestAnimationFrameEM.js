@@ -25,7 +25,7 @@ const requestAnimationFrameEM = createEffectManager<RequestAnimationFrameEffectT
 				}
 
 				rafId = window.requestAnimationFrame(() => {
-					dispatch(animationFrame.ac({ dateNow: Date.now() }), { targetEpicVats: [requesterEpicVat] })
+					dispatch(animationFrame.actionCreator({ dateNow: Date.now() }), { targetEpicVats: [requesterEpicVat] })
 					resolvePromise()
 				})
 				scope.resolvePromiseByEpicVat[requesterEpicVat] = resolvePromise

@@ -1,17 +1,16 @@
 // @flow strict
 
-import { type ComponentStateType, componentInitialState, componentUpdateBBox, componentSetSelected, componentSetIsMovingFalse, componentSetIsMovingTrue, setComponentIsResizingFalse, setComponentIsResizingTrue } from './componentState'
-import { componentVat, componentMouseDown } from './componentACnC'
-import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition } from '../../globalACAC'
-import { componentInitialScope, type ComponentScopeType, componentInitMoveDnd, componentResetMoveDnd, componentResetResizeDnd, componentInitResizeDnd } from './componentScope'
+import { componentInitialState, componentUpdateBBox, componentSetSelected, componentSetIsMovingFalse, componentSetIsMovingTrue, setComponentIsResizingFalse, setComponentIsResizingTrue } from './componentState'
+import { componentVat } from './componentACnC'
+import { windowMousePositionCondition, windowMouseUp, keyboardEscDownCondition, windowMouseDown } from '../../globalACAC'
+import { componentInitialScope, componentInitMoveDnd, componentResetMoveDnd, componentResetResizeDnd, componentInitResizeDnd } from './componentScope'
 import { dndTypeIdle, dndTypeProgress } from '../shared/dnd'
 import { T, F } from '../../../../../src/utils'
-import { createEpicWithScope, type BuiltInEffectType, createUpdater } from '../../../../../src/epics'
-import { templateAreaMouseDown } from '../template/templateACnC'
+import { createEpicWithScope, createUpdater } from '../../../../../src/epics'
 import { resizeDecorationsNMouseDown } from '../resizeDecorations/resizeDecorationsACnC'
 
 const
-	componentEpic = createEpicWithScope<ComponentStateType, ComponentScopeType, BuiltInEffectType, empty>({
+	componentEpic = createEpicWithScope<typeof componentInitialState, typeof componentInitialScope, empty, empty>({
 		vat: componentVat,
 		initialState: componentInitialState,
 		initialScope: componentInitialScope,
@@ -19,10 +18,10 @@ const
 			dndMoveAndSelection: createUpdater({
 				given: {},
 				when: {
-					mouseDown: componentMouseDown.condition,
+					windowMouseDown: windowMouseDown.condition,
 					mousePosition: windowMousePositionCondition,
-					cancel: keyboardEscDownCondition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
-					mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['mouseDown']),
+					cancel: keyboardEscDownCondition.toOptional().resetConditionsByKeyAfterReducerCall(['windowMouseDown']),
+					mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['windowMouseDown']),
 				},
 				then: ({
 					state: { position },
@@ -115,7 +114,7 @@ const
 			deselection: createUpdater({
 				given: {},
 				when: {
-					templateAreaMouseDown: templateAreaMouseDown.condition.toOptional(),
+					windowMouseDown: windowMouseDown.condition.toOptional(),
 					escPressed: keyboardEscDownCondition.toOptional(),
 				},
 				then: ({ R }) => R.mapState(componentSetSelected(F)),

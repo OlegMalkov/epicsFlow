@@ -2,10 +2,10 @@
 import { type UpdaterType, createUpdater } from '../../../src/epics'
 import { zResultC } from '../z/zVAT'
 import { isEven } from '../utils'
-import { incX, decX, setXColor, type XStateType } from './xState'
+import { incX, decX, setXColor, initialXState } from './xState'
 import { xClicked } from './xAAC'
 
-type XUpdaterType = UpdaterType<XStateType, *, *, *>
+type XUpdaterType = UpdaterType<typeof initialXState, *, *, *>
 
 const xClickedUpdater: XUpdaterType = createUpdater({
 	given: { zResult: zResultC },

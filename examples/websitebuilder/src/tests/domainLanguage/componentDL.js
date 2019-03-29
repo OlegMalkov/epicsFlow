@@ -1,15 +1,14 @@
 // @flow
 import { type IDispatchTarget } from './IStore'
-import { windowMouseMove } from '../../globalACAC'
-import { componentMouseDown } from '../../components/component/componentACnC'
-import { windowMouseUp } from '../../../../websitebuilderRedux/src/globalACAC'
+import { windowMouseMove, windowMouseUp, windowMouseDown } from '../../globalACAC'
+import { type LTPositionType } from '../../types'
 
-const dlSelectComponentByClick = ({ dispatch }: IDispatchTarget) => {
-	dispatch(windowMouseMove.ac({ position: { left: 100, top: 100 }}))
-	dispatch(componentMouseDown.ac())
-	dispatch(windowMouseUp.ac())
+const dlClick = ({ dispatch }: IDispatchTarget, position: LTPositionType) => {
+	dispatch(windowMouseMove.actionCreator({ position }))
+	dispatch(windowMouseDown.actionCreator())
+	dispatch(windowMouseUp.actionCreator())
 }
 
 export {
-	dlSelectComponentByClick,
+	dlClick,
 }

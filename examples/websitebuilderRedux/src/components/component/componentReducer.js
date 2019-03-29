@@ -1,35 +1,26 @@
 // @flow strict
 import {
-	componentInitialScope,
-	type ComponentScopeType,
-	componentInitMoveDnd,
-	componentResetMoveDnd,
-} from '../../../../websitebuilder/src/components/component/componentScope'
-import {
 	componentInitialState,
-	type ComponentStateType,
 	componentSetIsMovingTrue,
 	componentUpdateBBox,
 	componentSetIsMovingFalse,
 	componentSetSelected,
 } from '../../../../websitebuilder/src/components/component/componentState'
-import { type AnyActionType } from '../../../../../src/epics'
 import {
-	componentMouseDown,
-} from '../../../../websitebuilder/src/components/component/componentACnC'
+	componentInitialScope,
+	componentInitMoveDnd,
+	componentResetMoveDnd,
+} from '../../../../websitebuilder/src/components/component/componentScope'
+import { type AnyActionType } from '../../../../../src/epics'
 import { type LTPositionType } from '../../../../websitebuilder/src/types'
 import { matchCondition } from '../../utils'
 import { dndTypeProgress } from '../../../../websitebuilder/src/components/shared/dnd'
-import { windowMouseMove } from '../../globalACAC'
-import { windowMouseUp } from '../../../../websitebuilder/src/globalACAC'
+import { windowMouseUp, windowMouseMove, windowMouseDown } from '../../../../websitebuilder/src/globalACAC'
 import { T, F } from '../../../../../src/utils'
-import {
-	templateAreaMouseDown,
-} from '../../../../websitebuilder/src/components/template/templateACnC'
 
 opaque type ReduxComponentStateType: {| state: *, scope: * |} = {|
-    state: ComponentStateType,
-    scope: ComponentScopeType,
+    state: typeof componentInitialState,
+    scope: typeof componentInitialScope,
 |}
 
 const componentIntialState: ReduxComponentStateType = {
@@ -37,10 +28,9 @@ const componentIntialState: ReduxComponentStateType = {
 	scope: componentInitialScope,
 }
 
-const matchComponentMouseDown = matchCondition(componentMouseDown.condition)
+const matchWindowMouseDown = matchCondition(windowMouseDown.condition)
 const matchWindowMouseMove = matchCondition(windowMouseMove.condition)
 const matchWindowMouseUp = matchCondition(windowMouseUp.condition)
-const matchTemplateAreaMouseDown = matchCondition(templateAreaMouseDown.condition)
 
 type DepsType = {| mousePosition: LTPositionType|}
 
@@ -49,14 +39,27 @@ const componentReducer = (
 	action: AnyActionType,
 	{ mousePosition }: DepsType
 ): ReduxComponentStateType => {
-	if (matchComponentMouseDown(action)) {
-		// TODO when there are multiple components, it also should perform deselection
-		return {
-			state: componentState.state,
-			scope: componentInitMoveDnd({
-				componentStartPos: componentState.state.position,
-				mouseStartPosition: mousePosition,
-			})(componentState.scope),
+	if (matchWindowMouseDown(action)) {
+		const componentIsUnderMouse = true // TODO fix this statement
+
+		if (componentIsUnderMouse) {
+			return {
+				state: componentState.state,
+				scope: componentInitMoveDnd({
+					componentStartPos: componentState.state.position,
+					mouseStartPosition: mousePosition,
+				})(componentState.scope),
+			}
+		} else {
+			const { state, scope } = componentState
+
+			if (state.selected) {
+				return {
+					state: componentSetSelected(F)(state),
+					scope,
+				}
+			}
+			return componentState
 		}
 	}
 
@@ -74,7 +77,7 @@ const componentReducer = (
 			const diffTop = mouseStartPosition.top - mousePosition.top
 
 			nextState = componentUpdateBBox({
-				bboxUpdate: { left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop }
+				bboxUpdate: { left: componentStartPos.left - diffLeft, top: componentStartPos.top - diffTop },
 			})(nextState)
 
 			return {
@@ -93,18 +96,6 @@ const componentReducer = (
 			state = componentSetSelected(T)(state)
 			scope = componentResetMoveDnd(scope)
 			return { state, scope }
-		}
-		return componentState
-	}
-
-	if (matchTemplateAreaMouseDown(action)) {
-		const { state, scope } = componentState
-
-		if (state.selected) {
-			return {
-				state: componentSetSelected(F)(state),
-				scope,
-			}
 		}
 		return componentState
 	}

@@ -1,7 +1,7 @@
 // @flow strict
 
 import { componentPositionCondition, componentRightCondition } from '../component/componentACnC'
-import { mainActionsPanelInitialState, type MainActionsPanelStateType, mainActionsPanelSetVisible, mainActionsPanelSetPosition } from './mainActionsPanelState'
+import { mainActionsPanelInitialState, mainActionsPanelSetVisible, mainActionsPanelSetPosition } from './mainActionsPanelState'
 import {
 	propertiesPanelEpic,
 } from '../propertiesPanel/propertiesPanelEpic'
@@ -12,13 +12,13 @@ import { mainActionsPanelEpicVat, mainActionsIsVisibleCondition } from './mainAc
 import { resizeDecorationsVisibleCondition, resizeHandleNTopCondition } from '../resizeDecorations/resizeDecorationsEpic'
 import { templateWidthCondition } from '../template/templateACnC'
 import { workspaceScroll } from '../workspace/workspaceACnC'
-import { propertiesPanelCreateComputePropertiesPanelBBoxWithRespectToTemplateArea, type PropertiesPanelStateType } from '../propertiesPanel/propertiesPanelState'
+import { propertiesPanelCreateComputePropertiesPanelBBoxWithRespectToTemplateArea, propertiesPanelInitialState } from '../propertiesPanel/propertiesPanelState'
 
 const computeLeftAlignedPosition = ({ componentLeft, resizeHandleNTop, mainActionsPanelHeight }) =>
 	({ left: componentLeft, top: resizeHandleNTop - 10 - mainActionsPanelHeight })
 const computeRightAlignedPosition = ({ componentRight, resizeHandleNTop, mainActionsPanelDimensions }) =>
 	({ left: componentRight - mainActionsPanelDimensions.width, top: resizeHandleNTop - 10 - mainActionsPanelDimensions.height })
-const mainActionsPanelEpic = createEpic<MainActionsPanelStateType, *, *>({
+const mainActionsPanelEpic = createEpic<typeof mainActionsPanelInitialState, *, *>({
 	vat: mainActionsPanelEpicVat,
 	initialState: mainActionsPanelInitialState,
 	updaters: {
@@ -56,9 +56,9 @@ const mainActionsPanelEpic = createEpic<MainActionsPanelStateType, *, *>({
 			when: {
 				templateWidth: templateWidthCondition,
 				workspaceWidth: workspaceViewportEpic.condition.wsk('dimensions').wsk('width'),
-				propertiesPanelRTPositionAndHeight: propertiesPanelEpic.condition.wg<PropertiesPanelStateType>(pp => pp.visible).ws(pp => ({ rtPosition: pp.positonRT, height: pp.height })),
+				propertiesPanelRTPositionAndHeight: propertiesPanelEpic.condition.wg<typeof propertiesPanelInitialState>(pp => pp.visible).ws(pp => ({ rtPosition: pp.positonRT, height: pp.height })),
 				workspaceScroll: workspaceScroll.condition,
-				resetPropertiesPanelRTPositionAndHeightWhenPropPanelIsNotVisible: propertiesPanelEpic.condition.wg<PropertiesPanelStateType>(pp => !pp.visible).resetConditionsByKey(['propertiesPanelRTPositionAndHeight']).toOptional(),
+				resetPropertiesPanelRTPositionAndHeightWhenPropPanelIsNotVisible: propertiesPanelEpic.condition.wg<typeof propertiesPanelInitialState>(pp => !pp.visible).resetConditionsByKey(['propertiesPanelRTPositionAndHeight']).toOptional(),
 			},
 			then: ({ values: { workspaceScroll, componentRight, resizeHandleNTop, propertiesPanelRTPositionAndHeight, workspaceWidth, templateWidth }, R, state }) => {
 				const propertiesPanelBBoxWithRespectToTemplateArea = propertiesPanelCreateComputePropertiesPanelBBoxWithRespectToTemplateArea({

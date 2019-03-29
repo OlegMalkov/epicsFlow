@@ -119,7 +119,7 @@ describe('plugin', () => {
 		expect(store.getState().e2).toBe(0)
 		expect(store.getState().e3).toBe(1)
 
-		store.dispatch(a.ac())
+		store.dispatch(a.actionCreator())
 
 		expect(store.getState().e1).toBe(-1)
 		expect(store.getState().e2).toBe(2)

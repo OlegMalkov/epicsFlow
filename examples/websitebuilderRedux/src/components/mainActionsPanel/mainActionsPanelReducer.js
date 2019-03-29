@@ -1,9 +1,9 @@
 // @flow strict
 
-import { mainActionsPanelInitialState, type MainActionsPanelStateType } from '../../../../websitebuilder/src/components/mainActionsPanel/mainActionsPanelState'
+import { mainActionsPanelInitialState } from '../../../../websitebuilder/src/components/mainActionsPanel/mainActionsPanelState'
 import { type AnyActionType } from '../../../../../src/epics'
 
-type ReduxMainActionsPanelStateType = MainActionsPanelStateType
+type ReduxMainActionsPanelStateType = typeof mainActionsPanelInitialState
 
 const mainActionsPanelReducer = (
 	state: ReduxMainActionsPanelStateType = mainActionsPanelInitialState,

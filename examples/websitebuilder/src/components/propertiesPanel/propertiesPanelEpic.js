@@ -12,15 +12,15 @@ import { templateWidthCondition } from '../template/templateACnC'
 import { propertiesPanelNextPageButtonPress, propertiesPanelDragMouseDown } from './propertiesPanelACnC'
 import { workspaceViewportEpic } from '../workspace/workspaceViewportEpic'
 import { createEpicWithScope, createUpdater, createEpicCondition } from '../../../../../src/epics'
-import { propertiesPanelInitialState, type PropertiesPanelStateType, propertiesPanelSetVisible, propertiesPanelCreateComputePropertiesPanelBBoxWithRespectToTemplateArea, possiblePositionsRTPositionComputers, propertiesPanelComputeRightTopPositionRT, propertiesPanelSetPosition, propertiesPanelSetPositionNoChecks, propertiesPanelSetHeight } from './propertiesPanelState'
-import { propertiesPanelInitialScope, type PropertiesPanelScopeType, propertiesPanelResetMoveDnd, propertiesPanelInitMoveDnd } from './propertiesPanelScope'
+import { propertiesPanelInitialState, propertiesPanelSetVisible, propertiesPanelCreateComputePropertiesPanelBBoxWithRespectToTemplateArea, possiblePositionsRTPositionComputers, propertiesPanelComputeRightTopPositionRT, propertiesPanelSetPosition, propertiesPanelSetPositionNoChecks, propertiesPanelSetHeight } from './propertiesPanelState'
+import { propertiesPanelInitialScope, propertiesPanelResetMoveDnd, propertiesPanelInitMoveDnd } from './propertiesPanelScope'
 
 const propertiesPanelEpicVat = 'PROPERTIES_PANEL_VAT'
-const propertiesPanelCondition = createEpicCondition<PropertiesPanelStateType>(propertiesPanelEpicVat)
+const propertiesPanelCondition = createEpicCondition<typeof propertiesPanelInitialState>(propertiesPanelEpicVat)
 const propertiesPanelVisibleCondition = propertiesPanelCondition.withSelectorKey('visible')
 
 
-const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, PropertiesPanelScopeType, *, *>({
+const propertiesPanelEpic = createEpicWithScope<typeof propertiesPanelInitialState, typeof propertiesPanelInitialScope, *, *>({
 	vat: propertiesPanelEpicVat,
 	initialState: propertiesPanelInitialState,
 	initialScope: propertiesPanelInitialScope,

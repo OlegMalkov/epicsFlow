@@ -226,7 +226,7 @@ opaque type EpicsStoreType<Epics: Object>: {
 	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	subscribeOnMessage: any => any,
-	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
+	subscribe: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
 	replaceConfig: (CreateStorePropsType<Epics>) => void,
 	resetToInitialState: () => void,
 	warn: Function,
@@ -240,7 +240,7 @@ opaque type EpicsStoreType<Epics: Object>: {
 	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	subscribeOnMessage: any => any,
-	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
+	subscribe: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
 	warn: Function,
 |}
 function getFields(condition: AnyConditionType): {| ...CompulsoryConditionFieldsType, parentCondition: AnyConditionType |} {
@@ -1802,7 +1802,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		devTools.init(serviceState)
 	}
 	if (!isSubStore) {
-		dispatch(storeCreated.ac())
+		dispatch(storeCreated.actionCreator())
 	}
 
 	let storeReplacement
@@ -1858,7 +1858,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 
 			storeReplacement = createStore(creaceEpicsStoreConfig)
 			storeReplacement._setState(currentState)
-			stateChangedSubscribers.forEach(sub => storeReplacement.subscribeOnStateChange(sub))
+			stateChangedSubscribers.forEach(sub => storeReplacement.subscribe(sub))
 			msgSubscribers.forEach(sub => storeReplacement.subscribeOnMessage(sub))
 			// TODO dispose side effects
 		},
@@ -1883,15 +1883,15 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			}
 			return getAllPendingEffectsPromises()
 		},
-		subscribeOnStateChange: subscriber => {
+		subscribe: subscriber => {
 			if (storeReplacement) {
-				storeReplacement.subscribeOnStateChange(subscriber)
+				storeReplacement.subscribe(subscriber)
 			}
 			stateChangedSubscribers.push(subscriber)
 		},
 		subscribeOnMessage: sub => {
 			if (storeReplacement) {
-				storeReplacement.subscribeOnStateChange(sub)
+				storeReplacement.subscribe(sub)
 			}
 			msgSubscribers.push(sub)
 		},

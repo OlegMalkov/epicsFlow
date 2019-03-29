@@ -27,101 +27,103 @@
 import React, { Component } from 'react'
 import { type DispatchType } from '../../../src/epics'
 import './app.css'
-import { windowMouseMove, windowMouseUp, keyDown } from './globalACAC'
 import { ComponentView } from './components/component/componentView'
 import { PropertiesPanelView } from './components/propertiesPanel/propertiesPanelView'
 import { TopBarHeight } from './components/topBar/topBarConstants'
-import { browserDimensions } from './components/env/envACnC'
 import { addComponentPanelToggleExpansionButtonPressed } from './components/addComponentPanel/addComponentPanelACnC'
 import { workspaceScroll } from './components/workspace/workspaceACnC'
-import { wsbStore } from './wsbStore'
 import {
-	templateAreaMouseDown,
 	templateWidthLeftResizeHandleMouseDown,
 	templateWidthRightResizeHandleMouseDown,
 } from './components/template/templateACnC'
 import { ResizeDecorationsView } from './components/resizeDecorations/resizeDecorationsView'
 import { MainActionsPanelView } from './components/mainActionsPanel/mainActionsPanelView'
+import { initSubscripitons } from './initSubscriptions'
+import { propertiesPanelInitialState } from './components/propertiesPanel/propertiesPanelState'
+import { componentInitialState } from './components/component/componentState'
+import { mainActionsPanelInitialState } from './components/mainActionsPanel/mainActionsPanelState'
+import { resizeDecorationsInitialState } from './components/resizeDecorations/resizeDecorationsState'
+import { templateInitialState } from './components/template/templateState'
+import {
+	addComponentPanelInitialState,
+} from './components/addComponentPanel/addComponentPanelState'
 
 declare var window: EventTarget;
-const initialState = wsbStore.getState()
 
-function getBrowserDimensions() {
-	// $FlowFixMe
-	const	{ clientWidth, clientHeight } = document.documentElement
-	const { innerWidth, innerHeight } = (window: any)
-
-	return {
-		width: Math.max(clientWidth, innerWidth || 0),
-		height:  Math.max(clientHeight, innerHeight || 0),
-	}
+// eslint-disable-next-line flowtype/require-exact-type
+type AppStateForRenderType = {
+	addComponentPanel: typeof addComponentPanelInitialState,
+	component: typeof componentInitialState,
+	mainActionsPanel: typeof mainActionsPanelInitialState,
+	propertiesPanel: typeof propertiesPanelInitialState,
+	resizeDecorations: typeof resizeDecorationsInitialState,
+	template: typeof templateInitialState,
 }
 
-export class App extends Component<{}, typeof initialState> {
-templateAreaRef: { current: HTMLDivElement | null }
-workspaceRef: { current: HTMLDivElement | null }
-dispatch: DispatchType
-constructor(props: {}) {
-	super(props)
-	this.state = initialState
-	this.templateAreaRef = React.createRef<HTMLDivElement>()
-	this.workspaceRef = React.createRef<HTMLDivElement>()
-}
-componentDidMount() {
-	this.dispatch = wsbStore.dispatch
-	wsbStore.subscribeOnStateChange(appState => this.setState(appState))
+const createApp = ({ dispatch, subscribe, initialState }: {| dispatch: DispatchType, subscribe: (AppStateForRenderType => void) => void, initialState: AppStateForRenderType |}) => {
+	class App extends Component<{}, AppStateForRenderType> {
+		workspaceRef: { current: HTMLDivElement | null }
+		dispatch: DispatchType
+		constructor(props: {}) {
+			super(props)
+			this.state = initialState
+			this.workspaceRef = React.createRef<HTMLDivElement>()
+		}
+		componentDidMount() {
+			subscribe(appState => this.setState(appState))
 
-	window.addEventListener(
-		'mousemove',
-		(e: MouseEvent) => this.dispatch(
-			windowMouseMove.actionCreator({ position: { left: e.clientX, top: e.clientY } })
-		)
-	)
-	window.addEventListener('mouseup', () => this.dispatch(windowMouseUp.actionCreator()))
-	window.addEventListener('keydown', (e: KeyboardEvent) => this.dispatch(keyDown.actionCreator({ keyCode: e.keyCode })))
+			const { current } = this.workspaceRef
 
-	this.dispatch(browserDimensions.actionCreator(getBrowserDimensions()))
-	window.addEventListener('resize', () => this.dispatch(browserDimensions.actionCreator(getBrowserDimensions())))
+			if (current) {
+				current.addEventListener('scroll', () => dispatch(workspaceScroll.actionCreator({ top: current.scrollTop })))
+				dispatch(workspaceScroll.actionCreator({ top: current.scrollTop }))
+			}
+			initSubscripitons(dispatch)
+		}
 
-	const { current } = this.workspaceRef
-
-	if (current) {
-		current.addEventListener('scroll', () => this.dispatch(workspaceScroll.actionCreator({ top: current.scrollTop })))
-		this.dispatch(workspaceScroll.actionCreator({ top: current.scrollTop }))
-	}
-}
-
-render() {
-	return (
-		<div className="App">
-			<div className="TopBar" style={{ height: TopBarHeight }} />
-			<div className="Body">
-				<div className="AddComponentPanel" style={{ width: this.state.addComponentPanel.width }} onClick={() => this.dispatch(addComponentPanelToggleExpansionButtonPressed.ac())} />
-				<div className="Workspace" >
-					<div className="WorkspaceScrollableArea" ref={this.workspaceRef}>
-						<div
-							ref={this.templateAreaRef}
-							className="TemplateArea"
-							style={{ width: this.state.template.width }}
-							onMouseDown={(e) => e.target === this.templateAreaRef.current && this.dispatch(templateAreaMouseDown.actionCreator())}
-						>
-							<div
-								className="TemplateWidthResizeHandle"
-								onMouseDown={() => this.dispatch(templateWidthLeftResizeHandleMouseDown.actionCreator())}
-							/>
-							<div
-								className="TemplateWidthResizeHandle TemplateWidthResizeHandleRight"
-								onMouseDown={() => this.dispatch(templateWidthRightResizeHandleMouseDown.actionCreator())}
-							/>
-							<ComponentView state={this.state.component} dispatch={this.dispatch} />
-							<ResizeDecorationsView state={this.state.resizeDecorations} dispatch={this.dispatch} />
-							<MainActionsPanelView state={this.state.mainActionsPanel} dispatch={this.dispatch} />
+		render() {
+			return (
+				<div className="App">
+					<div className="TopBar" style={{ height: TopBarHeight }} />
+					<div className="Body">
+						<div className="AddComponentPanel" style={{ width: this.state.addComponentPanel.width }} onClick={() => dispatch(addComponentPanelToggleExpansionButtonPressed.actionCreator())} />
+						<div className="Workspace" >
+							<div className="WorkspaceScrollableArea" ref={this.workspaceRef}>
+								<div
+									className="TemplateArea"
+									style={{ width: this.state.template.width }}
+								>
+									<div
+										className="TemplateWidthResizeHandle"
+										onMouseDown={() => dispatch(templateWidthLeftResizeHandleMouseDown.actionCreator())}
+									/>
+									<div
+										className="TemplateWidthResizeHandle TemplateWidthResizeHandleRight"
+										onMouseDown={() => dispatch(templateWidthRightResizeHandleMouseDown.actionCreator())}
+									/>
+									<ComponentView state={this.state.component} dispatch={dispatch} />
+									<ResizeDecorationsView state={this.state.resizeDecorations} dispatch={dispatch} />
+									<MainActionsPanelView state={this.state.mainActionsPanel} dispatch={dispatch} />
+								</div>
+							</div>
+							<PropertiesPanelView state={this.state.propertiesPanel} dispatch={dispatch} />
 						</div>
 					</div>
-					<PropertiesPanelView state={this.state.propertiesPanel} dispatch={this.dispatch} />
 				</div>
-			</div>
-		</div>
-	)
+			)
+		}
+	}
+
+	return App
 }
+
+
+// eslint-disable-next-line import/group-exports
+export type {
+	AppStateForRenderType,
+}
+
+// eslint-disable-next-line import/group-exports
+export {
+	createApp,
 }

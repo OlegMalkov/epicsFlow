@@ -31,12 +31,6 @@ const mainActionsPanelSetPosition = (position: LTPositionType) => {
 	return _setPosition({ top, left })
 }
 
-// eslint-disable-next-line import/group-exports
-export type {
-	MainActionsPanelStateType,
-}
-
-// eslint-disable-next-line import/group-exports
 export {
 	mainActionsPanelInitialState,
 	mainActionsPanelSetVisible,

@@ -58,7 +58,7 @@ describe('effectManager', () => {
 			epics: { e1, e2 },
 		})
 
-		store.dispatch(a.ac())
+		store.dispatch(a.actionCreator())
 		await waitEffectManagers(store)
 
 		expect(store.getState().e1).toBe(0)
@@ -74,8 +74,8 @@ describe('effectManager', () => {
 						given: {},
 						when: { _: storeCreated.condition.to(), _b: b.c.to() },
 						then: ({ R }) => R.sideEffect(dispatchBatchedActionsEffectCreator([
-							{ actions: [a.ac(), a.ac()], targetEpicVat: 'e2' },
-							{ actions: [a.ac(), a.ac(), a.ac()], targetEpicVat: 'e3' },
+							{ actions: [a.actionCreator(), a.actionCreator()], targetEpicVat: 'e2' },
+							{ actions: [a.actionCreator(), a.actionCreator(), a.actionCreator()], targetEpicVat: 'e3' },
 						])),
 					}),
 				},
@@ -152,11 +152,11 @@ describe('effectManager', () => {
 		expect(store.getState().e3).toBe(3)
 		expect(store.getState().e4).toBe(5)
 
-		store.subscribeOnStateChange(() => {
+		store.subscribe(() => {
 			storeStateChangedCounter = storeStateChangedCounter + 1
 		})
 
-		store.dispatch(b.ac())
+		store.dispatch(b.actionCreator())
 
 		expect(storeStateChangedCounter).toBe(1)
 
