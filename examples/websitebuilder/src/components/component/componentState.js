@@ -30,26 +30,19 @@ const componentSetIsMovingTrue = setComponentIsMoving(T)
 const componentSetIsMovingFalse = setComponentIsMoving(F)
 const setComponentIsResizingTrue = setComponentIsResizing(T)
 const setComponentIsResizingFalse = setComponentIsResizing(F)
-const adjustComponentPosition = ({ templateWidth, componentWidth }: {| componentWidth: number, templateWidth: number |}) =>
-	(position: LTPositionType): LTPositionType => {
-		let result = position
+const adjustComponentPosition = (position: LTPositionType): LTPositionType => {
+	let result = position
 
-		if (result.top < 0) {
-			result = { ...result, top: 0 }
-		}
-
-		if (result.left < 0) {
-			result = { ...result, left: 0 }
-		}
-
-		const newRight = componentWidth + result.left
-
-		if (newRight > templateWidth) {
-			result = { ...result, left: templateWidth - componentWidth }
-		}
-
-		return result
+	if (result.top < 0) {
+		result = { ...result, top: 0 }
 	}
+
+	if (result.left < 0) {
+		result = { ...result, left: 0 }
+	}
+
+	return result
+}
 const adjustComponentDimensions = (dimensions: DimensionsType): DimensionsType => {
 	let result = dimensions
 
@@ -63,15 +56,15 @@ const adjustComponentDimensions = (dimensions: DimensionsType): DimensionsType =
 
 	return result
 }
-const componentUpdateBBox = ({ bboxUpdate, templateWidth }: {| bboxUpdate: {| ...PositionUpdateType, ...DimensionsUpdateType |}, templateWidth: number |}) =>
+const componentUpdateBBox = ({ bboxUpdate }: {| bboxUpdate: {| ...PositionUpdateType, ...DimensionsUpdateType |} |}) =>
 	(componentState: ComponentStateType): ComponentStateType => {
 		const newDimensions = {
-			width: bboxUpdate.width || componentState.dimensions.width,
-			height: bboxUpdate.height || componentState.dimensions.height,
+			width: bboxUpdate.width === undefined ? componentState.dimensions.width : bboxUpdate.width,
+			height: bboxUpdate.height === undefined ? componentState.dimensions.height : bboxUpdate.height,
 		}
 		const adjustedDimensions = adjustComponentDimensions(newDimensions)
-		const newPosition = { left: bboxUpdate.left || componentState.position.left, top:  bboxUpdate.top || componentState.position.top }
-		const adjustedPosition = adjustComponentPosition({ templateWidth, componentWidth: componentState.dimensions.width })(newPosition)
+		const newPosition = { left: bboxUpdate.left === undefined ? componentState.position.left : bboxUpdate.left, top: bboxUpdate.top === undefined ? componentState.position.top : bboxUpdate.top }
+		const adjustedPosition = adjustComponentPosition(newPosition)
 
 		let	finalPosition = adjustedPosition
 

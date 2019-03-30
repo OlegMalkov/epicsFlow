@@ -2,7 +2,7 @@
 
 import { windowMousePositionCondition, windowMouseUp } from '../../globalACAC'
 import { type TemplateStateType, templateInitialState, setTemplateWidth } from './templateState'
-import { componentRightCondition } from '../component/componentACnC'
+import { componentRightCondition, componentDimensionsCondition } from '../component/componentACnC'
 import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateVat } from './templateACnC'
 import { templateInitialScope, type TemplateScopeType, resetTemplateDnd, templateInitDnd } from './templateScope'
 import { createEpicWithScope, createUpdater } from '../../../../../src/epics'
@@ -14,7 +14,7 @@ const templateEpic = createEpicWithScope<TemplateStateType, TemplateScopeType, e
 	updaters: {
 		dnd: createUpdater({
 			given: {
-				componentRight: componentRightCondition,
+				componentWidth: componentDimensionsCondition.withSelectorKey('width'),
 				leftDown: templateWidthLeftResizeHandleMouseDown.condition.toOptional(),
 				rightDown: templateWidthRightResizeHandleMouseDown.condition.toOptional(),
 			},
@@ -22,7 +22,7 @@ const templateEpic = createEpicWithScope<TemplateStateType, TemplateScopeType, e
 				mouseLeft: windowMousePositionCondition.withSelector(({ left }) => left),
 				mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['leftDown', 'rightDown']),
 			},
-			then: ({ state, scope, values: { mouseLeft, leftDown, rightDown, componentRight }, changedActiveConditionsKeysMap, R }) => {
+			then: ({ state, scope, values: { mouseLeft, leftDown, rightDown, componentWidth }, changedActiveConditionsKeysMap, R }) => {
 				if (!leftDown && !rightDown) return R.doNothing
 
 				if (changedActiveConditionsKeysMap.mouseUp) {
@@ -37,9 +37,20 @@ const templateEpic = createEpicWithScope<TemplateStateType, TemplateScopeType, e
 
 				const { startWidth, mouseStartLeft } = dnd
 				const leftDiff = mouseStartLeft - mouseLeft
-				const nextWidth = Math.max(300, componentRight, leftDown ? startWidth + 2 * leftDiff : startWidth - 2 * leftDiff)
+				const nextWidth = Math.max(300, componentWidth, leftDown ? startWidth + 2 * leftDiff : startWidth - 2 * leftDiff)
 
 				return R.mapState(state => setTemplateWidth(nextWidth)(state))
+			},
+		}),
+		expandOnComponentMove: createUpdater({
+			given: {},
+			when: { componentRight: componentRightCondition },
+			then: ({ values: { componentRight }, R, state: { width } }) => {
+				if (width < componentRight) {
+					return R.mapState(setTemplateWidth(componentRight))
+				}
+
+				return R.doNothing
 			},
 		}),
 	},
