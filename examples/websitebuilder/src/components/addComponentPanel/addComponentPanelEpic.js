@@ -2,7 +2,7 @@
 
 import { setProp } from '../../../../../src/utils'
 import { createEpic, createUpdater } from '../../../../../src/epics'
-import { addComponentPanelToggleExpansionButtonPressed } from './addComponentPanelACnC'
+import { addComponentPanelToggleExpansionButtonPressed } from './addComponentPanelEvents'
 
 type AddComponentPanelStateType = {| expanded: bool, width: number |}
 
@@ -12,7 +12,7 @@ const setWidth = setProp<AddComponentPanelStateType, *>('width')
 const setExpanded = setProp<AddComponentPanelStateType, *>('expanded')
 
 export const addComponentPanelEpic = createEpic<AddComponentPanelStateType, empty, empty>({
-	vat: 'LEFT_PANEL_VAT',
+	vcet: 'LEFT_PANEL_VCET',
 	initialState: { width: 200, expanded: true },
 	updaters: {
 		compute: createUpdater({

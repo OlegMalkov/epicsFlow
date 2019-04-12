@@ -1,27 +1,27 @@
 // @flow strict
 
 import { dndTypeProgress, dndTypeIdle } from '../shared/dnd'
-import { windowMousePositionCondition, keyboardEscDownCondition, windowMouseUp } from '../../globalACAC'
+import { windowMousePositionCondition, keyboardEscDownCondition, windowMouseUpEvent } from '../../globalEvents'
 import {
 	areBBoxIntersect,
 	computeBBoxFromPositionAndDimensions,
 } from '../../utils'
-import { mainActionsIsVisibleCondition, mainActionsPositionWhenVisibleCondition, mainActionsDimensionsWhenVisibleCondition } from '../mainActionsPanel/mainActionsPanelACnC'
-import { componentPositionCondition, componentDimensionsCondition, componentSelectedCondition } from '../component/componentACnC'
-import { templateWidthCondition } from '../template/templateACnC'
-import { propertiesPanelNextPageButtonPress, propertiesPanelDragMouseDown } from './propertiesPanelACnC'
+import { mainActionsIsVisibleCondition, mainActionsPositionWhenVisibleCondition, mainActionsDimensionsWhenVisibleCondition } from '../mainActionsPanel/mainActionsPanelEvents'
+import { componentPositionCondition, componentDimensionsCondition, componentSelectedCondition } from '../component/componentEvents'
+import { templateWidthCondition } from '../template/templateEvents'
+import { propertiesPanelNextPageButtonPress, propertiesPanelDragMouseDown } from './propertiesPanelEvents'
 import { workspaceViewportEpic } from '../workspace/workspaceViewportEpic'
 import { createEpicWithScope, createUpdater, createEpicCondition } from '../../../../../src/epics'
 import { propertiesPanelInitialState, type PropertiesPanelStateType, propertiesPanelSetVisible, propertiesPanelCreateComputePropertiesPanelBBoxWithRespectToTemplateArea, possiblePositionsRTPositionComputers, propertiesPanelComputeRightTopPositionRT, propertiesPanelSetPosition, propertiesPanelSetPositionNoChecks, propertiesPanelSetHeight } from './propertiesPanelState'
 import { propertiesPanelInitialScope, type PropertiesPanelScopeType, propertiesPanelResetMoveDnd, propertiesPanelInitMoveDnd } from './propertiesPanelScope'
 
-const propertiesPanelEpicVat = 'PROPERTIES_PANEL_VAT'
-const propertiesPanelCondition = createEpicCondition<PropertiesPanelStateType>(propertiesPanelEpicVat)
+const propertiesPanelEpicVcet = 'PROPERTIES_PANEL_VCET'
+const propertiesPanelCondition = createEpicCondition<PropertiesPanelStateType>(propertiesPanelEpicVcet)
 const propertiesPanelVisibleCondition = propertiesPanelCondition.withSelectorKey('visible')
 
 
 const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, PropertiesPanelScopeType, *, *>({
-	vat: propertiesPanelEpicVat,
+	vcet: propertiesPanelEpicVcet,
 	initialState: propertiesPanelInitialState,
 	initialScope: propertiesPanelInitialScope,
 	updaters: {
@@ -93,7 +93,7 @@ const propertiesPanelEpic = createEpicWithScope<PropertiesPanelStateType, Proper
 			when: {
 				mousePosition: windowMousePositionCondition,
 				cancel: keyboardEscDownCondition.toOptional().resetConditionsByKeyAfterReducerCall(['propertiesPanelDragMouseDown']),
-				mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['propertiesPanelDragMouseDown']),
+				mouseUp: windowMouseUpEvent.condition.toOptional().resetConditionsByKeyAfterReducerCall(['propertiesPanelDragMouseDown']),
 			},
 			then: ({
 				state,

@@ -1,6 +1,6 @@
 // @flow strict
 
-import { componentIsMovingCondition, componentSelectedCondition, componentIsResizingCondition, componentPositionCondition, componentDimensionsCondition } from '../component/componentACnC'
+import { componentIsMovingCondition, componentSelectedCondition, componentIsResizingCondition, componentPositionCondition, componentDimensionsCondition } from '../component/componentEvents'
 import { createEpicCondition, createEpic, createUpdater } from '../../../../../src/epics'
 import {
 	resizeDecorationsInitialState,
@@ -11,15 +11,15 @@ import {
 	halfResizeHandleSidePx,
 	resizeDecorationsVerticalResizeHandleTreshold,
 } from './resizeDecorationsState'
-import { resizeDecorationsNMouseDown } from './resizeDecorationsACnC'
+import { resizeDecorationsNMouseDown } from './resizeDecorationsEvents'
 
-const resizeDecorationsEpicVat = 'RESIZE_DECORATIONS_VAT'
-const resizeDecorationsCondition = createEpicCondition<typeof resizeDecorationsInitialState>(resizeDecorationsEpicVat)
+const resizeDecorationsEpicVcet = 'RESIZE_DECORATIONS_VCET'
+const resizeDecorationsCondition = createEpicCondition<typeof resizeDecorationsInitialState>(resizeDecorationsEpicVcet)
 const resizeHandleNTopCondition = resizeDecorationsCondition.wsk('handles').wsk('n').wsk('position').wsk('top')
 const resizeDecorationsVisibleCondition = resizeDecorationsCondition.wsk('visible')
 
 const resizeDecorationsEpic = createEpic<typeof resizeDecorationsInitialState, *, *>({
-	vat: resizeDecorationsEpicVat,
+	vcet: resizeDecorationsEpicVcet,
 	initialState: resizeDecorationsInitialState,
 	updaters: {
 		detectActiveHandleKey: createUpdater({

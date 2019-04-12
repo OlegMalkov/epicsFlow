@@ -1,6 +1,6 @@
 // @flow strict
 import { componentReducer, type ReduxComponentStateType } from './components/component/componentReducer'
-import { type AnyActionType } from '../../../src/epics'
+import { type AnyMsgType } from '../../../src/epics'
 import {
 	resizeDecorationsReducer,
 	type ReduxResizeDecorationsStateType,
@@ -17,25 +17,25 @@ type AppStateType = {|
 	scope: ScopeType,
 |}
 
-const rootReducer = (appState: AppStateType | void, action: AnyActionType): AppStateType => {
+const rootReducer = (appState: AppStateType | void, event: AnyMsgType): AppStateType => {
 	if (appState === undefined) {
-		const initialScope = scopeReducer(undefined, action)
+		const initialScope = scopeReducer(undefined, event)
 
 		return {
-			component: componentReducer(undefined, action, { mousePosition: initialScope.mousePosition, templateWidth: 700 }), // TODO , templateWidth: 700
-			resizeDecorations: resizeDecorationsReducer(undefined, action),
-			mainActionsPanel: mainActionsPanelReducer(undefined, action),
-			propertiesPanel: propertiesPanelReducer(undefined, action),
+			component: componentReducer(undefined, event, { mousePosition: initialScope.mousePosition, templateWidth: 700 }), // TODO , templateWidth: 700
+			resizeDecorations: resizeDecorationsReducer(undefined, event),
+			mainActionsPanel: mainActionsPanelReducer(undefined, event),
+			propertiesPanel: propertiesPanelReducer(undefined, event),
 			scope: initialScope,
 		}
 	}
 
-	const nextScope = scopeReducer(appState.scope, action)
+	const nextScope = scopeReducer(appState.scope, event)
 	const componentDeps = { mousePosition: nextScope.mousePosition, templateWidth: 700 } // TODO , templateWidth: 700
-	const nextComponentState = componentReducer(appState.component, action, componentDeps)
-	const nextResizeDecorationsState = resizeDecorationsReducer(appState.resizeDecorations, action)
-	const nextMainActionsPanelState = mainActionsPanelReducer(appState.mainActionsPanel, action)
-	const nextPropertiesPanelState = propertiesPanelReducer(appState.propertiesPanel, action)
+	const nextComponentState = componentReducer(appState.component, event, componentDeps)
+	const nextResizeDecorationsState = resizeDecorationsReducer(appState.resizeDecorations, event)
+	const nextMainActionsPanelState = mainActionsPanelReducer(appState.mainActionsPanel, event)
+	const nextPropertiesPanelState = propertiesPanelReducer(appState.propertiesPanel, event)
 
 	if (
 		nextComponentState !== appState.component

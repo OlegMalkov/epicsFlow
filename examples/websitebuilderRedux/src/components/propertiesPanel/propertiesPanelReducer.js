@@ -1,5 +1,5 @@
 // @flow strict
-import { type AnyActionType } from '../../../../../src/epics'
+import { type AnyMsgType } from '../../../../../src/epics'
 import { propertiesPanelInitialState, type PropertiesPanelStateType } from '../../../../websitebuilder/src/components/propertiesPanel/propertiesPanelState';
 import { propertiesPanelInitialScope, type PropertiesPanelScopeType } from '../../../../websitebuilder/src/components/propertiesPanel/propertiesPanelScope';
 
@@ -9,7 +9,7 @@ const reduxPropertiesPanelInitialState = { state: propertiesPanelInitialState, s
 
 const propertiesPanelReducer = (
 	state: ReduxPropertiesPanelStateType = reduxPropertiesPanelInitialState,
-	action: AnyActionType
+	event: AnyMsgType
 ): ReduxPropertiesPanelStateType => {
 	return state
 }

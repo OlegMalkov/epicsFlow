@@ -1,15 +1,15 @@
 // @flow strict
 import { type YStateType } from './yState'
-import { makeSimpleActionCreatorAndCondition, createEpicCondition } from '../../../src/epics'
+import { makeSimpleEvent, createEpicCondition } from '../../../src/epics'
 
-const yVat = 'Y_VAT'
-const yC = createEpicCondition<YStateType>(yVat)
+const yVcet = 'Y_VCET'
+const yC = createEpicCondition<YStateType>(yVcet)
 const yValueC = yC.wsk('value')
 const yColorC = yC.wsk('color')
-const yClicked = makeSimpleActionCreatorAndCondition('Y_CLICKED')
+const yClicked = makeSimpleEvent('Y_CLICKED')
 
 export {
-	yVat,
+	yVcet,
 	yValueC,
 	yColorC,
 	yClicked,

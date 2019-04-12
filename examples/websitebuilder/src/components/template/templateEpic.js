@@ -1,14 +1,14 @@
 // @flow strict
 
-import { windowMousePositionCondition, windowMouseUp } from '../../globalACAC'
+import { windowMousePositionCondition, windowMouseUpEvent } from '../../globalEvents'
 import { type TemplateStateType, templateInitialState, setTemplateWidth } from './templateState'
-import { componentRightCondition } from '../component/componentACnC'
-import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateVat } from './templateACnC'
+import { componentRightCondition } from '../component/componentEvents'
+import { templateWidthLeftResizeHandleMouseDown, templateWidthRightResizeHandleMouseDown, templateVcet } from './templateEvents'
 import { templateInitialScope, type TemplateScopeType, resetTemplateDnd, templateInitDnd } from './templateScope'
 import { createEpicWithScope, createUpdater } from '../../../../../src/epics'
 
 const templateEpic = createEpicWithScope<TemplateStateType, TemplateScopeType, empty, empty>({
-	vat: templateVat,
+	vcet: templateVcet,
 	initialState: templateInitialState,
 	initialScope: templateInitialScope,
 	updaters: {
@@ -20,7 +20,7 @@ const templateEpic = createEpicWithScope<TemplateStateType, TemplateScopeType, e
 			},
 			when: {
 				mouseLeft: windowMousePositionCondition.withSelector(({ left }) => left),
-				mouseUp: windowMouseUp.condition.toOptional().resetConditionsByKeyAfterReducerCall(['leftDown', 'rightDown']),
+				mouseUp: windowMouseUpEvent.condition.toOptional().resetConditionsByKeyAfterReducerCall(['leftDown', 'rightDown']),
 			},
 			then: ({ state, scope, values: { mouseLeft, leftDown, rightDown, componentRight }, changedActiveConditionsKeysMap, R }) => {
 				if (!leftDown && !rightDown) return R.doNothing

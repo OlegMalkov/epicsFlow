@@ -1,7 +1,7 @@
 Acronyms
 
-AAC - actions and given
-AC - action creator
+AAC - msgs and given
+AC - event creator
 U - updater
 
 condition methods

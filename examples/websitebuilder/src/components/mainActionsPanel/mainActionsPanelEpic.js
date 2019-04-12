@@ -1,6 +1,6 @@
 // @flow strict
 
-import { componentPositionCondition, componentRightCondition } from '../component/componentACnC'
+import { componentPositionCondition, componentRightCondition } from '../component/componentEvents'
 import { mainActionsPanelInitialState, type MainActionsPanelStateType, mainActionsPanelSetVisible, mainActionsPanelSetPosition } from './mainActionsPanelState'
 import {
 	propertiesPanelEpic,
@@ -8,10 +8,10 @@ import {
 import { workspaceViewportEpic } from '../workspace/workspaceViewportEpic'
 import { areBBoxIntersect, computeBBoxFromPositionAndDimensions } from '../../utils'
 import { createEpic, createUpdater } from '../../../../../src/epics'
-import { mainActionsPanelEpicVat, mainActionsIsVisibleCondition } from './mainActionsPanelACnC'
+import { mainActionsPanelEpicVcet, mainActionsIsVisibleCondition } from './mainActionsPanelEvents'
 import { resizeDecorationsVisibleCondition, resizeHandleNTopCondition } from '../resizeDecorations/resizeDecorationsEpic'
-import { templateWidthCondition } from '../template/templateACnC'
-import { workspaceScroll } from '../workspace/workspaceACnC'
+import { templateWidthCondition } from '../template/templateEvents'
+import { workspaceScroll } from '../workspace/workspaceEvents'
 import { propertiesPanelCreateComputePropertiesPanelBBoxWithRespectToTemplateArea, type PropertiesPanelStateType } from '../propertiesPanel/propertiesPanelState'
 
 const computeLeftAlignedPosition = ({ componentLeft, resizeHandleNTop, mainActionsPanelHeight }) =>
@@ -19,7 +19,7 @@ const computeLeftAlignedPosition = ({ componentLeft, resizeHandleNTop, mainActio
 const computeRightAlignedPosition = ({ componentRight, resizeHandleNTop, mainActionsPanelDimensions }) =>
 	({ left: componentRight - mainActionsPanelDimensions.width, top: resizeHandleNTop - 10 - mainActionsPanelDimensions.height })
 const mainActionsPanelEpic = createEpic<MainActionsPanelStateType, *, *>({
-	vat: mainActionsPanelEpicVat,
+	vcet: mainActionsPanelEpicVcet,
 	initialState: mainActionsPanelInitialState,
 	updaters: {
 		showHide: createUpdater({

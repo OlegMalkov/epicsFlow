@@ -1,5 +1,5 @@
 // @flow strict
-import { type AnyActionType } from '../../../../../src/epics'
+import { type AnyMsgType } from '../../../../../src/epics'
 import {
 	resizeDecorationsInitialState,
 	type ResizeDecorationsStateType,
@@ -9,7 +9,7 @@ type ReduxResizeDecorationsStateType = ResizeDecorationsStateType
 
 const resizeDecorationsReducer = (
 	state: ReduxResizeDecorationsStateType = resizeDecorationsInitialState,
-	action: AnyActionType
+	event: AnyMsgType
 ): ReduxResizeDecorationsStateType => {
 	return state
 }

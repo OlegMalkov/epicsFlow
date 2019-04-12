@@ -4,7 +4,6 @@
 
 import React, { Component } from 'react'
 import './app.css'
-import { windowMouseMove, windowMouseUp, keyDown } from './globalACAC'
 // import { reduxWsbStore } from './reduxWsbStore'
 import { type DispatchType } from '../../../src/epics'
 import { TopBarHeight } from '../../websitebuilder/src/components/topBar/topBarConstants'
@@ -18,17 +17,18 @@ import {
 import {
 	PropertiesPanelView,
 } from '../../websitebuilder/src/components/propertiesPanel/propertiesPanelView'
-import { browserDimensions } from '../../websitebuilder/src/components/env/envACnC'
-import { workspaceScroll } from '../../websitebuilder/src/components/workspace/workspaceACnC'
+import { browserDimensions } from '../../websitebuilder/src/components/env/envEvents'
+import { workspaceScroll } from '../../websitebuilder/src/components/workspace/workspaceEvents'
 import {
 	addComponentPanelToggleExpansionButtonPressed,
-} from '../../websitebuilder/src/components/addComponentPanel/addComponentPanelACnC'
+} from '../../websitebuilder/src/components/addComponentPanel/addComponentPanelEvents'
 import {
-	templateAreaMouseDown,
+	templateAreaMouseDownEvent,
 	templateWidthLeftResizeHandleMouseDown,
 	templateWidthRightResizeHandleMouseDown,
-} from '../../websitebuilder/src/components/template/templateACnC'
+} from '../../websitebuilder/src/components/template/templateEvents'
 import { reduxWsbStore } from './reduxWsbStore'
+import { windowMouseMoveEvent, windowMouseUpEvent, keyDownEvent } from '../../websitebuilder/src/globalEvents';
 
 declare var window: EventTarget;
 const initialState = reduxWsbStore.getState()
@@ -60,20 +60,20 @@ componentDidMount() {
 	window.addEventListener(
 		'mousemove',
 		(e: MouseEvent) => this.dispatch(
-			windowMouseMove.actionCreator({ position: { left: e.clientX, top: e.clientY } })
+			windowMouseMoveEvent.create({ position: { left: e.clientX, top: e.clientY } })
 		)
 	)
-	window.addEventListener('mouseup', () => this.dispatch(windowMouseUp.actionCreator()))
-	window.addEventListener('keydown', (e: KeyboardEvent) => this.dispatch(keyDown.actionCreator({ keyCode: e.keyCode })))
+	window.addEventListener('mouseup', () => this.dispatch(windowMouseUpEvent.create()))
+	window.addEventListener('keydown', (e: KeyboardEvent) => this.dispatch(keyDownEvent.create({ keyCode: e.keyCode })))
 
-	this.dispatch(browserDimensions.actionCreator(getBrowserDimensions()))
-	window.addEventListener('resize', () => this.dispatch(browserDimensions.actionCreator(getBrowserDimensions())))
+	this.dispatch(browserDimensions.create(getBrowserDimensions()))
+	window.addEventListener('resize', () => this.dispatch(browserDimensions.create(getBrowserDimensions())))
 
 	const { current } = this.workspaceRef
 
 	if (current) {
-		current.addEventListener('scroll', () => this.dispatch(workspaceScroll.actionCreator({ top: current.scrollTop })))
-		this.dispatch(workspaceScroll.actionCreator({ top: current.scrollTop }))
+		current.addEventListener('scroll', () => this.dispatch(workspaceScroll.create({ top: current.scrollTop })))
+		this.dispatch(workspaceScroll.create({ top: current.scrollTop }))
 	}
 }
 
@@ -82,22 +82,22 @@ render() {
 		<div className="App">
 			<div className="TopBar" style={{ height: TopBarHeight }} />
 			<div className="Body">
-				<div className="AddComponentPanel" style={{ width: 50 }} onClick={() => this.dispatch(addComponentPanelToggleExpansionButtonPressed.ac())} />
+				<div className="AddComponentPanel" style={{ width: 50 }} onClick={() => this.dispatch(addComponentPanelToggleExpansionButtonPressed.create())} />
 				<div className="Workspace" >
 					<div className="WorkspaceScrollableArea" ref={this.workspaceRef}>
 						<div
 							ref={this.templateAreaRef}
 							className="TemplateArea"
 							style={{ width: 700 }}
-							onMouseDown={(e) => e.target === this.templateAreaRef.current && this.dispatch(templateAreaMouseDown.actionCreator())}
+							onMouseDown={(e) => e.target === this.templateAreaRef.current && this.dispatch(templateAreaMouseDownEvent.create())}
 						>
 							<div
 								className="TemplateWidthResizeHandle"
-								onMouseDown={() => this.dispatch(templateWidthLeftResizeHandleMouseDown.actionCreator())}
+								onMouseDown={() => this.dispatch(templateWidthLeftResizeHandleMouseDown.create())}
 							/>
 							<div
 								className="TemplateWidthResizeHandle TemplateWidthResizeHandleRight"
-								onMouseDown={() => this.dispatch(templateWidthRightResizeHandleMouseDown.actionCreator())}
+								onMouseDown={() => this.dispatch(templateWidthRightResizeHandleMouseDown.create())}
 							/>
 							<ComponentView state={this.state.component.state} dispatch={this.dispatch} />
 							<ResizeDecorationsView state={this.state.resizeDecorations} dispatch={this.dispatch} />

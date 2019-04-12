@@ -4,7 +4,7 @@ import {
 	createEpic,
 	createUpdater,
 	createStore,
-	makeSimpleActionCreatorAndCondition,
+	makeSimpleEvent,
 	createPluginStateKey,
 } from '../epics'
 import { localStorageEM } from '../effectManagers/localStorageEM'
@@ -13,13 +13,13 @@ import {
 	type EsdbPluginConfigType,
 	esdbSave,
 	esdbAggregatesStateLocalStorageKey,
-	esdbCreateActionsLocalStorageKey,
+	esdbCreateEventsLocalStorageKey,
 } from './eventSourceDbPlugin'
 import { setNow } from '../tests/mocks'
 
-const a = makeSimpleActionCreatorAndCondition('A')
-const b = makeSimpleActionCreatorAndCondition('B')
-const z = makeSimpleActionCreatorAndCondition('Z')
+const a = makeSimpleEvent('A')
+const b = makeSimpleEvent('B')
+const z = makeSimpleEvent('Z')
 
 const inc = x => x + 1
 
@@ -31,11 +31,11 @@ describe('eventSourceDbPlugin', () => {
 	const countOfABEpics = {
 		countOfA: createEpic<number, *, *, EsdbPluginConfigType>({
 			initialState: 0,
-			vat: 'COUNT_OF_A_VAT',
+			vcet: 'COUNT_OF_A_VCET',
 			updaters: {
 				inc: createUpdater({
 					given: {},
-					when: { _a: a.c },
+					when: { _a: a.condition },
 					then: ({ R }) => R.mapState(inc),
 				}),
 			},
@@ -43,11 +43,11 @@ describe('eventSourceDbPlugin', () => {
 		}),
 		countOfB: createEpic<number, *, *, EsdbPluginConfigType>({
 			initialState: 0,
-			vat: 'COUNT_OF_B_VAT',
+			vcet: 'COUNT_OF_B_VCET',
 			updaters: {
 				inc: createUpdater({
 					given: {},
-					when: { _b: b.c },
+					when: { _b: b.condition },
 					then: ({ R }) => R.mapState(inc),
 				}),
 			},
@@ -55,11 +55,11 @@ describe('eventSourceDbPlugin', () => {
 		}),
 		countOfAorB: createEpic<number, *, *, EsdbPluginConfigType>({
 			initialState: 0,
-			vat: 'COUNT_OF_A_OR_B_VAT',
+			vcet: 'COUNT_OF_A_OR_B_VCET',
 			updaters: {
 				inc: createUpdater({
 					given: {},
-					when: { _a: a.c.to(), _b: b.c.to() },
+					when: { _a: a.condition.to(), _b: b.condition.to() },
 					then: ({ R }) => R.mapState(inc),
 				}),
 			},
@@ -74,52 +74,52 @@ describe('eventSourceDbPlugin', () => {
 			effectManagers: { localStorage: localStorageEM },
 		})
 
-		store.dispatch(a.ac())
+		store.dispatch(a.create())
 		setNow(1)
-		store.dispatch(b.ac())
+		store.dispatch(b.create())
 		setNow(2)
-		store.dispatch(b.ac())
+		store.dispatch(b.create())
 		setNow(3)
-		store.dispatch(z.ac())
+		store.dispatch(z.create())
 		setNow(4)
-		store.dispatch(a.ac())
+		store.dispatch(a.create())
 		setNow(5)
-		store.dispatch(b.ac())
+		store.dispatch(b.create())
 		setNow(6)
 
 		return store
 	}
 
-	it('saves actions used by aggregates and aggregates states to local storage on esdbSave', async () => {
+	it('saves events used by aggregates and aggregates states to local storage on esdbSave', async () => {
 		const store = createPopulatedStore()
 
 		expect(store.getState().countOfA).toBe(2)
 		expect(store.getState().countOfB).toBe(3)
 		expect(store.getState().countOfAorB).toBe(5)
 
-		store.dispatch(esdbSave.ac())
+		store.dispatch(esdbSave.create())
 
-		const expectedActionsSaveKey = esdbCreateActionsLocalStorageKey(6)
+		const expectedEventsSaveKey = esdbCreateEventsLocalStorageKey(6)
 
-		expect(Object.keys(localStorage)).toEqual([expectedActionsSaveKey, esdbAggregatesStateLocalStorageKey])
-		expect(localStorage.getItem(expectedActionsSaveKey)).toEqual(JSON.stringify({
-			'0': a.ac(),
-			'1': b.ac(),
-			'2': b.ac(),
-			'4': a.ac(),
-			'5': b.ac(),
+		expect(Object.keys(localStorage)).toEqual([expectedEventsSaveKey, esdbAggregatesStateLocalStorageKey])
+		expect(localStorage.getItem(expectedEventsSaveKey)).toEqual(JSON.stringify({
+			'0': a.create(),
+			'1': b.create(),
+			'2': b.create(),
+			'4': a.create(),
+			'5': b.create(),
 		}))
 		expect(localStorage.getItem(esdbAggregatesStateLocalStorageKey)).toEqual(JSON.stringify({
-			'COUNT_OF_A_VAT': 2,
-			'COUNT_OF_B_VAT': 3,
-			'COUNT_OF_A_OR_B_VAT': 5,
+			'COUNT_OF_A_VCET': 2,
+			'COUNT_OF_B_VCET': 3,
+			'COUNT_OF_A_OR_B_VCET': 5,
 		}))
 	})
 
 	it('rehydrates store', async () => {
 		const store = createPopulatedStore()
 
-		store.dispatch(esdbSave.ac())
+		store.dispatch(esdbSave.create())
 
 		const rehydratedStore = createStore({
 			epics: countOfABEpics,

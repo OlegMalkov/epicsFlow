@@ -13,19 +13,17 @@ import {
 	componentSetIsMovingFalse,
 	componentSetSelected,
 } from '../../../../websitebuilder/src/components/component/componentState'
-import { type AnyActionType } from '../../../../../src/epics'
+import { type AnyMsgType } from '../../../../../src/epics'
 import {
-	componentMouseDown,
-} from '../../../../websitebuilder/src/components/component/componentACnC'
+	componentMouseDownEvent,
+} from '../../../../websitebuilder/src/components/component/componentEvents'
 import { type LTPositionType } from '../../../../websitebuilder/src/types'
-import { matchCondition } from '../../utils'
 import { dndTypeProgress } from '../../../../websitebuilder/src/components/shared/dnd'
-import { windowMouseMove } from '../../globalACAC'
-import { windowMouseUp } from '../../../../websitebuilder/src/globalACAC'
+import { windowMouseUpEvent, windowMouseMoveEvent } from '../../../../websitebuilder/src/globalEvents'
 import { T, F } from '../../../../../src/utils'
 import {
-	templateAreaMouseDown,
-} from '../../../../websitebuilder/src/components/template/templateACnC'
+	templateAreaMouseDownEvent,
+} from '../../../../websitebuilder/src/components/template/templateEvents'
 
 opaque type ReduxComponentStateType: {| state: *, scope: * |} = {|
     state: ComponentStateType,
@@ -37,19 +35,14 @@ const componentIntialState: ReduxComponentStateType = {
 	scope: componentInitialScope,
 }
 
-const matchComponentMouseDown = matchCondition(componentMouseDown.condition)
-const matchWindowMouseMove = matchCondition(windowMouseMove.condition)
-const matchWindowMouseUp = matchCondition(windowMouseUp.condition)
-const matchTemplateAreaMouseDown = matchCondition(templateAreaMouseDown.condition)
-
 type DepsType = {| mousePosition: LTPositionType, templateWidth: number |}
 
 const componentReducer = (
 	componentState: ReduxComponentStateType = componentIntialState,
-	action: AnyActionType,
+	event: AnyMsgType,
 	{ mousePosition, templateWidth }: DepsType
 ): ReduxComponentStateType => {
-	if (matchComponentMouseDown(action)) {
+	if (componentMouseDownEvent.match(event)) {
 		// TODO when there are multiple components, it also should perform deselection
 		return {
 			state: componentState.state,
@@ -60,9 +53,9 @@ const componentReducer = (
 		}
 	}
 
-	const windowMouseMoveAction = matchWindowMouseMove(action)
+	const windowMouseMove = windowMouseMoveEvent.match(event)
 
-	if (windowMouseMoveAction) {
+	if (windowMouseMove) {
 		const { movingDnd } = componentState.scope
 
 		if (movingDnd.type === dndTypeProgress) {
@@ -86,7 +79,7 @@ const componentReducer = (
 		return componentState
 	}
 
-	if (matchWindowMouseUp(action)) {
+	if (windowMouseUpEvent.match(event)) {
 		let { state, scope } = componentState
 
 		if (scope.movingDnd.type === dndTypeProgress) {
@@ -98,7 +91,7 @@ const componentReducer = (
 		return componentState
 	}
 
-	if (matchTemplateAreaMouseDown(action)) {
+	if (templateAreaMouseDownEvent.match(event)) {
 		const { state, scope } = componentState
 
 		if (state.selected) {

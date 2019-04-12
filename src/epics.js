@@ -7,7 +7,7 @@ const __DEV__ = process.env !== 'production'
 
 type AnyValueType = number | string | bool | Object | Array<AnyValueType> | null
 type CompulsoryConditionFieldsType = {|
-	actionType: string,
+	messageType: string,
 	isEpicCondition: bool,
 	optional: bool,
 	passive: bool,
@@ -15,9 +15,9 @@ type CompulsoryConditionFieldsType = {|
 	resetConditionsByKeyKeys: Array<string> | null,
 	sealed: bool,
 |}
-type SubscriptionType = {| conditionKey: string, epicVat: string, passive: bool, updaterKey: string |}
+type SubscriptionType = {| conditionKey: string, epicVcet: string, passive: bool, updaterKey: string |}
 opaque type Condition<V: Object>: {
-	actionType: string,
+	messageType: string,
 	resetConditionsByKey: (Array<string>) => Condition<V>,
 	resetConditionsByKeyAfterReducerCall: (Array<string>) => Condition<V>,
 	to: () => Condition<V>,
@@ -30,6 +30,7 @@ opaque type Condition<V: Object>: {
 	ws: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
 	wsk: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
 	isEpicCondition: bool,
+	match: AnyMsgType => V | void,
 } = {|
 	...CompulsoryConditionFieldsType,
 	childrenConditionsWithSelectorOrGuard?: Array<AnyConditionType>,
@@ -53,6 +54,7 @@ opaque type Condition<V: Object>: {
 	withSelectorKey: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
 	ws: <R>((value: V, prevValue: V) => R) => $Diff<Condition<R>, {| withSelector: *, withSelectorKey: *, ws: *, wsk: * |}>,
 	wsk: <SK: $Keys<V>>(selectorKey: SK) => Condition<$ElementType<V, SK>>,
+	match: AnyMsgType => V | void,
 |}
 type AnyConditionType = Condition<AnyValueType>
 type CreateConditionPropsType = {|
@@ -65,56 +67,56 @@ type CreateConditionPropsType = {|
 	selector?: AnyValueType => AnyValueType,
 	selectorKey?: string,
 |}
-type AnyActionType = { type: $Subtype<string> } // eslint-disable-line flowtype/require-exact-type
-type MetaType = {| targetEpicVats?: string[] |}
-type DispatchType = (AnyActionType, meta?: MetaType) => void
+type AnyMsgType = { type: $Subtype<string> } // eslint-disable-line flowtype/require-exact-type
+type MetaType = {| targetEpicVcet?: string[] |}
+type DispatchType = (AnyMsgType, meta?: MetaType) => void
 type ConditionsValuesType = { [string]: AnyValueType }
-opaque type DispatchActionEffectType = {|
-	action: { type: string },
-	type: typeof dispatchActionEffectType,
+opaque type DispatchMsgEffectType = {|
+	msg: { type: string },
+	type: typeof dispatchMsgEffectType,
 |}
-opaque type DispatchBatchedActionsEffectType = {|
-	batches: Array<{| actions: Array<AnyActionType>, targetEpicVat: string |}>,
-	type: typeof dispatchBatchedActionsEffectType,
+opaque type DispatchBatchedMsgsEffectType = {|
+	batches: Array<{| msgs: Array<AnyMsgType>, targetEpicVcet: string |}>,
+	type: typeof dispatchBatchedMsgsEffectType,
 |}
 opaque type SendMsgOutsideEpicsEffectType = {|
 	msg: any,
 	type: typeof sendMsgOutsideEpicsEffectType,
 |}
-type ReducerType<S: AnyValueType, SC: Object, CV, E> = ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<CV, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: CV |}) => ReducerResult<S, SC, E>
-type BuiltInEffectType = DispatchActionEffectType | SendMsgOutsideEpicsEffectType | DispatchBatchedActionsEffectType
-type UpdaterType<S, SC, C: { [string]: { actionType: string } & Object }, E> = {|
+type ReducerType<S: AnyValueType, SC: Object, CV, E> = ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<CV, typeof toTrueV>, scope: SC, sourceMsg: AnyMsgType, state: S, values: CV |}) => ReducerResult<S, SC, E>
+type BuiltInEffectType = DispatchMsgEffectType | SendMsgOutsideEpicsEffectType | DispatchBatchedMsgsEffectType
+type UpdaterType<S, SC, C: { [string]: { messageType: string } & Object }, E> = {|
 	compulsoryConditionsKeys: Array<$Keys<C>>,
 	conditionKeysToConditionUpdaterKeys: Array<[string, $Keys<C>]>,
 	conditions: C,
 	conditionsKeys: Array<$Keys<C>>,
 	then: ReducerType<S, SC, $Exact<$ObjMap<C, typeof extractConditionV>>, E>,
 |}
-type EpicValueActionType<State> = {| type: string, value: State |}
-opaque type EpicType<S, SC, E, PC>: { c: Condition<S>, condition: Condition<S>, initialState: S, pluginConfig: PC | void, vat: string } = {|
+type EpicValueChangedEventType<State> = {| type: string, value: State |}
+opaque type EpicType<S, SC, E, PC>: { c: Condition<S>, condition: Condition<S>, initialState: S, pluginConfig: PC | void, vcet: string } = {|
 	c: Condition<S>,
 	condition: Condition<S>,
 	initialScope: SC,
 	initialState: S,
 	pluginConfig: PC | void,
 	updaters: { [string]: UpdaterType<S, SC, *, E> },
-	vat: string,
+	vcet: string,
 |}
 type CreateEpicWithScopePropsType<S, SC, E, PC> = {|
 	initialScope: SC,
 	initialState: S,
 	pluginConfig?: PC,
 	updaters: { [string]: UpdaterType<S, SC, *, E> },
-	vat: string,
+	vcet: string,
 |}
 type CreateEpicPropsType<S, E, PC> = {|
 	initialState: S,
 	pluginConfig?: PC,
 	updaters: { [string]: UpdaterType<S, void, *, E> },
-	vat: string,
+	vcet: string,
 |}
 
-type OnEffectRequestType<S, SC, E> = ({| dispatch: DispatchType, effect: $ReadOnly<E>, requesterEpicVat: string, scope: SC, state: $ReadOnly<S>, R: EffectManagerResultType<S> |}) => EffectManagerResultType<S>
+type OnEffectRequestType<S, SC, E> = ({| dispatch: DispatchType, effect: $ReadOnly<E>, requesterEpicVcet: string, scope: SC, state: $ReadOnly<S>, R: EffectManagerResultType<S> |}) => EffectManagerResultType<S>
 opaque type EffectManager<S, SC, E> = {|
 	_effect: E,
 	initialScope?: SC,
@@ -163,7 +165,7 @@ type EpicStateUpdateType = {|
 	updatersState: EpicUpdatersStateUpdateType,
 |}
 type EpicsStateUpdateType = { [key: string]: EpicStateUpdateType }
-type EpicStateChangedActionType = {|
+type EpicStateChangedEventType = {|
 type: string,
 updateReasons?: Array<string>,
 value: AnyValueType,
@@ -188,50 +190,50 @@ type EpicExecutionInfoType = {|
 	childrenLayers?: Array<ExecutionLevelInfoType>,
 	epicKey: string,
 	epicNotExecutedBecause?: string,
-	epicVat: string, // eslint-disable-line
+	epicVcet: string, // eslint-disable-line
 	updaters?: Array<EpicUpdaterExecutionInfoType>,
 |}
 type ExecutionLevelInfoType = {|
 	executedEpics: Array<EpicExecutionInfoType>,
-	triggerAction: AnyActionType,
+	triggerMsg: AnyMsgType,
 |}
-type DispatchActionsBatchesType = Array<{| actions: Array<AnyActionType>, targetEpicVat: string |}>
-type ExecuteActionPropsType = {|
-	actionsChain: Array<AnyActionType>,
+type DispatchMsgsBatchesType = Array<{| msgs: Array<AnyMsgType>, targetEpicVcet: string |}>
+type ExecuteMsgPropsType = {|
+	msgsChain: Array<AnyMsgType>,
 	conditionsValues: ConditonsValuesType,
 	conditionsValuesUpdate: ConditonsValuesUpdateType,
 	effectManagersState: EffectManagersStateType<*, *>,
 	effectManagersStateUpdate: EffectManagersStateUpdateType,
 	epicsState: EpicsStateType,
 	epicsStateUpdate: EpicsStateUpdateType,
-	batchedDispatchBatches: DispatchActionsBatchesType,
+	batchedDispatchBatches: DispatchMsgsBatchesType,
 	executionLevelTrace: ExecutionLevelInfoType | void,
-	lastReducerValuesByEpicVatUpdaterKey: { [string]: Object },
-	messagesToSendOutside: Array<AnyActionType>,
+	lastReducerValuesByEpicVcetUpdaterKey: { [string]: Object },
+	messagesToSendOutside: Array<AnyMsgType>,
 	prevConditionsValues: ConditonsValuesType,
 |}
-type CreateExecuteActionPropsType = {|
+type CreateExecuteMsgPropsType = {|
 	dispatch: DispatchType,
 	effectManagers: { [string]: EffectManager<any, any, any> },
-	epicKeyByVat: { [string]: string },
-	epicsMapByVat: { [string]: EpicType<any, any, any, any> },
-	rootConditionsByActionType: { [string]: AnyConditionType },
+	epicKeyByVcet: { [string]: string },
+	epicsMapByVcet: { [string]: EpicType<any, any, any, any> },
+	rootConditionsByMsgType: { [string]: AnyConditionType },
 	trace: Function,
 	warn: Function,
 |}
-type EpicSubsType = { [epicVat: string]: { [updaterKey: string]: Array<string> } }
+type EpicSubsType = { [epicVcet: string]: { [updaterKey: string]: Array<string> } }
 
 opaque type EpicsStoreType<Epics: Object>: {
 	dispatch: DispatchType,
 	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
-	subscribeOnMessage: any => any,
+	subscribeOutMsg: any => any,
 	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
 	replaceConfig: (CreateStorePropsType<Epics>) => void,
 	resetToInitialState: () => void,
 	warn: Function,
 } = {|
-	_getNextStateForActionWithoutUpdatingStoreState: (AnyActionType) => $Exact<$ObjMap<Epics, typeof getInitialState>>,
+	_getNextStateForMsgWithoutUpdatingStoreState: (AnyMsgType) => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	_getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
 	_setState: ServiceStateType => void,
 	replaceConfig: (CreateStorePropsType<Epics>) => void,
@@ -239,13 +241,37 @@ opaque type EpicsStoreType<Epics: Object>: {
 	dispatch: DispatchType,
 	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
-	subscribeOnMessage: any => any,
+	subscribeOutMsg: any => any,
 	subscribeOnStateChange: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
 	warn: Function,
 |}
+
+function buildValueSelector<V>(condition: Condition<V>, selectorPath = [], selector) {
+	if (!(condition: any).parentCondition) {
+		if (selectorPath.length === 0 && !selector) return x => x
+		return x => {
+			const value = selectorPath.reduce((x, key) => x[key], x)
+
+			if (selector) return selector(value)
+			return value
+		}
+	}
+	return buildValueSelector((condition: any).parentCondition, (condition: any).selectorKey ? [(condition: any).selectorKey, ...selectorPath] : selectorPath, (condition: any).selector ? (condition: any).selector : selector)
+}
+
+const createConditionMatcher = <V>(condition: Condition<V>): (AnyMsgType => V | void) => {
+	const valueSelector = buildValueSelector(condition)
+
+	return (msg: AnyMsgType): V | void => {
+		if (condition.messageType === msg.type) {
+			return valueSelector((msg: any))
+		}
+	}
+}
+
 function getFields(condition: AnyConditionType): {| ...CompulsoryConditionFieldsType, parentCondition: AnyConditionType |} {
 	const {
-		actionType,
+		messageType,
 		passive,
 		optional,
 		resetConditionsByKeyKeys,
@@ -254,7 +280,7 @@ function getFields(condition: AnyConditionType): {| ...CompulsoryConditionFields
 		isEpicCondition,
 	} = condition
 
-	return {		actionType,
+	return {		messageType,
 		passive,
 		optional,
 		resetConditionsByKeyKeys,
@@ -264,14 +290,14 @@ function getFields(condition: AnyConditionType): {| ...CompulsoryConditionFields
 		isEpicCondition,
 	}
 }
-const dispatchActionEffectType: 'dispatch_action' = 'dispatch_action'
-const dispatchBatchedActionsEffectType: 'dispatch_batch_actions_into_epics' = 'dispatch_batch_actions_into_epics' // dispatch multiple action into epic, but notify everybody only once
+const dispatchMsgEffectType: 'dispatch_msg' = 'dispatch_msg'
+const dispatchBatchedMsgsEffectType: 'dispatch_batch_msgs_into_epics' = 'dispatch_batch_msgs_into_epics' // dispatch multiple msgs into epic, but notify everybody only once
 
 const sendMsgOutsideEpicsEffectType: 'send_msg_outside_of_epics' = 'send_msg_outside_of_epics'
-const dispatchActionEffectCreator = (action: AnyActionType): DispatchActionEffectType => ({ type: dispatchActionEffectType,	action })
-const dispatchBatchedActionsEffectCreator = (batches: DispatchActionsBatchesType): DispatchBatchedActionsEffectType => ({ type: dispatchBatchedActionsEffectType, batches })
-const daEC = dispatchActionEffectCreator
-const sendMessageOutsideEpicsEffectCreator = (msg: any): SendMsgOutsideEpicsEffectType => ({ type: sendMsgOutsideEpicsEffectType, msg })
+const dispatchMsgEffectCreator = (msg: AnyMsgType): DispatchMsgEffectType => ({ type: dispatchMsgEffectType, msg })
+const dispatchBatchedMsgsEffectCreator = (batches: DispatchMsgsBatchesType): DispatchBatchedMsgsEffectType => ({ type: dispatchBatchedMsgsEffectType, batches })
+const daEC = dispatchMsgEffectCreator
+const sendMsgOutsideEpicsEffectCreator = (msg: any): SendMsgOutsideEpicsEffectType => ({ type: sendMsgOutsideEpicsEffectType, msg })
 
 class ReducerResult<S, SC, SE> {
 	_state: S;
@@ -309,10 +335,10 @@ class ReducerResult<S, SC, SE> {
 }
 
 type MergeType<T, T1> = {| ...$Exact<T>, ...$Exact<T1> |}
-function createUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType: string } & Object }, ReactsTo: { [string]: { actionType: string } & Object }, E> ({ given, when, then }: {|
+function createUpdater<S: AnyValueType, SC: Object, DO: { [string]: { messageType: string } & Object }, ReactsTo: { [string]: { messageType: string } & Object }, E> ({ given, when, then }: {|
 	given: DO,
 	when: ReactsTo,
-	then: ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<MergeType<DO, ReactsTo>, typeof toTrueV>, scope: SC, sourceAction: AnyActionType, state: S, values: $Exact<$ObjMap<MergeType<DO, ReactsTo>, typeof extractConditionV>> |}) => ReducerResult<S, SC, E>,
+	then: ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<MergeType<DO, ReactsTo>, typeof toTrueV>, scope: SC, sourceMsg: AnyMsgType, state: S, values: $Exact<$ObjMap<MergeType<DO, ReactsTo>, typeof extractConditionV>> |}) => ReducerResult<S, SC, E>,
 |}): UpdaterType<S, SC, any, E> {
 	let noActiveConditions = true
 	const conditionKeysToConditionUpdaterKeys = []
@@ -357,11 +383,11 @@ function createUpdater<S: AnyValueType, SC: Object, DO: { [string]: { actionType
 
 class EffectManagerResultType<S> {
 	_state: S
-	_actionsToDispatch: Array<{| action: AnyActionType, broadcast?: bool |}>
+	_msgsToDispatch: Array<{| msg: AnyMsgType, broadcast?: bool |}>
 	_promise: Promise<void>
 	constructor(state: S) {
 		this._state = state
-		this._actionsToDispatch = []
+		this._msgsToDispatch = []
 		this.doNothing = this
 	}
 	doNothing: EffectManagerResultType<S>
@@ -369,9 +395,9 @@ class EffectManagerResultType<S> {
 		this._state = updater(this._state)
 		return this
 	}
-	dispatchAction(action: AnyActionType, broadcast?: true): EffectManagerResultType<S> {
-		this._actionsToDispatch.push(({
-			action,
+	dispatchMsg(msg: AnyMsgType, broadcast?: true): EffectManagerResultType<S> {
+		this._msgsToDispatch.push(({
+			msg,
 			broadcast,
 		}))
 		return this
@@ -523,12 +549,12 @@ function deepCopy<T: Object | Array<any>>(src: T, _visited?: Array<Object | Arra
 }
 const values = o => Object.keys(o).map(k => o[k])
 const last = arr => arr.slice(-1)[0]
-const MatchAnyActionType: '*' = '*'
+const MatchAnyMsgType: '*' = '*'
 
-function validateUniqVats(epics) {
+function validateUniqVcet(epics) {
 	const allEpicsKeys = Object.keys(epics)
-	const allVats = allEpicsKeys.map(k => epics[k].vat)
-	const vatsCountMap = allVats.reduce((r, v) => {
+	const allVcet = allEpicsKeys.map(k => epics[k].vcet)
+	const vcetsCountMap = allVcet.reduce((r, v) => {
 		if (r[v]) {
 			r[v]++
 		} else {
@@ -536,11 +562,11 @@ function validateUniqVats(epics) {
 		}
 		return r
 	}, {})
-	const duplicatedVats = Object.keys(vatsCountMap)
-		.filter(v => vatsCountMap[v] > 1)
+	const duplicatedVcet = Object.keys(vcetsCountMap)
+		.filter(v => vcetsCountMap[v] > 1)
 
-	if (duplicatedVats.length) {
-		throw new Error(`duplicate vats:\n${duplicatedVats.map(v => `Epics ${allEpicsKeys.filter(k => epics[k].vat === v).join(', ')} has same vat ${v}`).join('\n')}`)
+	if (duplicatedVcet.length) {
+		throw new Error(`duplicate vcets:\n${duplicatedVcet.map(v => `Epics ${allEpicsKeys.filter(k => epics[k].vcet === v).join(', ')} has same vcet ${v}`).join('\n')}`)
 	}
 }
 function getEffectManagersInitialState(effectManagers) {
@@ -583,12 +609,12 @@ function traceToString(trace: ExecutionLevelInfoType, executedEpicsFilter?: Epic
 		.filter(({ output }) => output)	// if executedEpicsOutputs.length > 1 - branching
 
 	if (executedEpicsOutputs.length === 0 && whitespaceLength === 0) {
-		return `${trace.triggerAction.type} does not have any effect`
+		return `${trace.triggerMsg.type} does not have any effect`
 	}
 	const branches = executedEpicsOutputs.map(({ output, epicExecutionInfo }) => {
 		const whitespace = new Array(whitespaceLength).join(' ')
-		const isEpicVat = trace.triggerAction.type.indexOf('_VAT') !== -1
-		const prevPrefix = `${whitespace}${level !== 0 && isEpicVat ? '' : trace.triggerAction.type}${level !== 0 ? '|':' '}=> `
+		const isEpicVcet = trace.triggerMsg.type.indexOf('_VCET') !== -1
+		const prevPrefix = `${whitespace}${level !== 0 && isEpicVcet ? '' : trace.triggerMsg.type}${level !== 0 ? '|':' '}=> `
 		const prefix = `${prevPrefix}${output}`
 
 		if (!epicExecutionInfo.childrenLayers) return prefix
@@ -679,7 +705,7 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 		if (guard) {
 			newChildValue = value
 			if (guard && !guard(value)) return
-			conditionsValuesUpdate[valueKey] = value // used for next action, will come in conditionsValues
+			conditionsValuesUpdate[valueKey] = value // used for next msg, will come in conditionsValues
 			changedConditions.push(childCondition)
 		} else {
 			const _prevChildValue = prevConditionsValues[valueKey]
@@ -706,13 +732,13 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 	})
 }
 const nothingChangedButObjectRecreatedWarn = 'WARN: nothing changed, but new objects with same data was created'
-const createExecuteAction = ({
+const createExecuteMsg = ({
 	trace,
-	epicsMapByVat,epicKeyByVat,
+	epicsMapByVcet,epicKeyByVcet,
 	effectManagers,
 	dispatch,
-	rootConditionsByActionType,
-}: CreateExecuteActionPropsType) => {
+	rootConditionsByMsgType,
+}: CreateExecuteMsgPropsType) => {
 	const effectManagersByRequestType: { [string]: EffectManager<*, *, *> } = Object.keys(effectManagers).reduce((m, emk) => {
 		const effectManager = { ...effectManagers[emk] }
 
@@ -724,14 +750,14 @@ const createExecuteAction = ({
 		}
 		return m
 	}, {})
-	const orderOfEpicsVat = Object.keys(epicsMapByVat).reduce((r, vat, index) => ({ ...r, [vat]: index }), {})
-	const vatToSortValue = (vat, currentActionType, initiatedByEpic) => {
-		if (vat === currentActionType || (initiatedByEpic && initiatedByEpic.type === vat)) return -Infinity
-		return orderOfEpicsVat[vat]
+	const orderOfEpicsVcet = Object.keys(epicsMapByVcet).reduce((r, vcet, index) => ({ ...r, [vcet]: index }), {})
+	const vcetToSortValue = (vcet, currentMsgType, initiatedByEpic) => {
+		if (vcet === currentMsgType || (initiatedByEpic && initiatedByEpic.type === vcet)) return -Infinity
+		return orderOfEpicsVcet[vcet]
 	}
-	const getTraceUpdaters = ({ executionLevelTrace, subVat }) => {
+	const getTraceUpdaters = ({ executionLevelTrace, subVcet }) => {
 		let updaters
-		const exsistingEpicTraceInfo = executionLevelTrace.executedEpics.find(t => t.epicVat === subVat)
+		const exsistingEpicTraceInfo = executionLevelTrace.executedEpics.find(t => t.epicVcet === subVcet)
 
 		if (exsistingEpicTraceInfo) {
 			if (exsistingEpicTraceInfo.updaters) {
@@ -743,29 +769,29 @@ const createExecuteAction = ({
 		} else {
 			updaters = []
 			executionLevelTrace.executedEpics.push({
-				epicVat: subVat,
-				epicKey: epicKeyByVat[subVat],
+				epicVcet: subVcet,
+				epicKey: epicKeyByVcet[subVcet],
 				updaters,
 			})
 		}
 		return updaters
 	}
-	const getNextLevelTrace = ({ executionLevelTrace, subVat, triggerAction }) => {
-		const executedEpic = executionLevelTrace.executedEpics.find(e => e.epicVat === subVat)
+	const getNextLevelTrace = ({ executionLevelTrace, subVcet, triggerMsg }) => {
+		const executedEpic = executionLevelTrace.executedEpics.find(e => e.epicVcet === subVcet)
 
 		if (!executedEpic) { throw new Error ('Unexpected trace error, please investigate how this happend.') } // should never happen, but flow can not check it
 		if (!executedEpic.childrenLayers) {
 			executedEpic.childrenLayers = []
 		}
-		const nextLevelTrace = { triggerAction,
+		const nextLevelTrace = { triggerMsg,
 			executedEpics: [] }
 
 		executedEpic.childrenLayers.push(nextLevelTrace)
 		return nextLevelTrace
 	}
 
-	function executeAction({
-		actionsChain,
+	function executeMsg({
+		msgsChain,
 		conditionsValues,
 		prevConditionsValues,
 		conditionsValuesUpdate,
@@ -773,17 +799,17 @@ const createExecuteAction = ({
 		epicsStateUpdate,
 		effectManagersState,
 		effectManagersStateUpdate,
-		lastReducerValuesByEpicVatUpdaterKey,
+		lastReducerValuesByEpicVcetUpdaterKey,
 		messagesToSendOutside,
 		batchedDispatchBatches,
 		executionLevelTrace,
-	}: ExecuteActionPropsType): void {
-		function getEpicStateUpdate(epicVat) {
-			let epicStateUpdate: EpicStateUpdateType = epicsStateUpdate[epicVat]
+	}: ExecuteMsgPropsType): void {
+		function getEpicStateUpdate(epicVcet) {
+			let epicStateUpdate: EpicStateUpdateType = epicsStateUpdate[epicVcet]
 
 			if (!epicStateUpdate) {
 				epicStateUpdate = ({ updatersState: {} }: EpicStateUpdateType)
-				epicsStateUpdate[epicVat] = epicStateUpdate // eslint-disable-line no-param-reassign
+				epicsStateUpdate[epicVcet] = epicStateUpdate // eslint-disable-line no-param-reassign
 			}
 			return epicStateUpdate
 		}
@@ -795,14 +821,14 @@ const createExecuteAction = ({
 			}
 			return updaterStateUpdate
 		}
-		const sourceAction = last(actionsChain)
-		const action = actionsChain[0]
-		const rootCondition: AnyConditionType | void = rootConditionsByActionType[action.type]
+		const sourceMsg = last(msgsChain)
+		const msg = msgsChain[0]
+		const rootCondition: AnyConditionType | void = rootConditionsByMsgType[msg.type]
 		const subscriptions: Array<SubscriptionType> = []
 
 		if (!rootCondition) return
 
-		conditionsValuesUpdate[rootCondition.valueKey] = action
+		conditionsValuesUpdate[rootCondition.valueKey] = msg
 		if (rootCondition.subscriptions) {
 			subscriptions.push(...rootCondition.subscriptions)
 		}
@@ -816,7 +842,7 @@ const createExecuteAction = ({
 		if (rootCondition.childrenConditionsWithSelectorOrGuard) {
 			const changedConditions = []
 
-			findChangedConditions(rootCondition, action, changedConditions, conditionsValues, prevConditionsValues, conditionsValuesUpdate)
+			findChangedConditions(rootCondition, msg, changedConditions, conditionsValues, prevConditionsValues, conditionsValuesUpdate)
 			changedConditions.forEach(cac => {
 				const { subscriptions: cacSub } = cac
 
@@ -826,9 +852,9 @@ const createExecuteAction = ({
 			})
 		}
 		subscriptions.forEach(sub => {
-			const { epicVat, updaterKey, conditionKey } = sub
-			const epicStateUpdate = getEpicStateUpdate(epicVat)
-			const epicState: EpicStateType = epicsState[epicVat]
+			const { epicVcet, updaterKey, conditionKey } = sub
+			const epicStateUpdate = getEpicStateUpdate(epicVcet)
+			const epicState: EpicStateType = epicsState[epicVcet]
 			const updaterState = epicState.updatersState[updaterKey]
 			const updaterStateUpdate = getUpdaterStateUpdate(epicStateUpdate, updaterState, updaterKey)
 
@@ -838,43 +864,43 @@ const createExecuteAction = ({
 
 		if (!activeSubs.length) return
 		const epicSubs: EpicSubsType = activeSubs.reduce((r: EpicSubsType, sub) => {
-			const { updaterKey, epicVat } = sub
-			let updatersByVat: { [updaterKey: string]: Array<string> } | void = r[epicVat]
+			const { updaterKey, epicVcet } = sub
+			let updatersByVcet: { [updaterKey: string]: Array<string> } | void = r[epicVcet]
 
-			if (!updatersByVat) {
-				r[epicVat] = updatersByVat = {}
+			if (!updatersByVcet) {
+				r[epicVcet] = updatersByVcet = {}
 			}
-			let conditionKeysByUpdaterKey: Array<string> | void = updatersByVat[updaterKey]
+			let conditionKeysByUpdaterKey: Array<string> | void = updatersByVcet[updaterKey]
 
 			if (!conditionKeysByUpdaterKey) {
-				updatersByVat[updaterKey] = conditionKeysByUpdaterKey = []
+				updatersByVcet[updaterKey] = conditionKeysByUpdaterKey = []
 			}
 			conditionKeysByUpdaterKey.push(sub.conditionKey)
 			return r
 		}, {})
-		const actionType: string = action.type
-		const { initiatedByEpic } = (action: any)
-		const epicVatsToBeExecuted = Object.keys(epicSubs).sort((vat1: string, vat2: string) => vatToSortValue(vat1, actionType, initiatedByEpic) - vatToSortValue(vat2, actionType, initiatedByEpic))
+		const messageType: string = msg.type
+		const { initiatedByEpic } = (msg: any)
+		const epicVcetToBeExecuted = Object.keys(epicSubs).sort((vcet1: string, vcet2: string) => vcetToSortValue(vcet1, messageType, initiatedByEpic) - vcetToSortValue(vcet2, messageType, initiatedByEpic))
 
-		epicVatsToBeExecuted.forEach((subVat: string) => {
+		epicVcetToBeExecuted.forEach((subVcet: string) => {
 			// $FlowFixMe
-			if (action.targetEpicVatsMap && !action.targetEpicVatsMap[subVat]) {
+			if (msg.targetEpicVcetMap && !msg.targetEpicVcetMap[subVcet]) {
 				if (trace && executionLevelTrace) {
 					executionLevelTrace.executedEpics.push({
-						epicVat: subVat,
-						epicKey: epicKeyByVat[subVat],
-						epicNotExecutedBecause: `action.targetEpicVatsMap ${Object.keys(action.targetEpicVatsMap).join(', ')} does not contain ${subVat}`,
+						epicVcet: subVcet,
+						epicKey: epicKeyByVcet[subVcet],
+						epicNotExecutedBecause: `msg.targetEpicVcetMap ${Object.keys(msg.targetEpicVcetMap).join(', ')} does not contain ${subVcet}`,
 					})
 				}
 				return
 			}
-			const updaterSubs = epicSubs[subVat]
-			const epic = epicsMapByVat[subVat]
-			const epicState: EpicStateType = epicsState[subVat]
+			const updaterSubs = epicSubs[subVcet]
+			const epic = epicsMapByVcet[subVcet]
+			const epicState: EpicStateType = epicsState[subVcet]
 			const updateReasons = []
 			const allEffects = []
 			const updaterKeysThatChangedState = []
-			const epicStateUpdate = getEpicStateUpdate(subVat)
+			const epicStateUpdate = getEpicStateUpdate(subVcet)
 
 			Object.keys(updaterSubs).forEach(updaterKey => {
 				const changedActiveConditionsKeys: Array<string> = updaterSubs[updaterKey]
@@ -896,7 +922,7 @@ const createExecuteAction = ({
 				if (updater.compulsoryConditionsKeys.some(k => !valuesFullfilled[k])) {
 					if (trace && executionLevelTrace) {
 						getTraceUpdaters({ executionLevelTrace,
-							subVat }).push({
+							subVcet }).push({
 							updaterKey,
 							changedActiveConditionsKeys,
 							reducerNotExecutedBecause: `compulsory conditions keys ${updater.compulsoryConditionsKeys.filter(k => !valuesFullfilled[k]).join(', ')} are not fullifilled`,
@@ -905,8 +931,8 @@ const createExecuteAction = ({
 					return
 				}
 				let atLeastOneValueIsDifferent = false
-				const epicUpdaterKey = `${subVat}.${updaterKey}`
-				const lastReducerValues = lastReducerValuesByEpicVatUpdaterKey[epicUpdaterKey]
+				const epicUpdaterKey = `${subVcet}.${updaterKey}`
+				const lastReducerValues = lastReducerValuesByEpicVcetUpdaterKey[epicUpdaterKey]
 				const reducerValues: Object = updater.conditionKeysToConditionUpdaterKeys.reduce((v, [conditionKey, conditionUpdaterKey]) => {
 					const shouldLookForDifferentValuesFromLastExecution = lastReducerValues && !atLeastOneValueIsDifferent
 
@@ -931,12 +957,12 @@ const createExecuteAction = ({
 						}
 					}
 					return v
-				}, {})				// epic value can be changed multiple times for single user action, this ensures that epic subscribers are called only once if nothing is changed from last call
+				}, {}) // epic value can be changed multiple times for single user msg, this ensures that epic subscribers are called only once if nothing is changed from last call
 
 				if (lastReducerValues && !atLeastOneValueIsDifferent) {
 					if (trace && executionLevelTrace) {
 						getTraceUpdaters({ executionLevelTrace,
-							subVat }).push({
+							subVcet }).push({
 							updaterKey,
 							changedActiveConditionsKeys,
 							reducerValues,
@@ -945,7 +971,7 @@ const createExecuteAction = ({
 					}
 					return
 				}
-				lastReducerValuesByEpicVatUpdaterKey[epicUpdaterKey] = reducerValues
+				lastReducerValuesByEpicVcetUpdaterKey[epicUpdaterKey] = reducerValues
 				const prevState = epicStateUpdate.state === undefined ? epicState.state : epicStateUpdate.state
 				const prevScope = epicStateUpdate.scope === undefined ? epicState.scope : epicStateUpdate.scope
 
@@ -959,7 +985,7 @@ const createExecuteAction = ({
 					values: reducerValues,
 					state: prevState,
 					scope: prevScope,
-					sourceAction,
+					sourceMsg,
 					changedActiveConditionsKeysMap: changedActiveConditionsKeys.reduce((m, k) => { m[k] = true; return m }, {}),
 					R: new ReducerResult(prevState, prevScope),
 				})
@@ -968,7 +994,7 @@ const createExecuteAction = ({
 				const scopeUpdated = prevScope !== result._scope
 
 				if (trace && executionLevelTrace) {
-					const updaters = getTraceUpdaters({ executionLevelTrace, subVat })
+					const updaters = getTraceUpdaters({ executionLevelTrace, subVcet })
 					const updaterTraceInfo: EpicUpdaterExecutionInfoType = {
 						updaterKey,
 						changedActiveConditionsKeys,
@@ -1030,15 +1056,15 @@ const createExecuteAction = ({
 
 				if (_sideEffects.length) {
 					_sideEffects.forEach(e => {
-						if (e.type === dispatchActionEffectType) {
-							// we dispatching action immediately as it may update state of same epic (e1) that requested action dispatch
+						if (e.type === dispatchMsgEffectType) {
+							// we dispatching msg immediately as it may update state of same epic (e1) that requested msg dispatch
 							// this way if some other epic(e2) has subscription to e1, e2 will we called only once, with latest updated epic state
-							const dispatchActionEffect: DispatchActionEffectType = (e: any)
-							const actionToDispatch: Object = dispatchActionEffect.action
+							const dispatchMsgEffect: DispatchMsgEffectType = (e: any)
+							const msgToDispatch: Object = dispatchMsgEffect.msg
 
-							actionToDispatch.initiatedByEpic = { updaterKey: e.updaterKey, type: subVat }
-							executeAction({
-								actionsChain: [dispatchActionEffect.action, ...actionsChain],
+							msgToDispatch.initiatedByEpic = { updaterKey: e.updaterKey, type: subVcet }
+							executeMsg({
+								msgsChain: [dispatchMsgEffect.msg, ...msgsChain],
 								conditionsValues,
 								prevConditionsValues,
 								conditionsValuesUpdate,
@@ -1046,14 +1072,14 @@ const createExecuteAction = ({
 								epicsStateUpdate,
 								effectManagersState,
 								effectManagersStateUpdate,
-								lastReducerValuesByEpicVatUpdaterKey,
+								lastReducerValuesByEpicVcetUpdaterKey,
 								messagesToSendOutside,
 								batchedDispatchBatches,
 								executionLevelTrace: trace && executionLevelTrace ? getNextLevelTrace({ executionLevelTrace,
-									subVat,
-									triggerAction: dispatchActionEffect.action }) : undefined,
+									subVcet,
+									triggerMsg: dispatchMsgEffect.msg }) : undefined,
 							})
-						} else if (e.type === dispatchBatchedActionsEffectType) {
+						} else if (e.type === dispatchBatchedMsgsEffectType) {
 							batchedDispatchBatches.push(...e.batches)
 						} else {
 							allEffects.push(e)
@@ -1066,16 +1092,16 @@ const createExecuteAction = ({
 				}
 			})
 			if (updaterKeysThatChangedState.length) {
-				const epicChangedAction: EpicStateChangedActionType = {
-					type: subVat,
+				const epicChangedEvent: EpicStateChangedEventType = {
+					type: subVcet,
 					value: epicStateUpdate.state,
 				}
 
 				if (updateReasons.length) {
-					epicChangedAction.updateReasons = updateReasons
+					epicChangedEvent.updateReasons = updateReasons
 				}
-				executeAction({
-					actionsChain: [epicChangedAction, ...actionsChain],
+				executeMsg({
+					msgsChain: [epicChangedEvent, ...msgsChain],
 					conditionsValues,
 					prevConditionsValues,
 					conditionsValuesUpdate,
@@ -1083,12 +1109,12 @@ const createExecuteAction = ({
 					epicsStateUpdate,
 					effectManagersState,
 					effectManagersStateUpdate,
-					lastReducerValuesByEpicVatUpdaterKey,
+					lastReducerValuesByEpicVcetUpdaterKey,
 					messagesToSendOutside,
 					batchedDispatchBatches,
 					executionLevelTrace: trace && executionLevelTrace ? getNextLevelTrace({ executionLevelTrace,
-						subVat,
-						triggerAction: epicChangedAction,
+						subVcet,
+						triggerMsg: epicChangedEvent,
 					}) : undefined,
 				})
 			}
@@ -1098,9 +1124,9 @@ const createExecuteAction = ({
 
 					switch (effectRequestType) {
 					case sendMsgOutsideEpicsEffectType: {
-						const sendMessageOusideOfEpicsEffect: SendMsgOutsideEpicsEffectType = (e: any)
+						const sendMsgOusideOfEpicsEffect: SendMsgOutsideEpicsEffectType = (e: any)
 
-						messagesToSendOutside.push(sendMessageOusideOfEpicsEffect.msg)
+						messagesToSendOutside.push(sendMsgOusideOfEpicsEffect.msg)
 						break
 					}
 					default: {
@@ -1110,7 +1136,7 @@ const createExecuteAction = ({
 						const state = (effectManagerStateUpdate && effectManagerStateUpdate.state) ? effectManagerStateUpdate.state : effectManagerState.state
 						const result = effectManager.onEffectRequest({
 							effect: e,
-							requesterEpicVat: subVat,
+							requesterEpicVcet: subVcet,
 							state,
 							scope: effectManagerState.scope,
 							dispatch,
@@ -1121,12 +1147,12 @@ const createExecuteAction = ({
 							effectManagersStateUpdate[effectRequestType] = { ...effectManagerStateUpdate, state: result._state }
 						}
 
-						result._actionsToDispatch.forEach(({ action, broadcast }) => {
+						result._msgsToDispatch.forEach(({ msg, broadcast }) => {
 							if (!broadcast) {
-								(action: any).targetEpicVatsMap = { [subVat]: true }
+								(msg: any).targetEpicVcetMap = { [subVcet]: true }
 							}
-							executeAction({
-								actionsChain: [action, ...actionsChain],
+							executeMsg({
+								msgsChain: [msg, ...msgsChain],
 								conditionsValues,
 								prevConditionsValues,
 								conditionsValuesUpdate,
@@ -1134,12 +1160,12 @@ const createExecuteAction = ({
 								epicsStateUpdate,
 								effectManagersState,
 								effectManagersStateUpdate,
-								lastReducerValuesByEpicVatUpdaterKey,
+								lastReducerValuesByEpicVcetUpdaterKey,
 								messagesToSendOutside,
 								batchedDispatchBatches,
 								executionLevelTrace: trace && executionLevelTrace ? getNextLevelTrace({ executionLevelTrace,
-									subVat,
-									triggerAction: action,
+									subVcet,
+									triggerMsg: msg,
 								}) : undefined,
 							})
 						})
@@ -1170,14 +1196,14 @@ const createExecuteAction = ({
 			}
 		})
 	}
-	return executeAction
+	return executeMsg
 }
 
-function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
+function computeInitialStates({ epicsArr, warn, executeMsg, trace }) {
 	const epicsState: EpicsStateType = epicsArr.reduce((state, epic) => {
 		return {
 			...state,
-			[epic.vat]: {
+			[epic.vcet]: {
 				updatersState: Object.keys(epic.updaters).reduce(
 					(s, updaterKey) => ({
 						...s,
@@ -1200,16 +1226,16 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 	const initialEpicsState: EpicsStateType = epicsArr
 		.filter(epic => epic.initialState !== undefined)
 		.reduce((epicsState: any, epic) => {
-			if (epicsStateUpdate[epic.vat] && epicsStateUpdate[epic.vat].state) {
+			if (epicsStateUpdate[epic.vcet] && epicsStateUpdate[epic.vcet].state) {
 				return epicsState
 			}
 			const messagesToSendOutside = []
-			const action = { type: epic.vat, value: epic.initialState }
+			const msg = { type: epic.vcet, value: epic.initialState }
 			const batchedDispatchBatches = []
-			const executionLevelTrace = { triggerAction: action, executedEpics: [] }
+			const executionLevelTrace = { triggerMsg: msg, executedEpics: [] }
 
-			executeAction({
-				actionsChain: [(action: EpicStateChangedActionType)],
+			executeMsg({
+				msgsChain: [(msg: EpicStateChangedEventType)],
 				conditionsValues,
 				prevConditionsValues: {},
 				conditionsValuesUpdate,
@@ -1217,7 +1243,7 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 				epicsStateUpdate,
 				effectManagersState: {},
 				effectManagersStateUpdate,
-				lastReducerValuesByEpicVatUpdaterKey: {},
+				lastReducerValuesByEpicVcetUpdaterKey: {},
 				messagesToSendOutside,
 				batchedDispatchBatches,
 				executionLevelTrace,
@@ -1226,19 +1252,19 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 				trace(executionLevelTrace)
 			}
 			if (messagesToSendOutside.length) {
-				const msg = 'epics should not send messages outside on initializing default state. use storeCreated.condition instead.'
+				const msg = 'epics should not send messages outside on initializing default state. use storeCreatedEvent.condition instead.'
 
 				warn(msg, messagesToSendOutside)
 				throw new Error(msg)
 			}
 			if (batchedDispatchBatches.length) {
-				const msg = 'epics should not then batched dispatch on initializing default state. use storeCreated.condition instead.'
+				const msg = 'epics should not then batched dispatch on initializing default state. use storeCreatedEvent.condition instead.'
 
 				warn(msg, batchedDispatchBatches)
 				throw new Error(msg)
 			}
 			if (Object.keys(effectManagersStateUpdate).length) {
-				const msg = 'effect managers should not be toched during intial state initialization. use storeCreated.condition instead.'
+				const msg = 'effect managers should not be toched during intial state initialization. use storeCreatedEvent.condition instead.'
 
 				warn(msg, effectManagersStateUpdate)
 				throw new Error(msg)
@@ -1252,8 +1278,8 @@ function computeInitialStates({ epicsArr, warn, executeAction, trace }) {
 			...conditionsValuesUpdate },
 	}
 }
-const createComputeOutsideState = ({ epicsVatToStateKeyMap }) => (state) => Object.keys(state).reduce((s, vat) => {
-	s[epicsVatToStateKeyMap[vat]] = state[vat].state
+const createComputeOutsideState = ({ epicsVcetToStateKeyMap }) => (state) => Object.keys(state).reduce((s, vcet) => {
+	s[epicsVcetToStateKeyMap[vcet]] = state[vcet].state
 	return s
 }, {})
 
@@ -1265,7 +1291,7 @@ function findRootCondition(condition: AnyConditionType): AnyConditionType {
 }
 
 function processConditionsSubscriptions(epics) {
-	const rootConditionsByActionType = {}
+	const rootConditionsByMsgType = {}
 
 	Object.keys(epics).forEach(epicKey => {
 		const epic = epics[epicKey]
@@ -1277,15 +1303,15 @@ function processConditionsSubscriptions(epics) {
 				const condition: AnyConditionType = updater.conditions[conditionKey]
 				const rootCondition = findRootCondition(condition)
 
-				if (!rootConditionsByActionType[rootCondition.actionType]) {
-					rootConditionsByActionType[rootCondition.actionType] = rootCondition
+				if (!rootConditionsByMsgType[rootCondition.messageType]) {
+					rootConditionsByMsgType[rootCondition.messageType] = rootCondition
 				}
 
 				if (!condition.subscriptions) {
 					condition.subscriptions = []
 				}
 				condition.subscriptions.push({
-					epicVat: epic.vat,
+					epicVcet: epic.vcet,
 					updaterKey,
 					conditionKey,
 					passive: condition.passive,
@@ -1294,7 +1320,7 @@ function processConditionsSubscriptions(epics) {
 		})
 	})
 
-	return rootConditionsByActionType
+	return rootConditionsByMsgType
 }
 function validateResetConditions(epics) {
 	Object.keys(epics).forEach(epicKey => {
@@ -1336,23 +1362,23 @@ function validateEpicConditions(epics) {
 			Object.keys(updater.conditions).forEach(conditionKey => {
 				const condition: AnyConditionType = updater.conditions[conditionKey]
 
-				if (epicsArray.some(e => e.vat === condition.actionType) && !condition.isEpicCondition) {
-					throw new Error(`${epicKey}.${updaterKey}.${conditionKey} has epic valueActionType: ${condition.actionType}, but was created as non epic condition`)
+				if (epicsArray.some(e => e.vcet === condition.messageType) && !condition.isEpicCondition) {
+					throw new Error(`${epicKey}.${updaterKey}.${conditionKey} has epic valueChangedEventType: ${condition.messageType}, but was created as non epic condition`)
 				}
-				if (!epicsArray.some(e => e.vat === condition.actionType) && condition.isEpicCondition) {
-					throw new Error(`${epicKey}.${updaterKey}.${conditionKey} was created as epic condition, but there is no epic registered with valueActionType: ${condition.actionType}`)
+				if (!epicsArray.some(e => e.vcet === condition.messageType) && condition.isEpicCondition) {
+					throw new Error(`${epicKey}.${updaterKey}.${conditionKey} was created as epic condition, but there is no epic registered with valueChangedEventType: ${condition.messageType}`)
 				}
 			})
 		})
 	})
 }
-type CreateConditionType = <V: Object>(actionType: string) => Condition<V>
-const globalRootConditionsByActionType = {}
+type CreateConditionType = <V: Object>(messageType: string) => Condition<V>
+const globalRootConditionsByMsgType = {}
 const globalSelectorsInUse = []
 const globalGuardsInUse = []
 
 function _createCondition({
-	actionType,
+	messageType,
 	passive,
 	optional,
 	selectorKey,
@@ -1376,9 +1402,9 @@ function _createCondition({
 		globalGuardsInUse.push(guard)
 	}
 	const condition: AnyConditionType = ({
-		valueKey: `${parentCondition ? parentCondition.valueKey : actionType}${selectorKey ? `.${selectorKey}` : ''}${selector ? (`.$$selector${ globalSelectorsInUse.indexOf(selector)}`) : ''}${guard ? `.$$guard${ globalGuardsInUse.indexOf(guard)}` : ''}`,
+		valueKey: `${parentCondition ? parentCondition.valueKey : messageType}${selectorKey ? `.${selectorKey}` : ''}${selector ? (`.$$selector${ globalSelectorsInUse.indexOf(selector)}`) : ''}${guard ? `.$$guard${ globalGuardsInUse.indexOf(guard)}` : ''}`,
 		parentCondition,
-		actionType,
+		messageType,
 		passive,
 		optional,
 		guard,
@@ -1465,16 +1491,18 @@ function _createCondition({
 		}
 	}
 	if (calledFromRoot) {
-		globalRootConditionsByActionType[actionType] = condition
+		globalRootConditionsByMsgType[messageType] = condition
 	}
+
+	condition.match = createConditionMatcher(condition)
 	return condition
 }
-function createCondition<V: Object> (actionType: string, isEpicCondition?: bool = false): Condition<V> {
-	if (globalRootConditionsByActionType[actionType]) {
-		return globalRootConditionsByActionType[actionType]
+function createCondition<V: Object> (messageType: string, isEpicCondition?: bool = false): Condition<V> {
+	if (globalRootConditionsByMsgType[messageType]) {
+		return globalRootConditionsByMsgType[messageType]
 	}
 	return (_createCondition({
-		actionType,
+		messageType,
 		passive: false,
 		optional: false,
 		resetConditionsByKeyKeys: null,
@@ -1483,17 +1511,17 @@ function createCondition<V: Object> (actionType: string, isEpicCondition?: bool 
 		isEpicCondition,
 	}, true): any)
 }
-function createEpicConditionReceiveFullAction<State>(vat: string): Condition<EpicValueActionType<State>> {
-	return createCondition<EpicValueActionType<State>>(vat, true)
+function createEpicConditionReceiveFullMsg<State>(vcet: string): Condition<EpicValueChangedEventType<State>> {
+	return createCondition<EpicValueChangedEventType<State>>(vcet, true)
 }
-function createEpicCondition<State>(vat: string): Condition<State> {
-	return createEpicConditionReceiveFullAction(vat).withSelectorKey('value')
+function createEpicCondition<State>(vcet: string): Condition<State> {
+	return createEpicConditionReceiveFullMsg(vcet).withSelectorKey('value')
 }
-function createEpicWithScope<S, SC, E, PC>({ vat, updaters, initialState, initialScope, pluginConfig }: CreateEpicWithScopePropsType<S, SC, E, PC>): EpicType<S, SC, E, PC> {
-	const c = createEpicCondition<S>(vat)
+function createEpicWithScope<S, SC, E, PC>({ vcet, updaters, initialState, initialScope, pluginConfig }: CreateEpicWithScopePropsType<S, SC, E, PC>): EpicType<S, SC, E, PC> {
+	const c = createEpicCondition<S>(vcet)
 
 	return ({
-		vat,
+		vcet,
 		updaters,
 		initialState,
 		initialScope,
@@ -1502,24 +1530,24 @@ function createEpicWithScope<S, SC, E, PC>({ vat, updaters, initialState, initia
 		pluginConfig,
 	})
 }
-function createEpic<S, E, PC>({ vat, updaters, initialState, pluginConfig }: CreateEpicPropsType<S, E, PC>): EpicType<S, void, E, PC> {
+function createEpic<S, E, PC>({ vcet, updaters, initialState, pluginConfig }: CreateEpicPropsType<S, E, PC>): EpicType<S, void, E, PC> {
 	return createEpicWithScope({
-		vat,
+		vcet,
 		updaters,
 		initialState,
 		initialScope: undefined,
 		pluginConfig,
 	})
 }
-const matchAnyActionCondition: Condition<typeof MatchAnyActionType> = createCondition(MatchAnyActionType)// TODO put correct annotation
+const matchAnyMsgCondition: Condition<typeof MatchAnyMsgType> = createCondition(MatchAnyMsgType)// TODO put correct annotation
 
 const createPluginStateKey = (key: string) => `plugin/${key}`
 
-function createEpicsSubStoresByVat(epics: { [string]: EpicType<*, *, *, *> }): { [epicKey: string]: EpicsStoreType<any> } {
+function createEpicsSubStoresByVcet(epics: { [string]: EpicType<*, *, *, *> }): { [epicKey: string]: EpicsStoreType<any> } {
 	return getObjectKeys(epics).reduce((result, epicKey) => {
 		const epic = epics[epicKey]
 
-		result[epic.vat] = createStore({ epics: { [epicKey]: epic }, isSubStore: true })
+		result[epic.vcet] = createStore({ epics: { [epicKey]: epic }, isSubStore: true })
 		return result
 	}, {})
 }
@@ -1561,13 +1589,13 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 	let messagesAccumulatedDuringBatchDispatch: Array<any> = []
 	let epicsStateChangedCallbackAfterBatchDispatchComplete: () => void = () => undefined
 
-	function dispatch(action: { type: any }, meta?: MetaType = ({}: any)) {
+	function dispatch(msg: { type: any }, meta?: MetaType = ({}: any)) {
 		const messagesToSendOutside = []
 		const epicsStateUpdate = {}
 		const effectManagersStateUpdate = {}
 
-		if (meta.targetEpicVats) {
-			(action: any).targetEpicVatsMap = meta.targetEpicVats.reduce(
+		if (meta.targetEpicVcet) {
+			(msg: any).targetEpicVcetMap = meta.targetEpicVcet.reduce(
 				(m,v) => {
 					m[v] = true
 					return m
@@ -1580,8 +1608,8 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		let updatedEffectManagersState
 		const batchedDispatchBatches = []
 
-		if (action.type === effectPromiseCompleteAT) {
-			const { effect, error, effectRequestType } = ((action: any): {| effect: {||}, effectRequestType: string, error: Error |})
+		if (msg.type === effectPromiseCompleteAT) {
+			const { effect, error, effectRequestType } = ((msg: any): {| effect: {||}, effectRequestType: string, error: Error |})
 			const effectManagerState = serviceState.effectManagers[effectRequestType]
 
 			effectManagersStateUpdate[effectRequestType] = {
@@ -1593,10 +1621,10 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			}
 		} else {
 			const conditionsValuesUpdate = {}
-			const executionLevelTrace = { triggerAction: action, executedEpics: [] }
+			const executionLevelTrace = { triggerMsg: msg, executedEpics: [] }
 
-			executeAction({
-				actionsChain: [action],
+			executeMsg({
+				msgsChain: [msg],
 				conditionsValues: serviceState.conditions,
 				prevConditionsValues: {},
 				conditionsValuesUpdate,
@@ -1604,7 +1632,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 				epicsStateUpdate,
 				effectManagersState: serviceState.effectManagers,
 				effectManagersStateUpdate,
-				lastReducerValuesByEpicVatUpdaterKey: {},
+				lastReducerValuesByEpicVcetUpdaterKey: {},
 				messagesToSendOutside,
 				batchedDispatchBatches,
 				executionLevelTrace,
@@ -1626,7 +1654,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			if (batchDispatchIsInProgress || !noBatchDispatchBatches) {
 				messagesAccumulatedDuringBatchDispatch.push(...messagesToSendOutside)
 			} else {
-				messagesToSendOutside.forEach(m => msgSubscribers.forEach(sub => sub(m)))
+				messagesToSendOutside.forEach(m => outMsgSubscribers.forEach(sub => sub(m)))
 			}
 		}
 		if (Object.keys(effectManagersStateUpdate).length) {
@@ -1642,10 +1670,10 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			if (devTools && Object.keys(epicsStateUpdate).length) {
 				let atLeastOneChange = false
 
-				Object.keys(epicsStateUpdate).forEach(vat => {
+				Object.keys(epicsStateUpdate).forEach(vcet => {
 					if (atLeastOneChange) return
-					const epicState = serviceState.epics[vat]
-					const epicStateUpdate = epicsStateUpdate[vat]
+					const epicState = serviceState.epics[vcet]
+					const epicStateUpdate = epicsStateUpdate[vcet]
 
 					if (
 						(epicStateUpdate.state !== undefined && !deepEqual(epicState.state, epicStateUpdate.state))
@@ -1656,7 +1684,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 					}
 				})
 				if (atLeastOneChange) {
-					devTools.send(action, nextServiceState)
+					devTools.send(msg, nextServiceState)
 				}
 			}
 			serviceState = nextServiceState
@@ -1666,23 +1694,23 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 
 				let atLeastOneChange = false
 
-				batchedDispatchBatches.forEach(({ actions, targetEpicVat }) => {
-					const epicSubStore = epicsSubStoresByVat[targetEpicVat]
+				batchedDispatchBatches.forEach(({ msgs, targetEpicVcet }) => {
+					const epicSubStore = epicsSubStoresByVcet[targetEpicVcet]
 
 					epicSubStore._setState({
-						epics: { [targetEpicVat]: serviceState.epics[targetEpicVat] },
+						epics: { [targetEpicVcet]: serviceState.epics[targetEpicVcet] },
 						conditions: {},
 						effectManagers: {},
 					})
-					actions.forEach(a => epicSubStore.dispatch(a))
+					msgs.forEach(a => epicSubStore.dispatch(a))
 
-					const currentEpicState = serviceState.epics[targetEpicVat]
-					const newEpicStateState = epicSubStore.getState()[targetEpicVat]
+					const currentEpicState = serviceState.epics[targetEpicVcet]
+					const newEpicStateState = epicSubStore.getState()[targetEpicVcet]
 
-					dispatch({ type: targetEpicVat, value: newEpicStateState })
+					dispatch({ type: targetEpicVcet, value: newEpicStateState })
 
 					if (currentEpicState.state !== newEpicStateState) {
-						serviceState.epics = { ...serviceState.epics, [targetEpicVat]: { ...currentEpicState, state: newEpicStateState } }
+						serviceState.epics = { ...serviceState.epics, [targetEpicVcet]: { ...currentEpicState, state: newEpicStateState } }
 						atLeastOneChange = true
 					}
 				})
@@ -1690,7 +1718,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 					onEpicsStateChange(serviceState.epics)
 				}
 
-				messagesAccumulatedDuringBatchDispatch.forEach(m => msgSubscribers.forEach(sub => sub(m)))
+				messagesAccumulatedDuringBatchDispatch.forEach(m => outMsgSubscribers.forEach(sub => sub(m)))
 				epicsStateChangedCallbackAfterBatchDispatchComplete()
 
 				batchDispatchIsInProgress = false
@@ -1733,42 +1761,42 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		})
 	})
 	epics = deepCopy(epics) // eslint-disable-line no-param-reassign
-	const epicsSubStoresByVat = isSubStore ? {} : createEpicsSubStoresByVat(epics)
+	const epicsSubStoresByVcet = isSubStore ? {} : createEpicsSubStoresByVcet(epics)
 
 	if (!isSubStore) {
-		validateUniqVats(epics)
+		validateUniqVcet(epics)
 		validateResetConditions(epics)
 		validateEpicConditions(epics)
 	}
 
-	const rootConditionsByActionType = processConditionsSubscriptions(epics)
+	const rootConditionsByMsgType = processConditionsSubscriptions(epics)
 
 	if (__DEV__) {
 		deepFreeze(epics)
 		deepFreeze(effectManagers)
 		deepFreeze(plugins)
 	}
-	const epicKeyByVat = getObjectKeys(epics).reduce((m, epicKey) => ({ ...m, [epics[epicKey].vat]: epicKey }), {})
+	const epicKeyByVcet = getObjectKeys(epics).reduce((m, epicKey) => ({ ...m, [epics[epicKey].vcet]: epicKey }), {})
 	const epicsArr = values(epics)
-	const epicsMapByVat = values(epics).reduce((a, e) => ({ ...a, [e.vat]: e }), {})
-	const executeAction = createExecuteAction({
+	const epicsMapByVcet = values(epics).reduce((a, e) => ({ ...a, [e.vcet]: e }), {})
+	const executeMsg = createExecuteMsg({
 		trace,
-		epicsMapByVat,
-		epicKeyByVat,
+		epicsMapByVcet,
+		epicKeyByVcet,
 		warn,
 		effectManagers,
 		dispatch,
-		rootConditionsByActionType,
+		rootConditionsByMsgType,
 	})
-	const epicsVatToStateKeyMap = Object.keys(epics).reduce((r, epicStateKey) => {
-		r[epics[epicStateKey].vat] = epicStateKey
+	const epicsVcetToStateKeyMap = Object.keys(epics).reduce((r, epicStateKey) => {
+		r[epics[epicStateKey].vcet] = epicStateKey
 		return r
 	}, {})
-	const computeOutsideState = createComputeOutsideState({ epicsVatToStateKeyMap })
+	const computeOutsideState = createComputeOutsideState({ epicsVcetToStateKeyMap })
 	const { initialEpicsState, initialCondtionsValues } = computeInitialStates({
 		epicsArr,
 		warn,
-		executeAction,
+		executeMsg,
 		trace,
 	})
 
@@ -1789,7 +1817,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		}, [])
 	}
 	const stateChangedSubscribers = []
-	const msgSubscribers = []
+	const outMsgSubscribers = []
 
 	if (debug && devToolsConfig && typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__) {
 		devTools = window.__REDUX_DEVTOOLS_EXTENSION__.connect({ ...devToolsConfig, name: 'service' })
@@ -1802,7 +1830,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		devTools.init(serviceState)
 	}
 	if (!isSubStore) {
-		dispatch(storeCreated.ac())
+		dispatch(storeCreatedEvent.create())
 	}
 
 	let storeReplacement
@@ -1814,16 +1842,16 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			if (storeReplacement) return storeReplacement._getServiceState()
 			return serviceState
 		},
-		_getNextStateForActionWithoutUpdatingStoreState: (action) => {
+		_getNextStateForMsgWithoutUpdatingStoreState: (msg) => {
 			if (storeReplacement) {
-				return storeReplacement._getNextStateForActionWithoutUpdatingStoreState(action)
+				return storeReplacement._getNextStateForMsgWithoutUpdatingStoreState(msg)
 			}
 			const epicsStateUpdate = {}
 			const conditionsValuesUpdate = {}
 			const effectManagersStateUpdate = {}
 
-			executeAction({
-				actionsChain: [action],
+			executeMsg({
+				msgsChain: [msg],
 				conditionsValues: serviceState.conditions,
 				prevConditionsValues: {},
 				conditionsValuesUpdate,
@@ -1831,7 +1859,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 				epicsStateUpdate,
 				effectManagersState: serviceState.effectManagers,
 				effectManagersStateUpdate,
-				lastReducerValuesByEpicVatUpdaterKey: {},
+				lastReducerValuesByEpicVcetUpdaterKey: {},
 				messagesToSendOutside: [],
 				batchedDispatchBatches: [],
 				executionLevelTrace: undefined,
@@ -1859,13 +1887,13 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			storeReplacement = createStore(creaceEpicsStoreConfig)
 			storeReplacement._setState(currentState)
 			stateChangedSubscribers.forEach(sub => storeReplacement.subscribeOnStateChange(sub))
-			msgSubscribers.forEach(sub => storeReplacement.subscribeOnMessage(sub))
+			outMsgSubscribers.forEach(sub => storeReplacement.subscribeOutMsg(sub))
 			// TODO dispose side effects
 		},
 		resetToInitialState: () => {
 			serviceState = initialState
 		},
-		dispatch: (a: AnyActionType, meta?: MetaType) => {
+		dispatch: (a: AnyMsgType, meta?: MetaType) => {
 			if (storeReplacement) {
 				return storeReplacement.dispatch(a, meta)
 			}
@@ -1889,56 +1917,57 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			}
 			stateChangedSubscribers.push(subscriber)
 		},
-		subscribeOnMessage: sub => {
+		// subscribe to messages that can be send from epics to 3rd party
+		subscribeOutMsg: sub => {
 			if (storeReplacement) {
-				storeReplacement.subscribeOnStateChange(sub)
+				storeReplacement.subscribeOutMsg(sub)
 			}
-			msgSubscribers.push(sub)
+			outMsgSubscribers.push(sub)
 		},
 		warn,
 	}
 }
-function makeActionCreatorAndCondition<ActionExtraFields>(actionType: string): {|
-	ac: ActionExtraFields => {| ...ActionExtraFields, type: string |},
-	actionCreator: ActionExtraFields => {| ...ActionExtraFields, type: string |},
-	c: Condition<{| ...ActionExtraFields, type: string |}>,
-	condition: Condition<{| ...ActionExtraFields, type: string |}>,
+
+function makeMsg<MsgExtraFields>(messageType: string): {|
+	create: MsgExtraFields => {| ...MsgExtraFields, type: string |},
+	condition: Condition<{| ...MsgExtraFields, type: string |}>,
+	match: AnyMsgType => {| ...MsgExtraFields, type: string |} | void,
 	type: string,
 |} {
-	const actionCreator = extraFields => ({ type: actionType, ...extraFields })
-	const condition = createCondition(actionType)
+	const create = extraFields => ({ type: messageType, ...extraFields })
+	const condition = createCondition(messageType)
 
 	return ({
-		actionCreator,
+		create,
 		condition,
-		ac: actionCreator,
-		c: condition,
-		type: actionType,
+		match: createConditionMatcher(condition),
+		type: messageType,
 	})
 }
-function makeSimpleActionCreatorAndCondition(actionType: string): {|
-	ac: () => {| type: string |},
-	actionCreator: () => {| type: string |},
-	c: Condition<{| type: string |}>,
+
+function makeSimpleMsg(messageType: string): {|
+	create: () => {| type: string |},
 	condition: Condition<{| type: string |}>,
+	match: AnyMsgType => {| type: string |} | void,
 	type: string,
 |} {
-	const actionCreator = () => ({ type: actionType })
-	const condition = createCondition(actionType)
+	const create = () => ({ type: messageType })
+	const condition = createCondition(messageType)
 
 	return ({
-		actionCreator,
+		create,
 		condition,
-		ac: actionCreator,
-		c: condition,
-		type: actionType,
+		match: createConditionMatcher(condition),
+		type: messageType,
 	})
 }
 
-const makeSACnC = makeSimpleActionCreatorAndCondition
-const makeACnC = makeActionCreatorAndCondition
+const makeSimpleEvent = makeSimpleMsg
+const makeEvent = makeMsg
+const makeSimpleCommand = makeSimpleMsg
+const makeCommand = makeMsg
 
-const storeCreated = makeSimpleActionCreatorAndCondition('@STORE_CREATED')
+const storeCreatedEvent = makeSimpleEvent('@STORE_CREATED')
 
 export type { // eslint-disable-line import/group-exports
 	Condition,
@@ -1953,22 +1982,22 @@ export type { // eslint-disable-line import/group-exports
 	PluginType,
 	AnyValueType,
 	AnyConditionType,
-	AnyActionType,
+	AnyMsgType,
 }
 
 export { // eslint-disable-line import/group-exports
-	makeSimpleActionCreatorAndCondition,
-	makeSACnC,
-	makeActionCreatorAndCondition,
-	makeACnC,
+	makeSimpleEvent,
+	makeEvent,
+	makeSimpleCommand,
+	makeCommand,
 	createEpic,
 	createEpicWithScope,
-	matchAnyActionCondition,
+	matchAnyMsgCondition,
 	createStore,
-	dispatchActionEffectCreator,
+	dispatchMsgEffectCreator,
 	daEC,
-	dispatchBatchedActionsEffectCreator,
-	sendMessageOutsideEpicsEffectCreator,
+	dispatchBatchedMsgsEffectCreator,
+	sendMsgOutsideEpicsEffectCreator,
 	createCondition,
 	createEpicCondition,
 	createUpdater,
@@ -1976,7 +2005,8 @@ export { // eslint-disable-line import/group-exports
 	deepCopy,
 	deepEqual,
 	traceToString,
-	storeCreated,
+	storeCreatedEvent,
 	createPluginStateKey,
 	getObjectKeys,
+	createConditionMatcher,
 }

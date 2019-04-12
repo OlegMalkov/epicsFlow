@@ -4,8 +4,8 @@ import {
 	dlSelectComponentByClick,
 } from '../../../websitebuilder/src/tests/domainLanguage/componentDL'
 import {
-	templateAreaMouseDown,
-} from '../../../websitebuilder/src/components/template/templateACnC'
+	templateAreaMouseDownEvent,
+} from '../../../websitebuilder/src/components/template/templateEvents'
 
 const store = reduxWsbStore
 
@@ -14,13 +14,13 @@ beforeEach(() => {
 })
 
 describe('component', () => {
-	it('got selected on componentMouseDown + windowMouseUp', () => {
+	it('got selected on componentMouseDownEvent + windowMouseUpEvent', () => {
 		dlSelectComponentByClick(store)
 		expect(store.getState().component.state.selected).toBe(true)
 	})
-	it('got deselected on templateAreaMouseDown', () => {
+	it('got deselected on templateAreaMouseDownEvent', () => {
 		dlSelectComponentByClick(store)
-		store.dispatch(templateAreaMouseDown.ac())
+		store.dispatch(templateAreaMouseDownEvent.create())
 		expect(store.getState().component.state.selected).toBe(false)
 	})
 })

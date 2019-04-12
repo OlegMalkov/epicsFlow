@@ -1,54 +1,54 @@
 // @flow strict
 
-import { makeActionCreatorAndCondition, createEffectManager } from '../epics'
+import { makeEvent, createEffectManager } from '../epics'
 
-type StateType = {| requestsByEpicVat: { [vat: string]: Request } |}
-type ScopeType = {| resolvePromiseByEpicVat: { [vat: string]: () => void } |}
+type StateType = {| requestsByEpicVcet: { [vcet: string]: Request } |}
+type ScopeType = {| resolvePromiseByEpicVcet: { [vcet: string]: () => void } |}
 type RequestAnimationFrameEffectType = {| cmd: 'REQUEST' | 'CANCEL', type: typeof requestType |}
 
-const animationFrame = makeActionCreatorAndCondition<{| dateNow: number |}>('ANIMATION_FRAME')
+const animationFrame = makeEvent<{| dateNow: number |}>('ANIMATION_FRAME')
 const requestType: 'request_animation_frame_effect' = 'request_animation_frame_effect'
 const requestAnimationFrameEC = (): RequestAnimationFrameEffectType => ({ type: requestType, cmd: 'REQUEST' })
 const cancelAnimationFrameEC = (): RequestAnimationFrameEffectType => ({	type: requestType, cmd: 'CANCEL' })
 
 const requestAnimationFrameEM = createEffectManager<RequestAnimationFrameEffectType, StateType, ScopeType>({
 	requestType,
-	initialState: { requestsByEpicVat: {} },
-	initialScope: { resolvePromiseByEpicVat: {} },
-	onEffectRequest: ({ effect, requesterEpicVat, state, scope, dispatch, R }) => {
+	initialState: { requestsByEpicVcet: {} },
+	initialScope: { resolvePromiseByEpicVcet: {} },
+	onEffectRequest: ({ effect, requesterEpicVcet, state, scope, dispatch, R }) => {
 		if (effect.cmd === 'REQUEST') {
 			let rafId
 			const promise = new Promise((resolve) => {
 				const resolvePromise = () => {
-					delete scope.resolvePromiseByEpicVat[requesterEpicVat]
+					delete scope.resolvePromiseByEpicVcet[requesterEpicVcet]
 					resolve()
 				}
 
 				rafId = window.requestAnimationFrame(() => {
-					dispatch(animationFrame.ac({ dateNow: Date.now() }), { targetEpicVats: [requesterEpicVat] })
+					dispatch(animationFrame.create({ dateNow: Date.now() }), { targetEpicVcet: [requesterEpicVcet] })
 					resolvePromise()
 				})
-				scope.resolvePromiseByEpicVat[requesterEpicVat] = resolvePromise
+				scope.resolvePromiseByEpicVcet[requesterEpicVcet] = resolvePromise
 			})
 
 			return R
 				.withEffectPromise(promise)
 				.mapState(() => ({
 					...state,
-					requestsByEpicVat: {
-						...state.requestsByEpicVat,
-						[requesterEpicVat]: rafId,
+					requestsByEpicVcet: {
+						...state.requestsByEpicVcet,
+						[requesterEpicVcet]: rafId,
 					},
 				}))
 		} else if (effect.cmd === 'CANCEL') {
-			window.cancelAnimationFrame(state.requestsByEpicVat[requesterEpicVat])
-			scope.resolvePromiseByEpicVat[requesterEpicVat]()
+			window.cancelAnimationFrame(state.requestsByEpicVcet[requesterEpicVcet])
+			scope.resolvePromiseByEpicVcet[requesterEpicVcet]()
 
 			return R.mapState(() => ({
 				...state,
-				requestsByEpicVat: {
-					...state.requestsByEpicVat,
-					[requesterEpicVat]: null,
+				requestsByEpicVcet: {
+					...state.requestsByEpicVcet,
+					[requesterEpicVcet]: null,
 				},
 			}))
 		}

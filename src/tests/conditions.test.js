@@ -21,7 +21,7 @@ const aovnC = aoC.wsk('v').wsk('n')
 describe('given', () => {
 	it('can chain selectors', () => {
 		const e1 = createEpic<number, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: 1,
 			updaters: {
 				nChanged: createUpdater({
@@ -54,7 +54,7 @@ describe('given', () => {
 
 	it('condition .withSelector works', () => {
 		const e1 = createEpic<number, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: 0,
 			updaters: {
 				nChanged: createUpdater({
@@ -78,7 +78,7 @@ describe('given', () => {
 
 	it('condition .withSelector + .withGuard works', () => {
 		const e1 = createEpic<number, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: 0,
 			updaters: {
 				nChanged: createUpdater({
@@ -109,7 +109,7 @@ describe('given', () => {
 
 	it('condition .withGuard + .toOptional works', () => {
 		const e1 = createEpic<number, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: 0,
 			updaters: {
 				nChanged: createUpdater({
@@ -140,7 +140,7 @@ describe('given', () => {
 
 	it('condition .withGuard + .withSelector works', () => {
 		const e1 = createEpic<number, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: 0,
 			updaters: {
 				nChanged: createUpdater({
@@ -171,7 +171,7 @@ describe('given', () => {
 
 	it('calls once if selector return same value by ref compare', () => {
 		const e1 = createEpic<number, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: 1,
 			updaters: {
 				nChanged: createUpdater({
@@ -191,7 +191,7 @@ describe('given', () => {
 
 	it('calls twice if selector return different values by ref compare', () => {
 		const e1 = createEpic<number, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: 1,
 			updaters: {
 				nChanged: createUpdater({
@@ -209,9 +209,9 @@ describe('given', () => {
 		expect(store.getState().e1).toBe(11)
 	})
 
-	it('calls twice if no selector present, even same action reference dispatched twice', () => {
+	it('calls twice if no selector present, even same event reference dispatched twice', () => {
 		const e1 = createEpic<number, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: 1,
 			updaters: {
 				nChanged: createUpdater({
@@ -222,10 +222,10 @@ describe('given', () => {
 			},
 		})
 		const store = createStore({ epics: { e1 }	})
-		const action = aAC(5)
+		const event = aAC(5)
 
-		store.dispatch(action)
-		store.dispatch(action)
+		store.dispatch(event)
+		store.dispatch(event)
 
 		expect(store.getState().e1).toBe(3)
 	})
@@ -287,7 +287,7 @@ describe('given', () => {
 		const aGC = aC.wg(({ o }) => o.flag)
 		const aoGC = aGC.wsk('o').wg(({ v }) => v.flag)
 		const e1 = createEpic<number, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: 0,
 			updaters: {
 				nChanged: createUpdater({
@@ -323,7 +323,7 @@ describe('given', () => {
 
 	it('it is possible to have different guards for root level', () => {
 		const e1 = createEpic<number, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: 0,
 			updaters: {
 				aChangedWhenNMoreThan5: createUpdater({
@@ -369,7 +369,7 @@ describe('given', () => {
 
 	it('it is possible to have different guards for not root level', () => {
 		const e1 = createEpic<number, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: 0,
 			updaters: {
 				nMoreThan5: createUpdater({
@@ -416,7 +416,7 @@ describe('given', () => {
 	it('can use prevValue inside selector of condition', () => {
 		const nDiffC = aC.ws((value, prevValue) => prevValue ? value.o.v.n - prevValue.o.v.n : 0)
 		const e1 = createEpic<number, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: 0,
 			updaters: {
 				nChanged: createUpdater({
@@ -444,10 +444,10 @@ describe('given', () => {
 		expect(store.getState().e1).toBe(35)
 	})
 
-	it('if epic is changed multiple times during same action, but condition changed only once, updater should be called only once', () => {
+	it('if epic is changed multiple times during same event, but condition changed only once, updater should be called only once', () => {
 		const aC = createCondition<AType>(a)
 		const e1 = createEpic<{| flag: bool, value: number |}, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: { value: 0, flag: false },
 			updaters: {
 				nChanged: createUpdater({
@@ -463,12 +463,12 @@ describe('given', () => {
 			},
 		})
 		const e2 = createEpic<number, empty, empty>({
-			vat: 'e2',
+			vcet: 'e2',
 			initialState: 0,
 			updaters: {
 				e1Changed: createUpdater({
 					given: {},
-					when: { e1: e1.c.wsk('flag') },
+					when: { e1: e1.condition.wsk('flag') },
 					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 			},
@@ -480,5 +480,5 @@ describe('given', () => {
 	})
 
 	// TODO resetAllConditionsAfterThis
-	// TODO matchAnyActionCondition
+	// TODO matchAnyMsgCondition
 })

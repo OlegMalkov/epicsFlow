@@ -5,12 +5,12 @@ import {
 	createCondition,
 	createEpicCondition,
 	createUpdater,
-	dispatchActionEffectCreator,
+	dispatchMsgEffectCreator,
 	type BuiltInEffectType,
 } from '../epics'
 
 describe('sequence', () => {
-	it('simple actions sequence', () => {
+	it('simple msgs sequence', () => {
 		type StateType = {| a: number |}
 		const x = 'x'
 		const xAC = value => ({ type: x, value })
@@ -21,7 +21,7 @@ describe('sequence', () => {
 
 
 		const e1 = createEpic<StateType, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: { a: 0 },
 			updaters: {
 				a: createUpdater<StateType, *, *, *, *>({
@@ -45,7 +45,7 @@ describe('sequence', () => {
 		const a = 'a'
 		const aC = createCondition(a)
 		const e1 = createEpic<number, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: 1,
 			updaters: {
 				a: createUpdater<number, *, *, *, *>({
@@ -56,7 +56,7 @@ describe('sequence', () => {
 			},
 		})
 		const e2 = createEpic<number, empty, empty>({
-			vat: 'e2',
+			vcet: 'e2',
 			initialState: 1,
 			updaters: {
 				a: createUpdater<number, *, *, *, *>({
@@ -67,12 +67,12 @@ describe('sequence', () => {
 			},
 		})
 		const e3 = createEpic<number, empty, empty>({
-			vat: 'e3',
+			vcet: 'e3',
 			initialState: 0,
 			updaters: {
 				e1ORe2Changed: createUpdater<number, *, *, *, *>({
 					given: {},
-					when: { e1: e1.c, e2: e2.c },
+					when: { e1: e1.condition, e2: e2.condition },
 					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 			},
@@ -90,7 +90,7 @@ describe('sequence', () => {
 		const a = 'a'
 		const aC = createCondition<{ type: 'a' }>(a)
 		const e1 = createEpic<StateType, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: { a: 1, b: 1 },
 			updaters: {
 				a: createUpdater<StateType, *, *, *, *>({
@@ -101,14 +101,14 @@ describe('sequence', () => {
 			},
 		})
 		const e2 = createEpic<number, empty, empty>({
-			vat: 'e2',
+			vcet: 'e2',
 			initialState: 0,
 			updaters: {
 				aORb: createUpdater<number, *, *, *, *>({
 					given: {},
 					when: {
-						_a: e1.c.wsk('a'),
-						_b: e1.c.wsk('b'),
+						_a: e1.condition.wsk('a'),
+						_b: e1.condition.wsk('b'),
 					},
 					then: ({ R }) => R.mapState(state => state + 1),
 				}),
@@ -126,7 +126,7 @@ describe('sequence', () => {
 		const a = 'a'
 		const aC = createCondition(a)
 		const e1 = createEpic<{| i: string, m: { [string]: {| kind: string |} } |}, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: { m: { x: { kind: 'dummy' } }, i: 'x' },
 			updaters: {
 				a: createUpdater<{| i: string, m: { [string]: {| kind: string |} } |}, *, *, *, *>({
@@ -137,23 +137,23 @@ describe('sequence', () => {
 			},
 		})
 		const e2 = createEpic<Array<string>, empty, empty>({
-			vat: 'e2',
+			vcet: 'e2',
 			initialState: [],
 			updaters: {
 				e1m: createUpdater<Array<string>, *, *, *, *>({
 					given: {},
-					when: { e1m: e1.c.wsk('m') },
+					when: { e1m: e1.condition.wsk('m') },
 					then: ({ values: { e1m }, R }) => R.mapState(() => Object.keys(e1m)),
 				}),
 			},
 		})
 		const e3 = createEpic<string, empty, empty>({
-			vat: 'e3',
+			vcet: 'e3',
 			initialState: '',
 			updaters: {
 				e1iORe2Changed: createUpdater<string, *, *, *, *>({
-					given: { e1mRO: e1.c.wsk('m') },
-					when: { e1i: e1.c.wsk('i'), e2: e2.c },
+					given: { e1mRO: e1.condition.wsk('m') },
+					when: { e1i: e1.condition.wsk('i'), e2: e2.condition },
 					then: ({ values: { e1mRO, e1i, e2 }, R }) => R.mapState(state => state + e1i + e1mRO[e1i].kind + e2.length),
 				}),
 			},
@@ -170,7 +170,7 @@ describe('sequence', () => {
 		const a = 'a'
 		const aC = createCondition(a)
 		const e1 = createEpic<{| i: string, m: { [string]: {| kind: string |} } |}, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: { m: { x: { kind: 'dummy' } }, i: 'x' },
 			updaters: {
 				a: createUpdater<{| i: string, m: { [string]: {| kind: string |} } |}, *, *, *, *>({
@@ -181,23 +181,23 @@ describe('sequence', () => {
 			},
 		})
 		const e2 = createEpic<Array<string>, empty, empty>({
-			vat: 'e2',
+			vcet: 'e2',
 			initialState: [],
 			updaters: {
 				e1m: createUpdater<Array<string>, *, *, *, *>({
 					given: {},
-					when: { e1m: e1.c.wsk('m') },
+					when: { e1m: e1.condition.wsk('m') },
 					then: ({ values: { e1m }, R }) => R.mapState(() => Object.keys(e1m)),
 				}),
 			},
 		})
 		const e3 = createEpic<string, empty, empty>({
-			vat: 'e3',
+			vcet: 'e3',
 			initialState: '',
 			updaters: {
 				e1iORe2Changed: createUpdater<string, *, *, *, *>({
 					given: {},
-					when: { e1mRO: e1.c.wsk('m'), e1i: e1.c.wsk('i'), e2: e2.c },
+					when: { e1mRO: e1.condition.wsk('m'), e1i: e1.condition.wsk('i'), e2: e2.condition },
 					then: ({ values: { e1mRO, e1i, e2 }, R }) => R.mapState(state => state + e1i + e1mRO[e1i].kind + e2.length),
 				}),
 			},
@@ -215,7 +215,7 @@ describe('sequence', () => {
 		const aC = createCondition(a)
 		const e1C = createEpicCondition<{| i: string, m: number, n: number |}>('e1')
 		const e1 = createEpic<{| i: string, m: number, n: number |}, empty, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: { n: 0, m: 0, i: 'x' },
 			updaters: {
 				a: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
@@ -236,17 +236,17 @@ describe('sequence', () => {
 			},
 		})
 		const e2 = createEpic<{| a: string, b: string |}, empty, empty>({
-			vat: 'e2',
+			vcet: 'e2',
 			initialState: { a: '', b: '' },
 			updaters: {
 				e1: createUpdater<{| a: string, b: string |}, *, *, *, *>({
 					given: {},
-					when: { e1: e1.c },
+					when: { e1: e1.condition },
 					then: ({ values: { e1 }, R }) => R.mapState(state => ({ ...state, a: state.a + e1.i })),
 				}),
 				e1n: createUpdater<{| a: string, b: string |}, *, *, *, *>({
 					given: {},
-					when: { n: e1.c.wsk('n') },
+					when: { n: e1.condition.wsk('n') },
 					then: ({ values: { n }, R }) => R.mapState(state => ({ ...state, b: state.b + n })),
 				}),
 			},
@@ -259,7 +259,7 @@ describe('sequence', () => {
 		expect(store.getState().e2).toEqual({ a: 'xx1', b: '01' })
 	})
 
-	it('when e1 dispatch action and e1 has condition for this action, e2 should be called only once', () => {
+	it('when e1 dispatch event and e1 has condition for this event, e2 should be called only once', () => {
 		const a = 'a'
 		const b = 'b'
 		const x = 'x'
@@ -267,14 +267,14 @@ describe('sequence', () => {
 		const bC = createCondition(b)
 		const xCondition = createCondition(x)
 		const e1 = createEpic<{| i: string, m: number, n: number |}, BuiltInEffectType, empty>({
-			vat: 'e1',
+			vcet: 'e1',
 			initialState: { n: 0, m: 0, i: 'x' },
 			updaters: {
 				a: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
 					given: {},
 					when: { whatever: aC },
 					then: ({ R }) => R
-						.sideEffect(dispatchActionEffectCreator({ type: b }))
+						.sideEffect(dispatchMsgEffectCreator({ type: b }))
 						.mapState(state => ({ ...state, n: state.n + 1 })),
 				}),
 				b: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
@@ -282,7 +282,7 @@ describe('sequence', () => {
 					when: { b: bC },
 					then: ({ R }) => R
 						.mapState(state => ({ ...state, m: state.m + 1 }))
-						.sideEffect(dispatchActionEffectCreator({ type: x })),
+						.sideEffect(dispatchMsgEffectCreator({ type: x })),
 				}),
 				x: createUpdater<{| i: string, m: number, n: number |}, *, *, *, *>({
 					given: {},
@@ -292,17 +292,17 @@ describe('sequence', () => {
 			},
 		})
 		const e2 = createEpic<{| a: string, b: string |}, empty, empty>({
-			vat: 'e2',
+			vcet: 'e2',
 			initialState: { a: '', b: '' },
 			updaters: {
 				e1: createUpdater<{| a: string, b: string |}, *, *, *, *>({
 					given: {},
-					when: { e1: e1.c },
+					when: { e1: e1.condition },
 					then: ({ values: { e1 }, R }) => R.mapState(state => ({ ...state, a: state.a + e1.i })),
 				}),
 				e1n: createUpdater<{| a: string, b: string |}, *, *, *, *>({
 					given: {},
-					when: { n: e1.c.wsk('n') },
+					when: { n: e1.condition.wsk('n') },
 					then: ({ values: { n }, R }) => R.mapState(state => ({ ...state, b: state.b + n })),
 				}),
 			},

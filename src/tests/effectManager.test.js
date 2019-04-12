@@ -4,24 +4,24 @@ import {
 	createEpic,
 	createUpdater,
 	createStore,
-	makeSimpleActionCreatorAndCondition,
+	makeSimpleEvent,
 	type BuiltInEffectType,
-	storeCreated,
-	dispatchBatchedActionsEffectCreator,
+	storeCreatedEvent,
+	dispatchBatchedMsgsEffectCreator,
 } from '../epics'
 import { type RequestAnimationFrameEffectType, animationFrame, requestAnimationFrameEM, requestAnimationFrameEC } from '../effectManagers/requestAnimationFrameEM'
 import { waitEffectManagers } from './utils'
 
 type CustomEpicEffectType = RequestAnimationFrameEffectType
 
-const a = makeSimpleActionCreatorAndCondition('A')
-const b = makeSimpleActionCreatorAndCondition('B')
+const a = makeSimpleEvent('A')
+const b = makeSimpleEvent('B')
 
 describe('effectManager', () => {
 	it('only epic that requested effect can receive response from effect manager (animation frame)', async () => {
 		const
 			e1 = createEpic<number, CustomEpicEffectType, empty>({
-				vat: 'e1',
+				vcet: 'e1',
 				initialState: 0,
 				updaters: {
 					af: createUpdater({
@@ -34,12 +34,12 @@ describe('effectManager', () => {
 
 
 		const e2 = createEpic<number, CustomEpicEffectType, empty>({
-			vat: 'e2',
+			vcet: 'e2',
 			initialState: 0,
 			updaters: {
 				a: createUpdater({
 					given: {},
-					when: { _a: a.c },
+					when: { _a: a.condition },
 					then: ({ R }) => R.sideEffect(requestAnimationFrameEC()),
 				}),
 				af: createUpdater({
@@ -58,7 +58,7 @@ describe('effectManager', () => {
 			epics: { e1, e2 },
 		})
 
-		store.dispatch(a.ac())
+		store.dispatch(a.create())
 		await waitEffectManagers(store)
 
 		expect(store.getState().e1).toBe(0)
@@ -67,15 +67,15 @@ describe('effectManager', () => {
 	it.only('can then batched dispach', async () => {
 		const
 			e1 = createEpic<number, BuiltInEffectType, empty>({
-				vat: 'e1',
+				vcet: 'e1',
 				initialState: 0,
 				updaters: {
 					storeCreatedOrB: createUpdater({
 						given: {},
-						when: { _: storeCreated.condition.to(), _b: b.c.to() },
-						then: ({ R }) => R.sideEffect(dispatchBatchedActionsEffectCreator([
-							{ actions: [a.ac(), a.ac()], targetEpicVat: 'e2' },
-							{ actions: [a.ac(), a.ac(), a.ac()], targetEpicVat: 'e3' },
+						when: { _: storeCreatedEvent.condition.to(), _b: b.condition.to() },
+						then: ({ R }) => R.sideEffect(dispatchBatchedMsgsEffectCreator([
+							{ msgs: [a.create(), a.create()], targetEpicVcet: 'e2' },
+							{ msgs: [a.create(), a.create(), a.create()], targetEpicVcet: 'e3' },
 						])),
 					}),
 				},
@@ -83,56 +83,56 @@ describe('effectManager', () => {
 
 
 		const e2 = createEpic<number, BuiltInEffectType, empty>({
-			vat: 'e2',
+			vcet: 'e2',
 			initialState: 0,
 			updaters: {
 				a: createUpdater({
 					given: {},
-					when: { _a: a.c },
+					when: { _a: a.condition },
 					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 				b: createUpdater({
 					given: {},
-					when: { _a: b.c },
+					when: { _a: b.condition },
 					then: ({ R }) => R.mapState(() => 10),
 				}),
 			},
 		})
 
 		const e3 = createEpic<number, BuiltInEffectType, empty>({
-			vat: 'e3',
+			vcet: 'e3',
 			initialState: 0,
 			updaters: {
 				a: createUpdater({
 					given: {},
-					when: { _a: a.c },
+					when: { _a: a.condition },
 					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 				b: createUpdater({
 					given: {},
-					when: { _b: b.c },
+					when: { _b: b.condition },
 					then: ({ R }) => R.mapState(() => 10),
 				}),
 			},
 		})
 
 		const e4 = createEpic<number, BuiltInEffectType, empty>({
-			vat: 'e4',
+			vcet: 'e4',
 			initialState: 0,
 			updaters: {
 				e2: createUpdater({
 					given: {},
-					when: { e2: e2.c },
+					when: { e2: e2.condition },
 					then: ({ values: { e2 }, R }) => R.mapState(state => state + e2),
 				}),
 				e3: createUpdater({
 					given: {},
-					when: { e3: e3.c },
+					when: { e3: e3.condition },
 					then: ({ values: { e3 }, R }) => R.mapState(state => state + e3),
 				}),
 				b: createUpdater({
 					given: {},
-					when: { _b: b.c },
+					when: { _b: b.condition },
 					then: ({ R }) => R.mapState(() => 0),
 				}),
 			},
@@ -156,7 +156,7 @@ describe('effectManager', () => {
 			storeStateChangedCounter = storeStateChangedCounter + 1
 		})
 
-		store.dispatch(b.ac())
+		store.dispatch(b.create())
 
 		expect(storeStateChangedCounter).toBe(1)
 

@@ -1,9 +1,8 @@
 // @flow strict
 import { type LTPositionType } from '../../websitebuilder/src/types'
 import { setProp } from '../../../src/utils'
-import { matchCondition } from './utils'
-import { windowMousePositionCondition } from '../../websitebuilder/src/globalACAC'
-import { type AnyActionType } from '../../../src/epics'
+import { windowMousePositionCondition } from '../../websitebuilder/src/globalEvents'
+import { type AnyMsgType } from '../../../src/epics'
 
 opaque type ScopeType: {| mousePosition: * |} = {|
 	mousePosition: LTPositionType,
@@ -14,10 +13,9 @@ const initialScope: ScopeType = {
 }
 
 const setMousePosition = setProp<ScopeType, *>('mousePosition')
-const matchMousePosition = matchCondition(windowMousePositionCondition)
 
-const scopeReducer = (state: ScopeType = initialScope, action: AnyActionType): ScopeType => {
-	const mousePosition = matchMousePosition(action)
+const scopeReducer = (state: ScopeType = initialScope, event: AnyMsgType): ScopeType => {
+	const mousePosition = windowMousePositionCondition.match(event)
 
 	if (mousePosition) {
 		return setMousePosition(mousePosition)(state)

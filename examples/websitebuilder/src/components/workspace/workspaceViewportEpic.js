@@ -1,7 +1,7 @@
 // @flow strict
 
 import { type DimensionsType } from '../../types'
-import { browserDimensions } from '../env/envACnC'
+import { browserDimensions } from '../env/envEvents'
 import { TopBarHeight } from '../topBar/topBarConstants'
 import { setPropDeepCompare } from '../../../../../src/utils'
 import { createEpic, createUpdater } from '../../../../../src/epics'
@@ -13,7 +13,7 @@ type WorkspaceViewportStateType = {|
 
 const setDimensions = setPropDeepCompare<WorkspaceViewportStateType, *>('dimensions')
 const workspaceViewportEpic = createEpic<WorkspaceViewportStateType, empty, empty>({
-	vat: 'WORKSPACE_VIEWPORT_VAT',
+	vcet: 'WORKSPACE_VIEWPORT_VCET',
 	initialState: { dimensions: { width: 0, height: 0 } },
 	updaters: {
 		compute: createUpdater({
