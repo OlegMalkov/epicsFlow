@@ -3,7 +3,7 @@
 import { rootReducer, type AppStateType } from './rootReducer'
 import { type AnyMsgType } from '../../../src/epics'
 
-const reduxWsbStore = (() => {
+const reduxStore = (() => {
 	const initialState = rootReducer(undefined, { type: '@INIT'})
 
 	let state: AppStateType = initialState
@@ -23,8 +23,8 @@ const reduxWsbStore = (() => {
 })()
 
 window.$R = {}
-window.$R.store = reduxWsbStore
+window.$R.store = reduxStore
 
 export {
-	reduxWsbStore,
+	reduxStore,
 }

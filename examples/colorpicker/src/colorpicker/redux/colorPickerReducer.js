@@ -1,9 +1,10 @@
 // @flow strict
-import { colorpickerInitialState, type ColorPickerStateType, setRedChannel, setGreenChannel, setBlueChannel } from '../colorPickerState'
+import { colorpickerInitialState, type ColorPickerStateType, setRedChannel, setGreenChannel, setBlueChannel, setAllChannelsFromRGB } from '../colorPickerState'
 import {
 	redChannelChangedEvent,
 	blueChannelChangedEvent,
 	greenChannelChangedEvent,
+	rgbValueChangedEvent,
 } from '../colorpickerEvents'
 import { type AnyMsgType } from '../../../../../src/epics'
 
@@ -25,7 +26,11 @@ const colorPickerReducer = (state: ColorPickerStateType = colorpickerInitialStat
 		return setBlueChannel(blue.value)(state)
 	}
 
-	const blue = blueChannelChangedEvent.match(msg)
+	const rgb = rgbValueChangedEvent.match(msg)
+
+	if (rgb) {
+		return setAllChannelsFromRGB(rgb.value)(state)
+	}
 
 	return state
 }
