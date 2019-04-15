@@ -1,22 +1,10 @@
 Acronyms
 
-AAC - msgs and given
-AC - event creator
-U - updater
-
 condition methods
-.to() - .optional()
-.ws() - .selector()
-.tp() - .passive()
-.wg() - .guard()
-
-condition variable names postfix
-C - condition
-PC - passive condition
-OC - optionalCondition
-POC - passive optional condition
-GOC - guarded optional condition
-
+.to() - .toOptional()
+.ws() - .withSelector()
+.wsk() - .withSelectorKey()
+.wg() - .withGuard()
 
 TRACE
 S - state changed
