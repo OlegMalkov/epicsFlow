@@ -69,7 +69,7 @@ constructor(props: {}) {
 }
 componentDidMount() {
 	this.dispatch = wsbStore.dispatch
-	wsbStore.subscribeOnStateChange(appState => this.setState(appState))
+	wsbStore.subscribe(appState => this.setState(appState))
 
 	window.addEventListener(
 		'mousemove',

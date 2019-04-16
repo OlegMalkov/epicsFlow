@@ -47,14 +47,14 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 			const condtitions: { [string]: AnyConditionType } = updater.conditions
 
 			getObjectKeys(condtitions).forEach(conditionKey => {
-				const { messageType, isEpicCondition } = condtitions[conditionKey]
+				const { msgType, isEpicCondition } = condtitions[conditionKey]
 
 				if (isEpicCondition) {
 					throw new Error(`${key}.${updaterKey}.${conditionKey} is epic condition. Event source event can not be epics VCETs, they should be msgs, that describe user intentions.`)
 				}
 
-				if (result.indexOf(messageType) === -1) {
-					result.push(messageType)
+				if (result.indexOf(msgType) === -1) {
+					result.push(msgType)
 				}
 			})
 		})
@@ -124,11 +124,11 @@ const esdbPlugin: PluginType = ({ injectEpics, injectUpdaters, getEpicsWithPlugi
 					})
 					return updaters
 				}, {}),
-				...allConditionsMsgsTypesInUse.reduce((updaters, messageType) => {
-					if (esdbRehydrateAggregates.type !== messageType) {
-						updaters[`remember_${messageType}`] = createUpdater({
+				...allConditionsMsgsTypesInUse.reduce((updaters, msgType) => {
+					if (esdbRehydrateAggregates.type !== msgType) {
+						updaters[`remember_${msgType}`] = createUpdater({
 							given: {},
-							when: { event: createCondition<AnyMsgType>(messageType, false) },
+							when: { event: createCondition<AnyMsgType>(msgType, false) },
 							then: ({ values: { event }, R }) => R.mapScope(addNotSavedAction(event)),
 						})
 					}

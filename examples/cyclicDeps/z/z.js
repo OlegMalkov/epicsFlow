@@ -6,7 +6,7 @@ import { zUpdaters } from './zUpdaters'
 import { createEpic } from '../../../src/epics'
 
 const z = createEpic<ZStateType, empty, empty>({
-	vcet: zCondition.messageType,
+	vcet: zCondition.msgType,
 	initialState: initialZState,
 	updaters: zUpdaters,
 })

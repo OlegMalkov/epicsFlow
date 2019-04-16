@@ -64,7 +64,7 @@ describe('effectManager', () => {
 		expect(store.getState().e1).toBe(0)
 		expect(store.getState().e2).toBe(1)
 	})
-	it.only('can then batched dispach', async () => {
+	it('can then batched dispach', async () => {
 		const
 			e1 = createEpic<number, BuiltInEffectType, empty>({
 				vcet: 'e1',
@@ -152,7 +152,7 @@ describe('effectManager', () => {
 		expect(store.getState().e3).toBe(3)
 		expect(store.getState().e4).toBe(5)
 
-		store.subscribeOnStateChange(() => {
+		store.subscribe(() => {
 			storeStateChangedCounter = storeStateChangedCounter + 1
 		})
 
