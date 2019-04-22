@@ -1,14 +1,8 @@
 // @flow strict
-import { type AnyMsgType } from '../../../src/epics'
-import {
-	type ColorPickerStateType,
-	colorpickerInitialState,
-} from './colorpicker/colorPickerState'
-import { colorPickerReducer } from './colorpicker/redux/colorPickerReducer'
-
-type AppStateType = {|
-	colorpicker: ColorPickerStateType,
-|}
+import { type AnyMsgType } from '../../../../src/epics'
+import { colorPickerReducer } from '../colorpicker/redux/colorPickerReducer'
+import { type AppStateType } from './reduxTypes'
+import { colorpickerInitialState } from '../colorpicker/colorPickerState'
 
 const initialAppState: AppStateType = {
 	colorpicker: colorpickerInitialState,

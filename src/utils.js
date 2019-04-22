@@ -4,6 +4,7 @@ import { deepEqual } from './epics'
 
 const T = () => true
 const F = () => false
+const I = <T>(x: T): T => x
 
 type SetPropType = <S: {}, P: $Keys<S>>(propName: P) => (valueUpdater: $ElementType<S, P> | $ElementType<S, P> => $ElementType<S, P>) => S => S
 type SetPath2Type = <S: {}, P1: $Keys<S>, P2: $Keys<$ElementType<S, P1>>>(p1: P1, p2: P2) => (value: $ElementType<$ElementType<S, P1>, P2> | $ElementType<$ElementType<S, P1>, P2> => $ElementType<$ElementType<S, P1>, P2>) => S => S
@@ -73,6 +74,7 @@ const ValueContainer = <V>(value: V): $ValueContainer<V> => new $ValueContainer(
 const SingleTypeContainer = <S>(state: S): $SingleTypeContainer<S> => new $SingleTypeContainer(state)
 
 export {
+	I,
 	T,
 	F,
 	ValueContainer,

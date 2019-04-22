@@ -5,7 +5,7 @@ import { type DispatchType } from '../../../src/epics'
 import './app.css'
 //import { store } from './store'
 import { ColorPickerView } from './colorpicker/colorpickerView'
-import { reduxStore } from './reduxStore'
+import { reduxStore } from './redux/reduxStore'
 
 //const _store = store
 const _store = reduxStore

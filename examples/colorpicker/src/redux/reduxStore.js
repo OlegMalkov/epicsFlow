@@ -1,7 +1,10 @@
-// @flow strict
+// @flow
 
 import { rootReducer, type AppStateType } from './rootReducer'
-import { type AnyMsgType } from '../../../src/epics'
+import { type AnyMsgType } from '../../../../src/epics'
+import { storageMiddleware } from './storageMiddleware/storageMiddleware'
+import { colorpickerMiddleware } from '../colorpicker/redux/colorPickerMiddleware'
+import { dispatchActionWithDelayMiddleware } from './dispatchActionWithDelayMiddleware/dispatchActionWithDelayMiddleware'
 
 const reduxStore = (() => {
 	const initialState = rootReducer(undefined, { type: '@INIT'})
@@ -9,7 +12,7 @@ const reduxStore = (() => {
 	let state: AppStateType = initialState
 	const subscribers = []
 
-	return {
+	const store = {
 		dispatch: (event: AnyMsgType) => {
 			state = rootReducer(state, event)
 			subscribers.forEach((sub) => sub(state))
@@ -20,6 +23,14 @@ const reduxStore = (() => {
 			state = initialState
 		},
 	}
+
+	store.dispatch = [
+		dispatchActionWithDelayMiddleware,
+		storageMiddleware,
+		colorpickerMiddleware,
+	].reduce((next, middleware) => middleware(store)(next), store.dispatch)
+
+	return store
 })()
 
 window.$R = {}

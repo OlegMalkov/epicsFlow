@@ -9,7 +9,7 @@ import {
 } from '../epics'
 import { setProp } from '../utils'
 
-opaque type LocalStorageCommandType =
+opaque type LocalStorageCmdType =
 	| {| type: 'CHECK' |}
 	| {| key: string, type: 'GET_ITEM' |}
 	| {| keys: Array<string>, type: 'GET_ITEMS' |}
@@ -20,7 +20,7 @@ opaque type LocalStorageCommandType =
 	| {| type: 'GET_KEYS' |}
 	| {| type: 'CLEAR' |}
 
-opaque type LocalStorageEffectType = {| cmd: LocalStorageCommandType, type: typeof requestType |}
+opaque type LocalStorageEffectType = {| cmd: LocalStorageCmdType, type: typeof requestType |}
 
 type StateType = {| available: bool, quotaExceeded: bool |}
 
