@@ -185,6 +185,7 @@ type EpicUpdaterExecutionInfoType = {|
 	updaterEpicStateChange?: Object,
 	updaterKey: string,
 	updaterReqestedEffects?: Array<Object>,
+	error?: Error,
 |}
 type EpicExecutionInfoType = {|
 	childrenLayers?: Array<ExecutionLevelInfoType>,
@@ -304,12 +305,14 @@ class ReducerResult<S, SC, SE> {
 	_state: S;
 	_scope: SC;
 	_sideEffects: Array<SE>;
-	_updateReasons: Array<string>
+	_updateReasons: Array<string>;
+	_customEpicChangedEventFields: Object;
 	constructor(state: S, scope: SC) {
 		this._state = state
 		this._updateReasons = []
 		this._scope = scope
 		this._sideEffects = []
+		this._customEpicChangedEventFields = {}
 		this.doNothing = this
 	}
 	doNothing: ReducerResult<S, SC, SE> // TODO make not chainable, throw on mixed and variance
@@ -318,11 +321,16 @@ class ReducerResult<S, SC, SE> {
 		return this
 	}
 	// update reason will be taken only if updater returned updated state
-	mapState(updater: S => S, updateReason?: string): ReducerResult<S, SC, SE> {
+	mapState(updater: S => S, updateReason?: string, customEpicChangedEventFields?: Object): ReducerResult<S, SC, SE> {
 		const nextState = updater(this._state)
 
-		if (updateReason && (nextState !== this._state)) {
-			this._updateReasons.push(updateReason)
+		if (nextState !== this._state) {
+			if (updateReason) {
+				this._updateReasons.push(updateReason)
+			}
+			if (customEpicChangedEventFields) {
+				this._customEpicChangedEventFields = { ...this._customEpicChangedEventFields, ...customEpicChangedEventFields }
+			}
 		}
 		this._state = nextState
 		return this
@@ -583,16 +591,18 @@ function getEffectManagersInitialState(effectManagers) {
 		return state
 	}, {})
 }
+
 const printUpdater = (u: EpicUpdaterExecutionInfoType) => `${u.updaterKey }(${[
-	u.updaterEpicStateChange ? (u.updaterEpicStateChange === nothingChangedButObjectRecreatedWarn ? 'SW' : 'S') : '',
-	u.updaterEpicScopeChange ? (u.updaterEpicScopeChange === nothingChangedButObjectRecreatedWarn ? 'SCW' : 'SC') : '',
-	u.updaterReqestedEffects ? 'E' : '',
+	u.updaterEpicStateChange !== undefined ? (u.updaterEpicStateChange === nothingChangedButObjectRecreatedWarn ? 'SW' : 'S') : '',
+	u.updaterEpicScopeChange !== undefined ? (u.updaterEpicScopeChange === nothingChangedButObjectRecreatedWarn ? 'SCW' : 'SC') : '',
+	u.updaterReqestedEffects !== undefined ? 'E' : '',
+	u.error ? 'ERR' : '',
 ].filter(x => x).join(',')})`
 const printEpicExecutionInfo = (epicExecutionInfo: EpicExecutionInfoType) => {
 	const { updaters, epicKey } = epicExecutionInfo
 
 	if (!updaters) return ''
-	const result = updaters.filter(u => u.updaterEpicStateChange || u.updaterEpicScopeChange || u.updaterReqestedEffects).map(printUpdater).join('')
+	const result = updaters.filter(u => u.updaterEpicStateChange !== undefined || u.updaterEpicScopeChange !== undefined || u.updaterReqestedEffects !== undefined || u.error).map(printUpdater).join('')
 
 	if (!result.length) return ''
 	return `${epicKey}[${result}]`
@@ -793,6 +803,8 @@ const createExecuteMsg = ({
 		return nextLevelTrace
 	}
 
+	const isEpicMsg = (msg) => !!(msg.type && epicsMapByVcet[msg.type])
+
 	function executeMsg({
 		msgsChain,
 		conditionsValues,
@@ -908,6 +920,7 @@ const createExecuteMsg = ({
 				const epic = epicsMapByVcet[subVcet]
 				const epicState: EpicStateType = epicsState[subVcet]
 				const updateReasons = []
+				let customEpicChangedEventFields = {}
 				const allEffects = []
 				const updaterKeysThatChangedState = []
 				const epicStateUpdate = getEpicStateUpdate(subVcet)
@@ -943,6 +956,11 @@ const createExecuteMsg = ({
 					let atLeastOneValueIsDifferent = false
 					const epicUpdaterKey = `${subVcet}.${updaterKey}`
 					const lastReducerValues = lastReducerValuesByEpicVcetUpdaterKey[epicUpdaterKey]
+					const getEpicStateMsg = (msg) => {
+						const epicStateUpdate = (epicsStateUpdate[msg.type] || {}).state
+
+						return ({ ...msg, payload: epicStateUpdate === undefined ? epicsState[msg.type].state : epicStateUpdate })
+					}
 					const reducerValues: Object = updater.conditionKeysToConditionUpdaterKeys.reduce((v, [conditionKey, conditionUpdaterKey]) => {
 						const shouldLookForDifferentValuesFromLastExecution = lastReducerValues && !atLeastOneValueIsDifferent
 
@@ -955,7 +973,7 @@ const createExecuteMsg = ({
 							}
 							return v
 						}
-						const valueUpdate = condition.msgType === MatchAnyMsgType ? msg : conditionsValuesUpdate[conditionKey]
+						const valueUpdate = condition.msgType === MatchAnyMsgType ? (isEpicMsg(msg) ? getEpicStateMsg(msg) : msg) : conditionsValuesUpdate[conditionKey]
 						const nextValue = v[conditionUpdaterKey] = valueUpdate === undefined ? conditionsValues[conditionKey] : valueUpdate
 
 						if (shouldLookForDifferentValuesFromLastExecution) {
@@ -992,15 +1010,34 @@ const createExecuteMsg = ({
 						deepFreeze(prevState)
 						deepFreeze(prevScope)
 					}
-					// TODO flow - mark everything passed inside then as $ReadOnly
-					const result = updater.then({
-						values: reducerValues,
-						state: prevState,
-						scope: prevScope,
-						sourceMsg,
-						changedActiveConditionsKeysMap: changedActiveConditionsKeys.reduce((m, k) => { m[k] = true; return m }, {}),
-						R: new ReducerResult(prevState, prevScope),
-					})
+
+					let result
+
+					try {
+						// TODO flow - mark everything passed inside then as $ReadOnly
+						result = updater.then({
+							values: reducerValues,
+							state: prevState,
+							scope: prevScope,
+							sourceMsg,
+							changedActiveConditionsKeysMap: changedActiveConditionsKeys.reduce((m, k) => { m[k] = true; return m }, {}),
+							R: new ReducerResult(prevState, prevScope),
+						})
+					} catch (e) {
+						if (trace && executionLevelTrace) {
+							const updaters = getTraceUpdaters({ executionLevelTrace, subVcet })
+							const updaterTraceInfo: EpicUpdaterExecutionInfoType = {
+								updaterKey,
+								changedActiveConditionsKeys,
+								error: e,
+							}
+
+							updaterTraceInfo.reducerValues = reducerValues
+
+							updaters.push(updaterTraceInfo)
+						}
+						throw e
+					}
 
 					if (__DEV__) {
 						if (typeof result._state === 'function') {
@@ -1071,37 +1108,14 @@ const createExecuteMsg = ({
 						updaterKeysThatChangedState.push(updaterKey)
 						epicStateUpdate.state = result._state // eslint-disable-line no-param-reassign
 						updateReasons.push(...result._updateReasons)
+						customEpicChangedEventFields = { ...customEpicChangedEventFields, ...result._customEpicChangedEventFields }
 					// TODO is this epic has subs to it self, execute them immideately, skipping after update
 					}
 					const { _sideEffects } = result
 
 					if (_sideEffects.length) {
 						_sideEffects.forEach(e => {
-							if (e.type === dispatchMsgEffectType) {
-							// we dispatching msg immediately as it may update state of same epic (e1) that requested msg dispatch
-							// this way if some other epic(e2) has subscription to e1, e2 will we called only once, with latest updated epic state
-								const dispatchMsgEffect: DispatchMsgEffectType = (e: any)
-								const msgToDispatch: Object = { ...dispatchMsgEffect.msg }
-
-								msgToDispatch.initiatedByEpic = { updaterKey: e.updaterKey, type: subVcet }
-								executeMsg({
-									msgsChain: [dispatchMsgEffect.msg, ...msgsChain],
-									conditionsValues,
-									prevConditionsValues,
-									conditionsValuesUpdate,
-									epicsState,
-									epicsStateUpdate,
-									effectManagersState,
-									effectManagersStateUpdate,
-									lastReducerValuesByEpicVcetUpdaterKey,
-									messagesToSendOutside,
-									batchedDispatchBatches,
-									executionLevelTrace: trace && executionLevelTrace ? getNextLevelTrace({ executionLevelTrace,
-										subVcet,
-										triggerMsg: dispatchMsgEffect.msg }) : undefined,
-									level: level + 1,
-								})
-							} else if (e.type === dispatchBatchedMsgsEffectType) {
+							if (e.type === dispatchBatchedMsgsEffectType) {
 								batchedDispatchBatches.push(...e.batches)
 							} else {
 								allEffects.push(e)
@@ -1118,6 +1132,7 @@ const createExecuteMsg = ({
 					const epicChangedEvent: EpicStateChangedEventType = {
 						type: subVcet,
 						payload: epicStateUpdate.state,
+						...customEpicChangedEventFields,
 					}
 
 					msgsChain.forEach(msg => {
@@ -1131,7 +1146,6 @@ const createExecuteMsg = ({
 					})
 
 					epicChangedEvent.updateReasons = updateReasons
-
 					executeMsg({
 						msgsChain: [epicChangedEvent, ...msgsChain],
 						conditionsValues,
@@ -1156,6 +1170,32 @@ const createExecuteMsg = ({
 						const effectRequestType = e.type
 
 						switch (effectRequestType) {
+						case dispatchMsgEffectType: {
+							// we dispatching msg immediately as it may update state of same epic (e1) that requested msg dispatch
+							// this way if some other epic(e2) has subscription to e1, e2 will we called only once, with latest updated epic state
+							const dispatchMsgEffect: DispatchMsgEffectType = (e: any)
+							const msgToDispatch: Object = { ...dispatchMsgEffect.msg }
+
+							msgToDispatch.initiatedByEpic = { updaterKey: e.updaterKey, type: subVcet }
+							executeMsg({
+								msgsChain: [dispatchMsgEffect.msg, ...msgsChain],
+								conditionsValues,
+								prevConditionsValues,
+								conditionsValuesUpdate,
+								epicsState,
+								epicsStateUpdate,
+								effectManagersState,
+								effectManagersStateUpdate,
+								lastReducerValuesByEpicVcetUpdaterKey,
+								messagesToSendOutside,
+								batchedDispatchBatches,
+								executionLevelTrace: trace && executionLevelTrace ? getNextLevelTrace({ executionLevelTrace,
+									subVcet,
+									triggerMsg: dispatchMsgEffect.msg }) : undefined,
+								level: level + 1,
+							})
+							break
+						}
 						case sendMsgOutsideEpicsEffectType: {
 							const sendMsgOusideOfEpicsEffect: SendMsgOutsideEpicsEffectType = (e: any)
 

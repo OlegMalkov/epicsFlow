@@ -259,7 +259,7 @@ describe('sequence', () => {
 		expect(store.getState().e2).toEqual({ a: 'xx1', b: '01' })
 	})
 
-	it('when e1 dispatch event and e1 has condition for this event, e2 should be called only once', () => {
+	it.skip('when e1 dispatch event and e1 has condition for this event, e2 should be called only once', () => {
 		const a = 'a'
 		const b = 'b'
 		const x = 'x'
