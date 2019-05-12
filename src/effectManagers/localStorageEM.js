@@ -138,6 +138,8 @@ const localStorageEM = createEffectManager<LocalStorageEffectType, StateType, nu
 		}
 		return R.doNothing
 	},
+	destroyEffects: () => { },
+	recreateEffects: () => { },
 })
 
 export type { // eslint-disable-line import/group-exports

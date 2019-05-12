@@ -54,6 +54,8 @@ const requestAnimationFrameEM = createEffectManager<RequestAnimationFrameEffectT
 		}
 		return R.doNothing
 	},
+	destroyEffects: () => { /* TODO */ },
+	recreateEffects: () => { /* TODO */ },
 })
 
 

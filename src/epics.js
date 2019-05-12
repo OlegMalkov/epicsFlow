@@ -117,6 +117,8 @@ type CreateEpicPropsType<S, E, PC> = {|
 |}
 
 type OnEffectRequestType<S, SC, E> = ({| dispatch: DispatchType, effect: $ReadOnly<E>, requesterEpicVcet: string, scope: SC, state: $ReadOnly<S>, R: EffectManagerResultType<S> |}) => EffectManagerResultType<S>
+
+type EMDRFnType<S, SC> = ({ state: S, scope: SC }) => void
 opaque type EffectManager<S, SC, E> = {|
 	_effect: E,
 	initialScope?: SC,
@@ -124,6 +126,8 @@ opaque type EffectManager<S, SC, E> = {|
 	key?: string,
 	onEffectRequest: OnEffectRequestType<S, SC, E>,
 	requestType: string,
+	destroyEffects: EMDRFnType<S, SC>,
+	recreateEffects: EMDRFnType<S, SC>,
 |}
 type PendingEffectType<E> = {| effect: E, promise: Promise<any> |}
 type EffectManagerStateType<S, E> = {|
@@ -139,6 +143,8 @@ type CreateEffectManagerPropsType<E, S, SC> = {|
 	initialState?: S,
 	onEffectRequest: OnEffectRequestType<S, SC, E>,
 	requestType: string,
+	destroyEffects: EMDRFnType<S, SC>,
+	recreateEffects: EMDRFnType<S, SC>,
 |}
 type CreateEffectManagerType = <E, S, SC>(CreateEffectManagerPropsType<E, S, SC>) => EffectManager<S, SC, E>
 type PluginPropsType = {|
@@ -227,8 +233,13 @@ type EpicSubsType = { [epicVcet: string]: { [updaterKey: string]: Array<string> 
 
 opaque type EpicsStoreType<Epics: Object>: {
 	dispatch: DispatchType,
+	_getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
+	_setState: ServiceStateType => void,
+	destroyEffects: () => void,
+	recreateEffects: () => void,
 	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
+	subscribeOnDispatch: (AnyMsgType => any) => () => void,
 	subscribeOutMsg: any => any,
 	subscribe: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
 	replaceConfig: (CreateStorePropsType<Epics>) => void,
@@ -238,12 +249,15 @@ opaque type EpicsStoreType<Epics: Object>: {
 	_getNextStateForMsgWithoutUpdatingStoreState: (AnyMsgType) => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	_getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
 	_setState: ServiceStateType => void,
+	destroyEffects: () => void,
+	recreateEffects: () => void,
 	replaceConfig: (CreateStorePropsType<Epics>) => void,
 	resetToInitialState: () => void,
 	dispatch: DispatchType,
 	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	subscribeOutMsg: any => any,
+	subscribeOnDispatch: (AnyMsgType => any) => () => void,
 	subscribe: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
 	warn: Function,
 |}
@@ -390,6 +404,17 @@ function createUpdater<S: AnyValueType, SC: Object, DO: { [string]: { msgType: s
 	}
 }
 
+function createSimpleUpdater<S: AnyValueType, SC: Object, V: *, E> (
+	condition: V,
+	then: ({| R: ReducerResult<S, SC, E>, value: $Call<typeof extractConditionV, V>, scope: SC, sourceMsg: AnyMsgType, state: S |}) => ReducerResult<S, SC, E>
+): UpdaterType<S, SC, any, E> {
+	return createUpdater({
+		given: {},
+		when: { value: condition },
+		then: ({ values, state, scope, R, sourceMsg }) => then({ value: values.value, state, scope, R, sourceMsg }),
+	})
+}
+
 class EffectManagerResultType<S> {
 	_state: S
 	_msgsToDispatch: Array<{| msg: AnyMsgType, broadcast?: bool |}>
@@ -422,12 +447,16 @@ function createEffectManager<E, S, SC>({
 	initialScope,
 	onEffectRequest,
 	requestType,
+	destroyEffects,
+	recreateEffects,
 }: CreateEffectManagerPropsType<E, S, SC>): EffectManager<S, SC, E> {
 	return {
 		requestType,
 		initialState,
 		initialScope,
 		onEffectRequest,
+		destroyEffects,
+		recreateEffects,
 		_effect: (null: any),
 	}
 }
@@ -744,6 +773,19 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 		findChangedConditions(childCondition, newChildValue, changedConditions, conditionsValues, prevConditionsValues, conditionsValuesUpdate)
 	})
 }
+
+const createEffectManagersByRequestType = (effectManagers): { [string]: EffectManager<*, *, *> } => Object.keys(effectManagers).reduce((m, emk) => {
+	const effectManager = { ...effectManagers[emk] }
+
+	effectManager.key = emk
+	if (!m[effectManager.requestType]) {
+		m[effectManager.requestType] = effectManager
+	} else {
+		throw new Error(`duplicate effect manager request type ${effectManagers[emk].requestType} for [${emk} and ${m[effectManager.requestType].key}]`)
+	}
+	return m
+}, {})
+
 const nothingChangedButObjectRecreatedWarn = 'WARN: nothing changed, but new objects with same data was created'
 const createExecuteMsg = ({
 	trace,
@@ -752,17 +794,7 @@ const createExecuteMsg = ({
 	dispatch,
 	rootConditionsByMsgType,
 }: CreateExecuteMsgPropsType) => {
-	const effectManagersByRequestType: { [string]: EffectManager<*, *, *> } = Object.keys(effectManagers).reduce((m, emk) => {
-		const effectManager = { ...effectManagers[emk] }
-
-		effectManager.key = emk
-		if (!m[effectManager.requestType]) {
-			m[effectManager.requestType] = effectManager
-		} else {
-			throw new Error(`duplicate effect manager request type ${effectManagers[emk].requestType} for [${emk} and ${m[effectManager.requestType].key}]`)
-		}
-		return m
-	}, {})
+	const effectManagersByRequestType = createEffectManagersByRequestType(effectManagers)
 	const orderOfEpicsVcet = Object.keys(epicsMapByVcet).reduce((r, vcet, index) => ({ ...r, [vcet]: index }), {})
 	const vcetToSortValue = (vcet, currentMsgType, initiatedByEpic) => {
 		if (vcet === currentMsgType || (initiatedByEpic && initiatedByEpic.type === vcet)) return -Infinity
@@ -905,7 +937,7 @@ const createExecuteMsg = ({
 			const epicVcetToBeExecuted = Object.keys(epicSubs).sort((vcet1: string, vcet2: string) => vcetToSortValue(vcet1, msgType, initiatedByEpic) - vcetToSortValue(vcet2, msgType, initiatedByEpic))
 
 			epicVcetToBeExecuted.forEach((subVcet: string) => {
-			// $FlowFixMe
+				// $FlowFixMe
 				if (msg.targetEpicVcetMap && !msg.targetEpicVcetMap[subVcet]) {
 					if (trace && executionLevelTrace) {
 						executionLevelTrace.executedEpics.push({
@@ -1207,14 +1239,24 @@ const createExecuteMsg = ({
 							const effectManagerStateUpdate = effectManagersStateUpdate[effectRequestType]
 							const effectManagerState = effectManagersState[effectRequestType]
 							const state = (effectManagerStateUpdate && effectManagerStateUpdate.state) ? effectManagerStateUpdate.state : effectManagerState.state
+							let isSyncDispatch = true
 							const result = effectManager.onEffectRequest({
 								effect: e,
 								requesterEpicVcet: subVcet,
 								state,
 								scope: effectManagerState.scope,
-								dispatch,
+								dispatch() {
+									if (isSyncDispatch) {
+										// Effect managers replying to requirest consitently in async manner, to simplify trace and reasoning
+										setTimeout(() => dispatch(...arguments), 0)
+									} else {
+										dispatch(...arguments)
+									}
+								},
 								R: new EffectManagerResultType(state),
 							})
+
+							isSyncDispatch = false
 
 							if (result._state !== state) {
 								effectManagersStateUpdate[effectRequestType] = { ...effectManagerStateUpdate, state: result._state }
@@ -1663,7 +1705,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 	plugins = {},
 	debug,
 	isSubStore,
-}: CreateStorePropsType<Epics>): EpicsStoreType<Epics> {
+}: CreateStorePropsType<Epics>, hotReload?: true): EpicsStoreType<Epics> {
 	// eslint-disable-next-line no-console
 	const { warn = (() => null: Function), trace, devTools: devToolsConfig } = debug === true ? { devTools: { config: { } }, warn: undefined, trace: e => console.log(traceToString(e))} : (debug || {})
 
@@ -1678,7 +1720,9 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 	let messagesAccumulatedDuringBatchDispatch: Array<any> = []
 	let epicsStateChangedCallbackAfterBatchDispatchComplete: () => void = () => undefined
 
-	function dispatch(msg: { type: any }, meta?: MetaType = ({}: any)) {
+	function dispatch(msg: AnyMsgType, meta?: MetaType = ({}: any)) {
+		onDispatchSubscribers.forEach(sub => sub(msg))
+
 		msg = { ...msg } // eslint-disable-line no-param-reassign
 		const messagesToSendOutside = []
 		const epicsStateUpdate = {}
@@ -1913,6 +1957,8 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		}, [])
 	}
 	let stateChangedSubscribers = []
+	let onDispatchSubscribers = []
+
 	const outMsgSubscribers = []
 
 	if (debug && devToolsConfig && typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__) {
@@ -1925,13 +1971,24 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		})
 		devTools.init(serviceState)
 	}
-	if (!isSubStore) {
+	if (!isSubStore && !hotReload) {
 		dispatch(storeCreatedEvent.create())
 	}
 
 	let storeReplacement
 
 	const initialState = serviceState
+
+	const doForEachEffectManager = (fn: ({ effectManager: EffectManager<*, *, *>, state: any, scope: any }) => void) => {
+		const effectManagersByRequestType = createEffectManagersByRequestType(effectManagers)
+
+		Object.keys(effectManagersByRequestType).forEach(effectRequestType => {
+			const effectManager: EffectManager<*, *, *> = effectManagersByRequestType[effectRequestType]
+			const { state, scope } = serviceState.effectManagers[effectRequestType]
+
+			fn({ effectManager, state, scope })
+		})
+	}
 
 	return {
 		_getServiceState: () => {
@@ -1974,14 +2031,34 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		_setState(_serviceState: ServiceStateType): void {
 			if (storeReplacement) {
 				storeReplacement._setState(_serviceState)
+			} else {
+				serviceState = _serviceState
+				outsideState = computeOutsideState(serviceState.epics)
 			}
-			serviceState = _serviceState
+		},
+		destroyEffects: () => {
+			if (storeReplacement) {
+				storeReplacement.destroyEffects()
+			} else {
+				doForEachEffectManager(({ effectManager, state, scope }) => {
+					effectManager.destroyEffects({ state, scope })
+				})
+			}
+		},
+		recreateEffects: () => {
+			if (storeReplacement) {
+				storeReplacement.recreateEffects()
+			} else {
+				doForEachEffectManager(({ effectManager, state, scope }) => {
+					effectManager.recreateEffects({ state, scope })
+				})
+			}
 		},
 
 		replaceConfig: (creaceEpicsStoreConfig) => {
 			const currentState: any = storeReplacement ? storeReplacement._getServiceState() : serviceState
 
-			storeReplacement = createStore(creaceEpicsStoreConfig)
+			storeReplacement = createStore(creaceEpicsStoreConfig, true)
 			storeReplacement._setState(currentState)
 			stateChangedSubscribers.forEach(sub => storeReplacement.subscribe(sub))
 			outMsgSubscribers.forEach(sub => storeReplacement.subscribeOutMsg(sub))
@@ -2016,6 +2093,13 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			return () => {
 				stateChangedSubscribers = stateChangedSubscribers.filter(s => s !== subscriber)
 			}
+		},
+		subscribeOnDispatch: subscriber => {
+			if (storeReplacement) {
+				storeReplacement.subscribeOnDispatch(subscriber)
+			}
+			onDispatchSubscribers.push(subscriber)
+			return () => { onDispatchSubscribers = onDispatchSubscribers.filter(sub => sub !== subscriber) }
 		},
 		// subscribe to messages that can be send from epics to 3rd party
 		subscribeOutMsg: sub => {
@@ -2070,6 +2154,7 @@ const makeCommand = makeMsg
 const storeCreatedEvent = makeSimpleEvent('@STORE_CREATED')
 
 export type { // eslint-disable-line import/group-exports
+	CreateStorePropsType,
 	Condition,
 	BuiltInEffectType,
 	CreateEffectManagerType,
@@ -2105,6 +2190,7 @@ export { // eslint-disable-line import/group-exports
 	createCondition,
 	createEpicCondition,
 	createUpdater,
+	createSimpleUpdater,
 	createEffectManager,
 	deepCopy,
 	deepEqual,
