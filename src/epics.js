@@ -238,7 +238,7 @@ type ErrorTransferPayloadType = {|
 |}
 
 type ConditionSelectorCallReproductionDataType = {|
-	type: 'CONDITION_SELECTOR_CALL',
+	type: 'EPIC_CONDITION_SELECTOR_CALL',
 	conditionValueKey: string,
 	childConditionIndex: number,
 	value: AnyValueType,
@@ -247,7 +247,7 @@ type ConditionSelectorCallReproductionDataType = {|
 |}
 
 type ConditionGuardCallReproductionDataType = {|
-	type: 'CONDITION_GUARD_CALL',
+	type: 'EPIC_CONDITION_GUARD_CALL',
 	conditionValueKey: string,
 	childConditionIndex: number,
 	value: AnyValueType,
@@ -255,7 +255,7 @@ type ConditionGuardCallReproductionDataType = {|
 |}
 
 type ThenCallReproductionDataType = {|
-	type: 'THEN_CALL',
+	type: 'EPIC_THEN_CALL',
 	epicVcet: string,
 	updaterKey: string,
 	updaterValues: Object,
@@ -266,7 +266,7 @@ type ThenCallReproductionDataType = {|
 |}
 
 type UnexpectedErrorReproductionDataType = {|
-	type: 'UNEXPECTED_ERROR',
+	type: 'EPIC_UNEXPECTED_ERROR',
 |}
 
 type ReproductionDataType = ConditionGuardCallReproductionDataType | ConditionSelectorCallReproductionDataType | ThenCallReproductionDataType | UnexpectedErrorReproductionDataType
@@ -799,7 +799,7 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 				if (guard && !guard(value)) return
 			} catch (e) {
 				const reproductionData: ConditionGuardCallReproductionDataType = {
-					type: 'CONDITION_GUARD_CALL',
+					type: 'EPIC_CONDITION_GUARD_CALL',
 					conditionValueKey: condition.valueKey,
 					childConditionIndex,
 					value,
@@ -823,7 +823,7 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 				newChildValue = childCondition.selector ? childCondition.selector(value, prevValue) : value[childCondition.selectorKey]
 			} catch (e) {
 				const reproductionData: ConditionSelectorCallReproductionDataType = {
-					type: 'CONDITION_SELECTOR_CALL',
+					type: 'EPIC_CONDITION_SELECTOR_CALL',
 					conditionValueKey: condition.valueKey,
 					childConditionIndex,
 					value,
@@ -1154,7 +1154,7 @@ const createExecuteMsg = ({
 							updaters.push(updaterTraceInfo)
 						}
 						const reproductionData: ThenCallReproductionDataType = {
-							type: 'THEN_CALL',
+							type: 'EPIC_THEN_CALL',
 							epicVcet: subVcet,
 							updaterKey,
 							updaterValues: thenValues,
@@ -1769,7 +1769,29 @@ function createEpic<S, E, PC>({ vcet, updaters, initialState, pluginConfig }: Cr
 		pluginConfig,
 	})
 }
-const matchAnyMsgCondition: Condition<typeof MatchAnyMsgType> = createCondition(MatchAnyMsgType)// TODO put correct annotation
+
+type ReduxReducerType<S> = (S | void, AnyMsgType) => S
+
+function getReducerInitialState<S>(reducer: ReduxReducerType<S>): S {
+	return reducer(undefined, { type: '@INIT' })
+}
+const autoGenerateVcet = '@auto_generate_vcet'
+
+function createEpicFromReduxReducer<S>(reducer: ReduxReducerType<S>): EpicType<S, void, void, void> {
+	return createEpic({
+		vcet: autoGenerateVcet,
+		updaters: {
+			redux: createUpdater({
+				given: {},
+				when: { action: matchAnyMsgCondition },
+				then: ({ values: { action }, R }) => R.mapState(state => reducer(state, action)),
+			}),
+		},
+		initialState: getReducerInitialState(reducer),
+	})
+}
+
+const matchAnyMsgCondition: Condition<Object> = createCondition(MatchAnyMsgType)
 
 const createPluginStateKey = (key: string) => `plugin/${key}`
 
@@ -1823,7 +1845,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 
 	function onError(error) {
 		const { reproductionData, msgsChain, sourceMsg } = errorPayloadTransfer.readPayloadFromError(error)
-			|| { reproductionData: { type: 'UNEXPECTED_ERROR' }, msgsChain: [unknownMsg], sourceMsg: unknownMsg }
+			|| { reproductionData: { type: 'EPIC_UNEXPECTED_ERROR' }, msgsChain: [unknownMsg], sourceMsg: unknownMsg }
 
 		errorPayloadTransfer.cleanUpError(error)
 
@@ -2014,6 +2036,13 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		})
 	})
 	epics = deepCopy(epics) // eslint-disable-line no-param-reassign
+	getObjectKeys(epics).forEach(epicKey => {
+		const epic = epics[epicKey]
+
+		if (epic.vcet === autoGenerateVcet) {
+			epic.vcet = `${epicKey}_VCET`
+		}
+	})
 	const epicsSubStoresByVcet = isSubStore ? {} : createEpicsSubStoresByVcet(epics)
 
 	if (!isSubStore) {
@@ -2312,6 +2341,7 @@ export { // eslint-disable-line import/group-exports
 	makeSimpleCommand,
 	makeCommand,
 	createEpic,
+	createEpicFromReduxReducer,
 	createEpicWithScope,
 	matchAnyMsgCondition,
 	createStore,
