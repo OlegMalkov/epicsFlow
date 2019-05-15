@@ -186,7 +186,7 @@ type EpicUpdaterExecutionInfoType = {|
 	epicScope?: Object,
 	epicState?: AnyValueType,
 	reducerNotExecutedBecause?: string,
-	reducerValues?: Object,
+	thenValues?: Object,
 	updaterEpicScopeChange?: Object,
 	updaterEpicStateChange?: Object,
 	updaterKey: string,
@@ -231,16 +231,65 @@ type CreateExecuteMsgPropsType = {|
 |}
 type EpicSubsType = { [epicVcet: string]: { [updaterKey: string]: Array<string> } }
 
+type ErrorTransferPayloadType = {|
+	msgsChain: Array<AnyMsgType>,
+	reproductionData: ReproductionDataType,
+	sourceMsg: AnyMsgType,
+|}
+
+type ConditionSelectorCallReproductionDataType = {|
+	type: 'CONDITION_SELECTOR_CALL',
+	conditionValueKey: string,
+	childConditionIndex: number,
+	value: AnyValueType,
+	prevValue: AnyValueType | void,
+	triggerMsg: AnyMsgType,
+|}
+
+type ConditionGuardCallReproductionDataType = {|
+	type: 'CONDITION_GUARD_CALL',
+	conditionValueKey: string,
+	childConditionIndex: number,
+	value: AnyValueType,
+	triggerMsg: AnyMsgType,
+|}
+
+type ThenCallReproductionDataType = {|
+	type: 'THEN_CALL',
+	epicVcet: string,
+	updaterKey: string,
+	updaterValues: Object,
+	epicState: AnyValueType,
+	epicScope: AnyValueType,
+	sourceMsg: AnyMsgType,
+	changedActiveConditionsKeys: Array<string>,
+|}
+
+type UnexpectedErrorReproductionDataType = {|
+	type: 'UNEXPECTED_ERROR',
+|}
+
+type ReproductionDataType = ConditionGuardCallReproductionDataType | ConditionSelectorCallReproductionDataType | ThenCallReproductionDataType | UnexpectedErrorReproductionDataType
+
+type ErrorDataType = {|
+	error: Error,
+	msgsChain: Array<AnyMsgType>,
+	sourceMsg: AnyMsgType,
+	reproductionData: ReproductionDataType,
+|}
+
 opaque type EpicsStoreType<Epics: Object>: {
 	dispatch: DispatchType,
 	_getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
 	_setState: ServiceStateType => void,
+	_setOutsideState: Object => void,
 	destroyEffects: () => void,
 	recreateEffects: () => void,
 	getAllPendingEffectsPromises: () => PendingEffectPromisesType,
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	subscribeOnDispatch: (AnyMsgType => any) => () => void,
 	subscribeOutMsg: any => any,
+	subscribeOnError: (ErrorDataType => any) => () => void,
 	subscribe: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
 	replaceConfig: (CreateStorePropsType<Epics>) => void,
 	resetToInitialState: () => void,
@@ -249,6 +298,7 @@ opaque type EpicsStoreType<Epics: Object>: {
 	_getNextStateForMsgWithoutUpdatingStoreState: (AnyMsgType) => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	_getServiceState: () => { conditions: ConditionsValuesType, effectManagers: EffectManagersStateType<*, *>, epics: EpicsStateType },
 	_setState: ServiceStateType => void,
+	_setOutsideState: Object => void,
 	destroyEffects: () => void,
 	recreateEffects: () => void,
 	replaceConfig: (CreateStorePropsType<Epics>) => void,
@@ -258,6 +308,7 @@ opaque type EpicsStoreType<Epics: Object>: {
 	getState: () => $Exact<$ObjMap<Epics, typeof getInitialState>>,
 	subscribeOutMsg: any => any,
 	subscribeOnDispatch: (AnyMsgType => any) => () => void,
+	subscribeOnError: (ErrorDataType => any) => () => void,
 	subscribe: (sub: ($Exact<$ObjMap<Epics, typeof getInitialState>>) => any) => any,
 	warn: Function,
 |}
@@ -736,15 +787,28 @@ const effectPromiseCompleteAT = 'effect_promise_complete'
 
 // TODO consider having deepCompare option on condition, so condition will be cosidered changed only if it's value changed using deep compare
 
-const findChangedConditions = (condition, value: Object, changedConditions, conditionsValues, prevConditionsValues, conditionsValuesUpdate) => {
+const findChangedConditions = (condition, value: Object, changedConditions, conditionsValues, prevConditionsValues, conditionsValuesUpdate, sourceMsg, msgsChain) => {
 	// $FlowFixMe condition.childrenConditionsWithSelectorOrGuard checked outside
-	condition.childrenConditionsWithSelectorOrGuard.forEach(childCondition => {
+	condition.childrenConditionsWithSelectorOrGuard.forEach((childCondition, childConditionIndex) => {
 		const { valueKey, guard } = childCondition
 		let newChildValue
 
 		if (guard) {
 			newChildValue = value
-			if (guard && !guard(value)) return
+			try {
+				if (guard && !guard(value)) return
+			} catch (e) {
+				const reproductionData: ConditionGuardCallReproductionDataType = {
+					type: 'CONDITION_GUARD_CALL',
+					conditionValueKey: condition.valueKey,
+					childConditionIndex,
+					value,
+					triggerMsg: msgsChain[0],
+				}
+
+				errorPayloadTransfer.putPayloadIntoError(e, { msgsChain, reproductionData, sourceMsg })
+				throw e
+			}
 			conditionsValuesUpdate[valueKey] = value // used for next msg, will come in conditionsValues
 			changedConditions.push(childCondition)
 		} else {
@@ -755,9 +819,21 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 			const _prevValueIsUndefined = _prevValue === undefined
 			const prevValue = _prevValueIsUndefined ? conditionsValues[condition.valueKey] : _prevValue
 
-			newChildValue = childCondition.selector ? childCondition.selector(value, prevValue) : value[childCondition.selectorKey]
-			if (prevChildValue === newChildValue && (condition.isEpicCondition || condition.selector)) return // This hack should be removed from epicsFlow lib (USED only in wsb)
+			try {
+				newChildValue = childCondition.selector ? childCondition.selector(value, prevValue) : value[childCondition.selectorKey]
+			} catch (e) {
+				const reproductionData: ConditionSelectorCallReproductionDataType = {
+					type: 'CONDITION_SELECTOR_CALL',
+					conditionValueKey: condition.valueKey,
+					childConditionIndex,
+					value,
+					prevValue,
+					triggerMsg: msgsChain[0],
+				}
 
+				errorPayloadTransfer.putPayloadIntoError(e, { msgsChain, reproductionData, sourceMsg })
+				throw e
+			}
 			if (prevChildValue === newChildValue) return
 			prevConditionsValues[valueKey] = conditionsValuesUpdate[valueKey]
 			if (_prevChildValueIsUndefined) {
@@ -770,7 +846,7 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 			changedConditions.push(...childCondition.childrenConditionsWithoutSelectorAndGuard)
 		}
 		if (!childCondition.childrenConditionsWithSelectorOrGuard) return
-		findChangedConditions(childCondition, newChildValue, changedConditions, conditionsValues, prevConditionsValues, conditionsValuesUpdate)
+		findChangedConditions(childCondition, newChildValue, changedConditions, conditionsValues, prevConditionsValues, conditionsValuesUpdate, sourceMsg, msgsChain)
 	})
 }
 
@@ -785,6 +861,15 @@ const createEffectManagersByRequestType = (effectManagers): { [string]: EffectMa
 	}
 	return m
 }, {})
+
+const errorPayloadTransfer = {
+	transferKey: 'payload',
+	putPayloadIntoError: (error: Error, transferPayload: ErrorTransferPayloadType): void => {
+		(error: any)[errorPayloadTransfer.transferKey] = transferPayload
+	},
+	readPayloadFromError: (error: Error): ErrorTransferPayloadType => (error: any)[errorPayloadTransfer.transferKey],
+	cleanUpError: (error: Error) => delete (error: any)[errorPayloadTransfer.transferKey],
+}
 
 const nothingChangedButObjectRecreatedWarn = 'WARN: nothing changed, but new objects with same data was created'
 const createExecuteMsg = ({
@@ -896,7 +981,7 @@ const createExecuteMsg = ({
 			if (rootCondition.childrenConditionsWithSelectorOrGuard) {
 				const changedConditions = []
 
-				findChangedConditions(rootCondition, msg, changedConditions, conditionsValues, prevConditionsValues, conditionsValuesUpdate)
+				findChangedConditions(rootCondition, msg, changedConditions, conditionsValues, prevConditionsValues, conditionsValuesUpdate, sourceMsg, msgsChain)
 				changedConditions.forEach(cac => {
 					const { subscriptions: cacSub } = cac
 
@@ -993,7 +1078,7 @@ const createExecuteMsg = ({
 
 						return ({ ...msg, payload: epicStateUpdate === undefined ? epicsState[msg.type].state : epicStateUpdate })
 					}
-					const reducerValues: Object = updater.conditionKeysToConditionUpdaterKeys.reduce((v, [conditionKey, conditionUpdaterKey]) => {
+					const thenValues: Object = updater.conditionKeysToConditionUpdaterKeys.reduce((v, [conditionKey, conditionUpdaterKey]) => {
 						const shouldLookForDifferentValuesFromLastExecution = lastReducerValues && !atLeastOneValueIsDifferent
 
 						const condition = updater.conditions[conditionUpdaterKey]
@@ -1027,18 +1112,18 @@ const createExecuteMsg = ({
 								subVcet }).push({
 								updaterKey,
 								changedActiveConditionsKeys,
-								reducerValues,
+								thenValues,
 								reducerNotExecutedBecause: 'It was called before in execution chain and values not changed since then',
 							})
 						}
 						return
 					}
-					lastReducerValuesByEpicVcetUpdaterKey[epicUpdaterKey] = reducerValues
+					lastReducerValuesByEpicVcetUpdaterKey[epicUpdaterKey] = thenValues
 					const prevState = epicStateUpdate.state === undefined ? epicState.state : epicStateUpdate.state
 					const prevScope = epicStateUpdate.scope === undefined ? epicState.scope : epicStateUpdate.scope
 
 					if (__DEV__) {
-						deepFreeze(reducerValues)
+						deepFreeze(thenValues)
 						deepFreeze(prevState)
 						deepFreeze(prevScope)
 					}
@@ -1048,7 +1133,7 @@ const createExecuteMsg = ({
 					try {
 						// TODO flow - mark everything passed inside then as $ReadOnly
 						result = updater.then({
-							values: reducerValues,
+							values: thenValues,
 							state: prevState,
 							scope: prevScope,
 							sourceMsg,
@@ -1064,10 +1149,23 @@ const createExecuteMsg = ({
 								error: e,
 							}
 
-							updaterTraceInfo.reducerValues = reducerValues
+							updaterTraceInfo.thenValues = thenValues
 
 							updaters.push(updaterTraceInfo)
 						}
+						const reproductionData: ThenCallReproductionDataType = {
+							type: 'THEN_CALL',
+							epicVcet: subVcet,
+							updaterKey,
+							updaterValues: thenValues,
+							epicState: prevState,
+							epicScope: prevScope,
+							sourceMsg,
+							changedActiveConditionsKeys,
+						}
+
+						errorPayloadTransfer.putPayloadIntoError(e, { msgsChain, reproductionData, sourceMsg })
+
 						throw e
 					}
 
@@ -1093,7 +1191,7 @@ const createExecuteMsg = ({
 						if (!stateUpdated && !scopeUpdated && !result._sideEffects.length) {
 							updaterTraceInfo.didNothing = true
 						} else {
-							updaterTraceInfo.reducerValues = reducerValues
+							updaterTraceInfo.thenValues = thenValues
 						}
 						if (stateUpdated) {
 							updaterTraceInfo.epicState = prevState
@@ -1324,7 +1422,7 @@ const printExecuteMsgExeption = ({ trace, executionLevelTrace, msg, e }) => {
 	console.error(`error during executing msg ${msg.type}`, '\nmsg: ', msg, '\ne: ', e, '\nexecutionLevelTrace: ', executionLevelTrace)
 }
 
-function computeInitialStates({ epicsArr, warn, executeMsg, trace }) {
+function computeInitialStates({ epicsArr, warn, executeMsg, trace, onError }) {
 	const epicsState: EpicsStateType = epicsArr.reduce((state, epic) => {
 		return {
 			...state,
@@ -1377,6 +1475,7 @@ function computeInitialStates({ epicsArr, warn, executeMsg, trace }) {
 				})
 			} catch (e) {
 				printExecuteMsgExeption({ trace, executionLevelTrace, msg, e })
+				onError(e)
 				throw e
 			}
 			if (trace) {
@@ -1699,6 +1798,8 @@ type CreateStorePropsType<Epics> = {|
 	isSubStore?: true,
 |}
 
+const unknownMsg = { type: '@UNKNOWN' }
+
 function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 	epics,
 	effectManagers = {},
@@ -1719,6 +1820,17 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 	let batchDispatchIsInProgress: bool = false
 	let messagesAccumulatedDuringBatchDispatch: Array<any> = []
 	let epicsStateChangedCallbackAfterBatchDispatchComplete: () => void = () => undefined
+
+	function onError(error) {
+		const { reproductionData, msgsChain, sourceMsg } = errorPayloadTransfer.readPayloadFromError(error)
+			|| { reproductionData: { type: 'UNEXPECTED_ERROR' }, msgsChain: [unknownMsg], sourceMsg: unknownMsg }
+
+		errorPayloadTransfer.cleanUpError(error)
+
+		const errorData: ErrorDataType = { error, reproductionData, msgsChain, sourceMsg }
+
+		onErrorSubscribers.forEach(sub => sub(errorData))
+	}
 
 	function dispatch(msg: AnyMsgType, meta?: MetaType = ({}: any)) {
 		onDispatchSubscribers.forEach(sub => sub(msg))
@@ -1775,6 +1887,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 				})
 			} catch (e) {
 				printExecuteMsgExeption({ trace, executionLevelTrace, msg, e })
+				onError(e)
 				throw e
 			}
 			if (trace) trace(executionLevelTrace)
@@ -1938,6 +2051,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		warn,
 		executeMsg,
 		trace,
+		onError,
 	})
 
 	let	serviceState: ServiceStateType = {
@@ -1958,6 +2072,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 	}
 	let stateChangedSubscribers = []
 	let onDispatchSubscribers = []
+	let onErrorSubscribers = []
 
 	const outMsgSubscribers = []
 
@@ -2036,6 +2151,14 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 				outsideState = computeOutsideState(serviceState.epics)
 			}
 		},
+		// may be used to trigger render exception
+		_setOutsideState(_outsideState) {
+			if (storeReplacement) {
+				storeReplacement._setOutsideState(_outsideState)
+			} else {
+				outsideState = _outsideState
+			}
+		},
 		destroyEffects: () => {
 			if (storeReplacement) {
 				storeReplacement.destroyEffects()
@@ -2100,6 +2223,13 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			}
 			onDispatchSubscribers.push(subscriber)
 			return () => { onDispatchSubscribers = onDispatchSubscribers.filter(sub => sub !== subscriber) }
+		},
+		subscribeOnError: subscriber => {
+			if (storeReplacement) {
+				storeReplacement.subscribeOnError(subscriber)
+			}
+			onErrorSubscribers.push(subscriber)
+			return () => { onErrorSubscribers = onErrorSubscribers.filter(sub => sub !== subscriber) }
 		},
 		// subscribe to messages that can be send from epics to 3rd party
 		subscribeOutMsg: sub => {
@@ -2171,6 +2301,8 @@ export type { // eslint-disable-line import/group-exports
 	EpicUpdaterExecutionInfoType,
 	EpicExecutionInfoType,
 	ExecutionLevelInfoType,
+	ErrorDataType,
+	ReproductionDataType,
 }
 
 export { // eslint-disable-line import/group-exports
