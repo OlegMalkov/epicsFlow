@@ -1670,7 +1670,29 @@ function createEpic<S, E, PC>({ vcet, updaters, initialState, pluginConfig }: Cr
 		pluginConfig,
 	})
 }
-const matchAnyMsgCondition: Condition<typeof MatchAnyMsgType> = createCondition(MatchAnyMsgType)// TODO put correct annotation
+
+type ReduxReducerType<S> = (S | void, AnyMsgType) => S
+
+function getReducerInitialState<S>(reducer: ReduxReducerType<S>): S {
+	return reducer(undefined, { type: '@INIT' })
+}
+const autoGenerateVcet = '@auto_generate_vcet'
+
+function createEpicFromReduxReducer<S>(reducer: ReduxReducerType<S>): EpicType<S, void, void, void> {
+	return createEpic({
+		vcet: autoGenerateVcet,
+		updaters: {
+			redux: createUpdater({
+				given: {},
+				when: { action: matchAnyMsgCondition },
+				then: ({ values: { action }, R }) => R.mapState(state => reducer(state, action)),
+			}),
+		},
+		initialState: getReducerInitialState(reducer),
+	})
+}
+
+const matchAnyMsgCondition: Condition<Object> = createCondition(MatchAnyMsgType)
 
 const createPluginStateKey = (key: string) => `plugin/${key}`
 
@@ -1901,6 +1923,13 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		})
 	})
 	epics = deepCopy(epics) // eslint-disable-line no-param-reassign
+	getObjectKeys(epics).forEach(epicKey => {
+		const epic = epics[epicKey]
+
+		if (epic.vcet === autoGenerateVcet) {
+			epic.vcet = `${epicKey}_VCET`
+		}
+	})
 	const epicsSubStoresByVcet = isSubStore ? {} : createEpicsSubStoresByVcet(epics)
 
 	if (!isSubStore) {
@@ -2180,6 +2209,7 @@ export { // eslint-disable-line import/group-exports
 	makeSimpleCommand,
 	makeCommand,
 	createEpic,
+	createEpicFromReduxReducer,
 	createEpicWithScope,
 	matchAnyMsgCondition,
 	createStore,
