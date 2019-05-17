@@ -23,17 +23,20 @@
     "eslint-plugin-flowtype": "^3.2.1",
     "eslint-plugin-import": "^2.16.0",
     "eslint-plugin-react": "^7.12.4",
-    "flow-bin": "^0.94.0",
     "flow-coverage-report": "^0.6.1",
     "jest-localstorage-mock": "^2.4.0",
     "node-inspect": "^1.11.5",
     "webpack": "^4.29.0",
-    "webpack-cli": "^3.2.1"
+    "webpack-cli": "^3.2.1",
+    "flow-bin": "^0.98.1"
   },
   "dependencies": {
     "jest": "^24.1.0"
   },
   "jest": {
-    "setupFiles": ["jest-localstorage-mock", "./src/tests/mocks.js"]
+    "setupFiles": [
+      "jest-localstorage-mock",
+      "./src/tests/mocks.js"
+    ]
   }
 }

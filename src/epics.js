@@ -3,7 +3,7 @@
 const toTrueV = (): true => true
 const extractConditionV =<V>(c: { value: V }): V => c.value
 
-const __DEV__ = process.env !== 'production'
+const __DEV__ = (process: any).env !== 'production'
 
 type AnyValueType = number | string | bool | Object | Array<AnyValueType> | null
 type CompulsoryConditionFieldsType = {|
@@ -67,6 +67,7 @@ type CreateConditionPropsType = {|
 	selector?: AnyValueType => AnyValueType,
 	selectorKey?: string,
 |}
+// $FlowFixMe
 type AnyMsgType = { type: $Subtype<string> } // eslint-disable-line flowtype/require-exact-type
 type MetaType = {| targetEpicVcet?: string[] |}
 type DispatchType = (AnyMsgType, meta?: MetaType) => void
@@ -791,6 +792,7 @@ const findChangedConditions = (condition, value: Object, changedConditions, cond
 	// $FlowFixMe condition.childrenConditionsWithSelectorOrGuard checked outside
 	condition.childrenConditionsWithSelectorOrGuard.forEach((childCondition, childConditionIndex) => {
 		const { valueKey, guard } = childCondition
+
 		let newChildValue
 
 		if (guard) {
@@ -1004,6 +1006,7 @@ const createExecuteMsg = ({
 			if (!activeSubs.length) return
 			const epicSubs: EpicSubsType = activeSubs.reduce((r: EpicSubsType, sub) => {
 				const { updaterKey, epicVcet } = sub
+
 				let updatersByVcet: { [updaterKey: string]: Array<string> } | void = r[epicVcet]
 
 				if (!updatersByVcet) {
@@ -1037,6 +1040,7 @@ const createExecuteMsg = ({
 				const epic = epicsMapByVcet[subVcet]
 				const epicState: EpicStateType = epicsState[subVcet]
 				const updateReasons = []
+
 				let customEpicChangedEventFields = {}
 				const allEffects = []
 				const updaterKeysThatChangedState = []
@@ -1337,6 +1341,7 @@ const createExecuteMsg = ({
 							const effectManagerStateUpdate = effectManagersStateUpdate[effectRequestType]
 							const effectManagerState = effectManagersState[effectRequestType]
 							const state = (effectManagerStateUpdate && effectManagerStateUpdate.state) ? effectManagerStateUpdate.state : effectManagerState.state
+
 							let isSyncDispatch = true
 							const result = effectManager.onEffectRequest({
 								effect: e,
@@ -1840,7 +1845,9 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 	}
 
 	let batchDispatchIsInProgress: bool = false
+
 	let messagesAccumulatedDuringBatchDispatch: Array<any> = []
+
 	let epicsStateChangedCallbackAfterBatchDispatchComplete: () => void = () => undefined
 
 	function onError(error) {
@@ -1872,7 +1879,9 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 			)
 		}
 		let	updatedConditionsValues
+
 		let updatedEpicsState
+
 		let updatedEffectManagersState
 		const batchedDispatchBatches = []
 
@@ -2088,6 +2097,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		epics: initialEpicsState,
 		effectManagers: getEffectManagersInitialState(effectManagers),
 	}
+
 	let outsideState = computeOutsideState(serviceState.epics)
 
 	function getAllPendingEffectsPromises() {
@@ -2100,7 +2110,9 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		}, [])
 	}
 	let stateChangedSubscribers = []
+
 	let onDispatchSubscribers = []
+
 	let onErrorSubscribers = []
 
 	const outMsgSubscribers = []
