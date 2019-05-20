@@ -1466,7 +1466,7 @@ function computeInitialStates({ epicsArr, warn, executeMsg, trace, onError }) {
 	const initialEpicsState: EpicsStateType = epicsArr
 		.filter(epic => epic.initialState !== undefined)
 		.reduce((epicsState: any, epic) => {
-			if (epicsStateUpdate[epic.vcet] && epicsStateUpdate[epic.vcet].state) {
+			if (epicsStateUpdate[epic.vcet] && epicsStateUpdate[epic.vcet].state !== undefined) {
 				return epicsState
 			}
 			const messagesToSendOutside = []
