@@ -2,6 +2,7 @@
 
 const toTrueV = (): true => true
 const extractConditionV =<V>(c: { value: V }): V => c.value
+const extractConditionVFromMsgDef =<V>(msgDef: { condition: { value: V } }): V => msgDef.condition.value
 
 const __DEV__ = (process: any).env !== 'production'
 
@@ -108,13 +109,13 @@ type CreateEpicWithScopePropsType<S, SC, E, PC> = {|
 	initialState: S,
 	pluginConfig?: PC,
 	updaters: { [string]: UpdaterType<S, SC, *, E> },
-	vcet: string,
+	vcet?: string,
 |}
 type CreateEpicPropsType<S, E, PC> = {|
 	initialState: S,
 	pluginConfig?: PC,
 	updaters: { [string]: UpdaterType<S, void, *, E> },
-	vcet: string,
+	vcet?: string,
 |}
 
 type OnEffectRequestType<S, SC, E> = ({| dispatch: DispatchType, effect: $ReadOnly<E>, requesterEpicVcet: string, scope: SC, state: $ReadOnly<S>, R: EffectManagerResultType<S> |}) => EffectManagerResultType<S>
@@ -456,14 +457,25 @@ function createUpdater<S: AnyValueType, SC: Object, DO: { [string]: { msgType: s
 	}
 }
 
-function createSimpleUpdater<S: AnyValueType, SC: Object, V: *, E> (
-	condition: V,
-	then: ({| R: ReducerResult<S, SC, E>, value: $Call<typeof extractConditionV, V>, scope: SC, sourceMsg: AnyMsgType, state: S |}) => ReducerResult<S, SC, E>
+function createSimpleUpdater<S: AnyValueType, SC: Object, Condition: *, E> (
+	condition: Condition,
+	then: ({| R: ReducerResult<S, SC, E>, value: $Call<typeof extractConditionV, Condition>, scope: SC, sourceMsg: AnyMsgType, state: S |}) => ReducerResult<S, SC, E>
 ): UpdaterType<S, SC, any, E> {
 	return createUpdater({
 		given: {},
 		when: { value: condition },
 		then: ({ values, state, scope, R, sourceMsg }) => then({ value: values.value, state, scope, R, sourceMsg }),
+	})
+}
+
+function createUpdaterWithReducer<S: AnyValueType, SC: Object, MsgDef: { condition: Condition<*> }, E> (
+	msgDef: MsgDef,
+	reducer: (S, $Call<typeof extractConditionVFromMsgDef, MsgDef>) => S
+): UpdaterType<S, SC, any, E> {
+	return createUpdater({
+		given: {},
+		when: { action: msgDef.condition },
+		then: ({ values: { action }, R }) => R.mapState(state => reducer(state, action)),
 	})
 }
 
@@ -1752,7 +1764,7 @@ function createEpicConditionReceiveFullMsg<State>(vcet: string): Condition<EpicV
 function createEpicCondition<State>(vcet: string): Condition<State> {
 	return createEpicConditionReceiveFullMsg(vcet).withSelectorKey('payload')
 }
-function createEpicWithScope<S, SC, E, PC>({ vcet, updaters, initialState, initialScope, pluginConfig }: CreateEpicWithScopePropsType<S, SC, E, PC>): EpicType<S, SC, E, PC> {
+function createEpicWithScope<S, SC, E, PC>({ vcet = autoGenerateVcet, updaters, initialState, initialScope, pluginConfig }: CreateEpicWithScopePropsType<S, SC, E, PC>): EpicType<S, SC, E, PC> {
 	const c = createEpicCondition/* ::<S> */(vcet)
 
 	return ({
@@ -2365,6 +2377,7 @@ export { // eslint-disable-line import/group-exports
 	createEpicCondition,
 	createUpdater,
 	createSimpleUpdater,
+	createUpdaterWithReducer,
 	createEffectManager,
 	deepCopy,
 	deepEqual,
