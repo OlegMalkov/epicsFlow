@@ -4,7 +4,7 @@ import {
 	createEpic,
 	createUpdater,
 	createStore,
-	makeSimpleEvent,
+	createSimpleEvent,
 	createPluginStateKey,
 } from '../epics'
 import { localStorageEM } from '../effectManagers/localStorageEM'
@@ -17,9 +17,9 @@ import {
 } from './eventSourceDbPlugin'
 import { setNow } from '../tests/mocks'
 
-const a = makeSimpleEvent('A')
-const b = makeSimpleEvent('B')
-const z = makeSimpleEvent('Z')
+const a = createSimpleEvent('A')
+const b = createSimpleEvent('B')
+const z = createSimpleEvent('Z')
 
 const inc = x => x + 1
 

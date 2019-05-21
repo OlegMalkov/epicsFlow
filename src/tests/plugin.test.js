@@ -4,7 +4,7 @@ import {
 	createEpic,
 	createUpdater,
 	createStore,
-	makeSimpleEvent,
+	createSimpleEvent,
 	type PluginType,
 	storeCreatedEvent,
 	createPluginStateKey,
@@ -14,7 +14,7 @@ import { type LocalStorageEffectType } from '../effectManagers/localStorageEM'
 
 type PluginConfigType = {| injectStateIncOnCreateStore: bool |}
 
-const a = makeSimpleEvent('A')
+const a = createSimpleEvent('A')
 
 describe('plugin', () => {
 	it('can inject epics and then initialization on storeCreatedEvent', async () => {

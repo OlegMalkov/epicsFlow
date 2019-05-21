@@ -4,7 +4,7 @@ import {
 	createEpic,
 	createUpdater,
 	createStore,
-	makeSimpleEvent,
+	createSimpleEvent,
 	type BuiltInEffectType,
 	storeCreatedEvent,
 	dispatchBatchedMsgsEffectCreator,
@@ -14,8 +14,8 @@ import { waitEffectManagers } from './utils'
 
 type CustomEpicEffectType = RequestAnimationFrameEffectType
 
-const a = makeSimpleEvent('A')
-const b = makeSimpleEvent('B')
+const a = createSimpleEvent('A')
+const b = createSimpleEvent('B')
 
 describe('effectManager', () => {
 	it('only epic that requested effect can receive response from effect manager (animation frame)', async () => {

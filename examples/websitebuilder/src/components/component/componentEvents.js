@@ -1,10 +1,10 @@
 // @flow strict
 
 import { type ComponentStateType } from './componentState'
-import { makeSimpleEvent, createEpicCondition } from '../../../../../src/epics'
+import { createSimpleEvent, createEpicCondition } from '../../../../../src/epics'
 
 const componentVcet = 'COMPONENT_VCET'
-const componentMouseDownEvent = makeSimpleEvent('COMPONENT_MOUSE_DOWN')
+const componentMouseDownEvent = createSimpleEvent('COMPONENT_MOUSE_DOWN')
 const componentCondition = createEpicCondition<ComponentStateType>(componentVcet)
 const componentRightCondition = componentCondition.withSelector<number>(({ position: { left }, dimensions: { width } }) => left + width)
 const componentPositionCondition = componentCondition.withSelectorKey('position')

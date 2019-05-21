@@ -1,12 +1,12 @@
 // @flow strict
 
-import { makeEvent, createEffectManager } from '../epics'
+import { createEvent, createEffectManager } from '../epics'
 
 type StateType = {| requestsByEpicVcet: { [vcet: string]: Request } |}
 type ScopeType = {| resolvePromiseByEpicVcet: { [vcet: string]: () => void } |}
 type RequestAnimationFrameEffectType = {| cmd: 'REQUEST' | 'CANCEL', type: typeof requestType |}
 
-const AnimationFrameEvent = makeEvent<{| dateNow: number |}>('ANIMATION_FRAME')
+const AnimationFrameEvent = createEvent<{| dateNow: number |}>('ANIMATION_FRAME')
 const requestType: 'request_animation_frame_effect' = 'request_animation_frame_effect'
 const requestAnimationFrameEC = (): RequestAnimationFrameEffectType => ({ type: requestType, cmd: 'REQUEST' })
 const cancelAnimationFrameEC = (): RequestAnimationFrameEffectType => ({	type: requestType, cmd: 'CANCEL' })

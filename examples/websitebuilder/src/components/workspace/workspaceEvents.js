@@ -1,7 +1,7 @@
 // @flow
-import { makeEvent } from '../../../../../src/epics'
+import { createEvent } from '../../../../../src/epics'
 
-const workspaceScroll = makeEvent<{| top: number |}>('WORKSPACE_SCROLL')
+const workspaceScroll = createEvent<{| top: number |}>('WORKSPACE_SCROLL')
 
 export {
 	workspaceScroll,

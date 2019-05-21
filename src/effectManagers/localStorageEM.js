@@ -3,8 +3,8 @@
 import {
 	createEffectManager,
 	type AnyValueType,
-	makeSimpleEvent,
-	makeEvent,
+	createSimpleEvent,
+	createEvent,
 	getObjectKeys,
 } from '../epics'
 import { setProp } from '../utils'
@@ -35,11 +35,11 @@ const localStorageRemoveItemsEC = (keys: Array<string>): LocalStorageEffectType 
 const localStorageGetKeysEC = (): LocalStorageEffectType => ({ type: requestType, cmd: { type: 'GET_KEYS' } })
 const localStorageClearEC = (): LocalStorageEffectType => ({ type: requestType, cmd: { type: 'CLEAR' } })
 
-const localStorageUnavailableResult = makeSimpleEvent('LOCAL_STORAGE_UNAVAILABLE_RESULT')
-const localStorageQuotaExceededResult = makeSimpleEvent('LOCAL_STORAGE_QUOTA_EXCEEDED_RESULT')
-const localStorageGetItemResult = makeEvent<{| value: ?string |}>('LOCAL_STORAGE_GET_ITEM_RESULT')
-const localStorageGetItemsResult = makeEvent<{| values: { [key: string]: ?string } |}>('LOCAL_STORAGE_GET_ITEMS_RESULT')
-const localStorageGetKeysResult = makeEvent<{| keys: Array<string> |}>('LOCAL_STORAGE_GET_KEYS_RESULT')
+const localStorageUnavailableResult = createSimpleEvent('LOCAL_STORAGE_UNAVAILABLE_RESULT')
+const localStorageQuotaExceededResult = createSimpleEvent('LOCAL_STORAGE_QUOTA_EXCEEDED_RESULT')
+const localStorageGetItemResult = createEvent<{| value: ?string |}>('LOCAL_STORAGE_GET_ITEM_RESULT')
+const localStorageGetItemsResult = createEvent<{| values: { [key: string]: ?string } |}>('LOCAL_STORAGE_GET_ITEMS_RESULT')
+const localStorageGetKeysResult = createEvent<{| keys: Array<string> |}>('LOCAL_STORAGE_GET_KEYS_RESULT')
 
 function isQuotaExceededError(e) {
 	// https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API#Testing_for_availability

@@ -2329,12 +2329,12 @@ function makeSimpleMsg(msgType: string): {|
 	})
 }
 
-const makeSimpleEvent = makeSimpleMsg
-const makeEvent = makeMsg
-const makeSimpleCommand = makeSimpleMsg
-const makeCommand = makeMsg
+const createSimpleEvent = makeSimpleMsg
+const createEvent = makeMsg
+const createSimpleCommand = makeSimpleMsg
+const createCommand = makeMsg
 
-const storeCreatedEvent = makeSimpleEvent('@STORE_CREATED')
+const storeCreatedEvent = createSimpleEvent('@STORE_CREATED')
 
 export type { // eslint-disable-line import/group-exports
 	CreateStorePropsType,
@@ -2360,10 +2360,10 @@ export type { // eslint-disable-line import/group-exports
 
 export { // eslint-disable-line import/group-exports
 	unnest,
-	makeSimpleEvent,
-	makeEvent,
-	makeSimpleCommand,
-	makeCommand,
+	createSimpleEvent,
+	createEvent,
+	createSimpleCommand,
+	createCommand,
 	createEpic,
 	createEpicFromReduxReducer,
 	createEpicWithScope,

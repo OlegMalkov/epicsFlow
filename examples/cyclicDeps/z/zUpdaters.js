@@ -1,11 +1,11 @@
 // @flow strict
-import { type UpdaterType, createUpdater, makeSimpleEvent } from '../../../src/epics'
+import { type UpdaterType, createUpdater, createSimpleEvent } from '../../../src/epics'
 import { xValueCondition } from '../x/xAAC'
 import { yValueC } from '../y/yAAC'
 
 import { zComputeResult, zIncMultiplier, type ZStateType } from './zState'
 
-const zClicked = makeSimpleEvent('Z_CLICKED')
+const zClicked = createSimpleEvent('Z_CLICKED')
 
 type ZUpdaterType = UpdaterType<ZStateType, *, *, *>
 const

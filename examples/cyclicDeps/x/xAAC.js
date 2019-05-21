@@ -1,11 +1,11 @@
 // @flow strict
 import { type XStateType } from './xState'
-import { createEpicCondition, makeSimpleEvent } from '../../../src/epics'
+import { createEpicCondition, createSimpleEvent } from '../../../src/epics'
 
 const xVcet = 'X_VCET'
 const xCondition = createEpicCondition<XStateType>(xVcet)
 const xValueCondition = xCondition.wsk('value')
-const xClicked = makeSimpleEvent('X_CLICKED')
+const xClicked = createSimpleEvent('X_CLICKED')
 
 
 export {

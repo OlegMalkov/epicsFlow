@@ -1,9 +1,9 @@
 // @flow strict
 
 import { type DimensionsType } from '../../types'
-import { makeEvent } from '../../../../../src/epics'
+import { createEvent } from '../../../../../src/epics'
 
-const browserDimensions = makeEvent<DimensionsType>('BROWSER_DIMENSIONS')
+const browserDimensions = createEvent<DimensionsType>('BROWSER_DIMENSIONS')
 
 export {
 	browserDimensions,

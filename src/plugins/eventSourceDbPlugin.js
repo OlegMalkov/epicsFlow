@@ -2,7 +2,7 @@
 import {
 	type PluginType,
 	storeCreatedEvent,
-	makeSimpleEvent,
+	createSimpleEvent,
 	createUpdater,
 	dispatchMsgEffectCreator,
 	type BuiltInEffectType,
@@ -12,7 +12,7 @@ import {
 	type AnyMsgType,
 	createCondition,
 	createEpicWithScope,
-	makeEvent,
+	createEvent,
 } from '../epics'
 import {
 	type LocalStorageEffectType,
@@ -25,9 +25,9 @@ import { setPath2, setProp } from '../utils'
 type EffectType = BuiltInEffectType | LocalStorageEffectType
 type EsdbPluginConfigType = {| esdbAggregate: true |}
 
-const esdbRehydrateRequest = makeSimpleEvent('REHYDRADE_REQUEST')
-const esdbRehydrateAggregates = makeEvent<{| aggregatesStatesByVcet: { [vcet: string]: AnyValueType } |}>('REHYDRADE_AGGREGATES')
-const esdbSave = makeSimpleEvent('SAVE')
+const esdbRehydrateRequest = createSimpleEvent('REHYDRADE_REQUEST')
+const esdbRehydrateAggregates = createEvent<{| aggregatesStatesByVcet: { [vcet: string]: AnyValueType } |}>('REHYDRADE_AGGREGATES')
+const esdbSave = createSimpleEvent('SAVE')
 const esdbCreateEventsLocalStorageKey = (now: number) => `esdb:${now}`
 const esdbAggregatesStateLocalStorageKey = 'esdb_aggregates_states'
 

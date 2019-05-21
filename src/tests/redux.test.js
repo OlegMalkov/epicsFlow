@@ -5,14 +5,14 @@ import {
 	createEpicFromReduxReducer,
 	createUpdaterWithReducer,
 	createStore,
-	makeCommand,
-	makeSimpleCommand,
+	createCommand,
+	createSimpleCommand,
 } from '../epics'
 
 type StateType = {| counter: number |}
 
-const IncCmd = makeSimpleCommand('INC')
-const IncByCmd = makeCommand<{| amount: number |}>('INC_BY')
+const IncCmd = createSimpleCommand('INC')
+const IncByCmd = createCommand<{| amount: number |}>('INC_BY')
 
 describe('redux', () => {
 	it('can use redux reducer to create epic', async () => {
