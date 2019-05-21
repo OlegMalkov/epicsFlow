@@ -6,7 +6,7 @@ type StateType = {| requestsByEpicVcet: { [vcet: string]: Request } |}
 type ScopeType = {| resolvePromiseByEpicVcet: { [vcet: string]: () => void } |}
 type RequestAnimationFrameEffectType = {| cmd: 'REQUEST' | 'CANCEL', type: typeof requestType |}
 
-const animationFrame = makeEvent<{| dateNow: number |}>('ANIMATION_FRAME')
+const AnimationFrameEvent = makeEvent<{| dateNow: number |}>('ANIMATION_FRAME')
 const requestType: 'request_animation_frame_effect' = 'request_animation_frame_effect'
 const requestAnimationFrameEC = (): RequestAnimationFrameEffectType => ({ type: requestType, cmd: 'REQUEST' })
 const cancelAnimationFrameEC = (): RequestAnimationFrameEffectType => ({	type: requestType, cmd: 'CANCEL' })
@@ -25,7 +25,7 @@ const requestAnimationFrameEM = createEffectManager<RequestAnimationFrameEffectT
 				}
 
 				rafId = window.requestAnimationFrame(() => {
-					dispatch(animationFrame.create({ dateNow: Date.now() }), { targetEpicVcet: [requesterEpicVcet] })
+					dispatch(AnimationFrameEvent.create({ dateNow: Date.now() }), { targetEpicVcet: [requesterEpicVcet] })
 					resolvePromise()
 				})
 				scope.resolvePromiseByEpicVcet[requesterEpicVcet] = resolvePromise
@@ -66,6 +66,6 @@ export type { // eslint-disable-line import/group-exports
 export { // eslint-disable-line import/group-exports
 	requestAnimationFrameEC,
 	cancelAnimationFrameEC,
-	animationFrame,
+	AnimationFrameEvent,
 	requestAnimationFrameEM,
 }

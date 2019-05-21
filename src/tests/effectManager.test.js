@@ -9,7 +9,7 @@ import {
 	storeCreatedEvent,
 	dispatchBatchedMsgsEffectCreator,
 } from '../epics'
-import { type RequestAnimationFrameEffectType, animationFrame, requestAnimationFrameEM, requestAnimationFrameEC } from '../effectManagers/requestAnimationFrameEM'
+import { type RequestAnimationFrameEffectType, AnimationFrameEvent, requestAnimationFrameEM, requestAnimationFrameEC } from '../effectManagers/requestAnimationFrameEM'
 import { waitEffectManagers } from './utils'
 
 type CustomEpicEffectType = RequestAnimationFrameEffectType
@@ -26,7 +26,7 @@ describe('effectManager', () => {
 				updaters: {
 					af: createUpdater({
 						given: {},
-						when: { _af: animationFrame.condition },
+						when: { _af: AnimationFrameEvent.condition },
 						then: ({ R }) => R.mapState(() => 1),
 					}),
 				},
@@ -44,7 +44,7 @@ describe('effectManager', () => {
 				}),
 				af: createUpdater({
 					given: {},
-					when: { _af: animationFrame.condition },
+					when: { _af: AnimationFrameEvent.condition },
 					then: ({ R }) => R.mapState(state => state + 1),
 				}),
 			},

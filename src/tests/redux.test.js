@@ -7,14 +7,12 @@ import {
 	createStore,
 	makeCommand,
 	makeSimpleCommand,
-	createConditionMatcher,
 } from '../epics'
 
 type StateType = {| counter: number |}
 
 const IncCmd = makeSimpleCommand('INC')
 const IncByCmd = makeCommand<{| amount: number |}>('INC_BY')
-const IncByCmdConditionMatcher = createConditionMatcher(IncByCmd.condition)
 
 describe('redux', () => {
 	it('can use redux reducer to create epic', async () => {
@@ -23,7 +21,7 @@ describe('redux', () => {
 
 			if (action.type === IncCmd.type) return { ...state, counter: state.counter + 1 }
 
-			const incByCmd = IncByCmdConditionMatcher(action)
+			const incByCmd = IncByCmd.match(action)
 
 			if (incByCmd) {
 				return { ...state, counter: state.counter + incByCmd.amount }
