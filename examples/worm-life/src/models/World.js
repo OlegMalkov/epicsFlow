@@ -1,14 +1,27 @@
 /* @flow strict */
 
-import { type WormType, setWormPosition, setWormHeadingDegree } from './Worm'
+import {
+	type WormType,
+	setWormPosition,
+	setWormHeadingDegree,
+	isWormCollide,
+	setWormColisionAnimation,
+	decreaseWormColisionAnimation,
+	setWormBounceBackDistance,
+} from './Worm'
 import { type PositionType } from '../types'
-import { getRandomInt_IMPURE } from '../utils'
+import { xMoveDiff, yMoveDiff, updateEachMapValue, getObjectValues } from '../utils'
+import { getRandomInt_IMPURE } from '../utils_IMPURE'
 
 type AppleType = {|
     position: PositionType,
 |}
 
-opaque type WorldType: * = {|
+opaque type WorldType: {|
+    worms: { [name: string]: WormType },
+    apples: Array<AppleType>,
+    age: number,
+|} = {|
     worms: { [name: string]: WormType },
     apples: Array<AppleType>,
     age: number,
@@ -73,48 +86,96 @@ const spawnApple = (spawnPosition: PositionType) => (world: WorldType): WorldTyp
 	return { ...world, apples: [...world.apples, { position: spawnPosition }] }
 }
 
-const moveDiffFactory = (fn) => (degree, movedDistance) => Math.round(fn(degree * Math.PI / 180) * 100) / 100 * movedDistance
-const xMoveDiff = moveDiffFactory(Math.cos)
-const yMoveDiff = moveDiffFactory(Math.sin)
-
 const outOfWorld = (position: PositionType) =>
 	position.x >= WorldBoundaries.right ||
 	position.x <= WorldBoundaries.left	||
 	position.y >= WorldBoundaries.bottom ||
 	position.y <= WorldBoundaries.top
 
-const colisionWithOtherWorms = (wormPosition, otherWorms) => false
-const moveWorms = (world: WorldType): WorldType => {
-	return { ...world, worms: Object.keys(world.worms).reduce((worms, wormName) => {
-		const worm = world.worms[wormName]
+const colisionWithOtherWorms = (worm, otherWorms) =>
+	otherWorms.find(w => isWormCollide(worm, w))
+
+const moveWorm = (movedDistance: number) => (worm: WormType) => setWormPosition({
+	x: worm.position.x + xMoveDiff(worm.headingDegree, movedDistance),
+	y: worm.position.y + yMoveDiff(worm.headingDegree, movedDistance),
+})(worm)
+
+const turnWormBack = (worm: WormType) => setWormHeadingDegree(worm.headingDegree + 180)(worm)
+
+const moveWorms = (world: WorldType, rnd: number): WorldType => {
+	const wormsNamesToShowCollision = []
+
+	let updatedWorms = updateEachMapValue(_worm => {
+		let worm = _worm
 
 		if (worm.speed === 0) {
-			return { ...worms, [wormName]: worm }
+			return worm
 		}
 
-		const movedDistance = worm.speed / 100
-		const newPosition = {
-			x: worm.position.x + xMoveDiff(worm.headingDegree, movedDistance),
-			y: worm.position.y + yMoveDiff(worm.headingDegree, movedDistance),
+		if (worm.bounceBackDistance > 0) {
+			worm = turnWormBack(worm)
+			const moveBackDistance = Math.max(1, worm.bounceBackDistance / 30)
+
+			worm = setWormBounceBackDistance(worm.bounceBackDistance - moveBackDistance)(worm)
+			worm = moveWorm(moveBackDistance)(worm)
+			worm = turnWormBack(worm)
+		} else {
+			worm = moveWorm((worm.speed - (worm.size / 2 - 50)) / 100)(worm)
 		}
 
-		const otherWorms = Object.keys(worms)
-			.filter(n => n !== wormName)
-			.map(wormName => worms[wormName])
+		if (outOfWorld(worm.position)) {
+			worm = turnWormBack(worm)
+			worm = moveWorm(worm.speed / 50)(worm)
+		}
 
-		if (outOfWorld(newPosition) || colisionWithOtherWorms(worm.position, otherWorms)) {
-			return {
-				...worms,
-				[wormName]: setWormHeadingDegree(worm.headingDegree + 25)(worm),
+		const otherWorms = getObjectValues(world.worms).filter(w => w.name !== worm.name)
+		const otherWormColision = colisionWithOtherWorms(worm, otherWorms)
+
+		if (otherWormColision) {
+			if (otherWormColision.size > worm.size) {
+				worm = setWormBounceBackDistance((otherWormColision.size - worm.size) * 3)(worm)
+				wormsNamesToShowCollision.push(otherWormColision.name)
 			}
 		}
 
-
-		return {
-			...worms,
-			[wormName]: setWormPosition(newPosition)(worm),
+		if (worm.position.x < 0) {
+			worm = setWormPosition({ x: 10, y: worm.position.y })(worm)
 		}
-	}, {}) }
+		if (worm.position.x > WorldBoundaries.right) {
+			worm = setWormPosition({ x: WorldBoundaries.right - 10, y: worm.position.y })(worm)
+		}
+		if (worm.position.y < 0) {
+			worm = setWormPosition({ y: 0, x: worm.position.x })(worm)
+		}
+		if (worm.position.y > WorldBoundaries.bottom) {
+			worm = setWormPosition({ y: WorldBoundaries.bottom - 10, x: worm.position.x })(worm)
+		}
+
+		return worm
+	}, world.worms)
+
+	updatedWorms = updateEachMapValue(worm => {
+		if (wormsNamesToShowCollision.includes(worm.name)) {
+			return setWormColisionAnimation(worm)
+		}
+		return worm
+	}, updatedWorms)
+	return { ...world, worms: updatedWorms }
+}
+
+const decreaseCollisionAnimationCounter = (world: WorldType): WorldType => {
+	const updatedWorms = updateEachMapValue(worm => {
+		if (worm.collisionAnimationCounter === 0) {
+			return worm
+		}
+
+		return decreaseWormColisionAnimation(worm)
+	}, world.worms)
+
+	return {
+		...world,
+		worms: updatedWorms,
+	}
 }
 
 const applyWormsSubconsciousInstructions = (world: WorldType): WorldType => world
@@ -131,6 +192,7 @@ export type {
 // eslint-disable-next-line import/group-exports
 export {
 	worldInitialState,
+	decreaseCollisionAnimationCounter,
 	spawnWorm,
 	spawnApple,
 	generateFreeSpawnPosition_IMPURE,

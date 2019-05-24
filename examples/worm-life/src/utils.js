@@ -1,12 +1,23 @@
-/* @flow strict */
+/* @flow */
 
-function getRandomInt_IMPURE(min: number, max: number) {
-	const ceiledMin = Math.ceil(min)
-	const flooredMax = Math.floor(max)
+const moveDiffFactory = (fn) => (degree: number, movedDistance: number) =>
+	Math.round(fn(degree * Math.PI / 180) * 100) / 100 * movedDistance
+const xMoveDiff = moveDiffFactory(Math.cos)
+const yMoveDiff = moveDiffFactory(Math.sin)
+const updateEachMapValue = <V, O: { [string]: V }>(updater: V => V, obj: O): O => {
+	return (Object.keys(obj).reduce((acc, k) => {
+		acc[k] = updater(obj[k])
+		return acc
+	}, {}): any)
+}
 
-	return Math.floor(Math.random() * (flooredMax - ceiledMin + 1)) + ceiledMin
+const getObjectValues = <V, O: { [string]: V }>(obj: O): Array<V> => {
+	return (Object.values(obj): any)
 }
 
 export {
-	getRandomInt_IMPURE,
+	xMoveDiff,
+	yMoveDiff,
+	updateEachMapValue,
+	getObjectValues,
 }

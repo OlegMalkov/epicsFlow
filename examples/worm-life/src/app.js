@@ -12,28 +12,39 @@ import {
 	applyWormsSubconsciousInstructions,
 	applyWormsConsciousInstructions,
 	WorldDimensions,
+	decreaseCollisionAnimationCounter,
 } from './models/World'
 import { createWorm } from './models/Worm'
 import './app.css'
+import { getRandomInt_IMPURE } from './utils_IMPURE';
 
 export class App extends Component<{}, WorldType> {
 	constructor(props: {}) {
 		super(props)
 		this.state = worldInitialState
-		for (let i = 0; i < 5; i++) {
-			const maybeWorm = createWorm({ name: `Oleg${i}` })
-			const maybeSpawnPosition = generateFreeSpawnPosition_IMPURE(this.state)
 
-			if (maybeWorm && maybeSpawnPosition) {
-				const maybeState = spawnWorm(maybeWorm, maybeSpawnPosition)(this.state)
+		// $FlowFixMe
+		this.gameLoop = this.gameLoop.bind(this)
+		// $FlowFixMe
+		this.spawnWorm = this.spawnWorm.bind(this)
+	}
 
-				if (maybeState) {
-					this.state = maybeState
-				}
+	spawnWorm(i: number) {
+		if (Object.keys(this.state.worms).length > 8) return
+		const maybeWorm = createWorm({ name: `Oleg${i}` })
+		const maybeSpawnPosition = generateFreeSpawnPosition_IMPURE(this.state)
+
+		// $FlowFixMe
+		maybeWorm.headingDegree = Math.random() * 360
+		if (maybeWorm && maybeSpawnPosition) {
+			const maybeState = spawnWorm(maybeWorm, maybeSpawnPosition)(this.state)
+
+			if (maybeState) {
+				// $FlowFixMe
+				this.setState(maybeState)
 			}
 		}
-
-		(this: any).gameLoop = this.gameLoop.bind(this)
+		setTimeout(() => this.spawnWorm(i+1), 1000)
 	}
 
 	gameLoop() {
@@ -53,8 +64,10 @@ export class App extends Component<{}, WorldType> {
 		// apply worms conscious instructions
 		nextState = applyWormsConsciousInstructions(nextState)
 
+		nextState = decreaseCollisionAnimationCounter(nextState)
+
 		// move worms
-		nextState = moveWorms(nextState)
+		nextState = moveWorms(nextState, getRandomInt_IMPURE(0, 100))
 
 		// increase age
 		nextState = increaseAge(nextState)
@@ -67,6 +80,7 @@ export class App extends Component<{}, WorldType> {
 	}
 	componentDidMount() {
 		window.requestAnimationFrame(this.gameLoop)
+		this.spawnWorm(0)
 	}
 
 	render() {
@@ -81,53 +95,65 @@ export class App extends Component<{}, WorldType> {
 							const halfWormEyeSize = wormEyeSize / 2
 
 							return (
-								<div
-									key={wormName}
-									className="wormPosition"
-									style={{
-										left: worm.position.x,
-										top: worm.position.y,
-										transform: `rotate(${worm.headingDegree}deg)`,
-									}}
-								>
+								<div key={wormName}>
 									<div
-										className="worm"
+										className="wormPosition"
 										style={{
-											width: worm.size,
-											height: wormHeight,
-											backgroundColor: worm.color,
+											left: worm.position.x,
+											top: worm.position.y,
+											transform: `rotate(${worm.headingDegree}deg)`,
 										}}
 									>
 										<div
-											className="wormEye"
+											className="worm"
 											style={{
-												right: -halfWormEyeSize,
-												top: -wormEyeSize + wormHeight / 2,
-												width: wormEyeSize,
-												height: wormEyeSize,
+												width: worm.size,
+												height: wormHeight,
 												backgroundColor: worm.color,
 											}}
-										/>
-										<div
-											className="wormEye"
-											style={{
-												right: -halfWormEyeSize,
-												bottom: -wormEyeSize + wormHeight / 2,
-												width: wormEyeSize,
-												height: wormEyeSize,
-												backgroundColor: worm.color,
-											}}
-										/>
-										<div
-											className="wormVision"
-											style={{
-												right: - worm.vision / 2,
-												top: -(worm.vision / 2) + wormHeight / 2,
-												width: worm.vision,
-												height: worm.vision,
-												backgroundColor: worm.color,
-											}}
-										/>
+										>
+											<div
+												className="wormEye"
+												style={{
+													right: -halfWormEyeSize,
+													top: -wormEyeSize + wormHeight / 2,
+													width: wormEyeSize,
+													height: wormEyeSize,
+													backgroundColor: worm.color,
+												}}
+											/>
+											<div
+												className="wormEye"
+												style={{
+													right: -halfWormEyeSize,
+													bottom: -wormEyeSize + wormHeight / 2,
+													width: wormEyeSize,
+													height: wormEyeSize,
+													backgroundColor: worm.color,
+												}}
+											/>
+											<div
+												className="wormVision"
+												style={{
+													right: - worm.vision / 2,
+													top: -(worm.vision / 2) + wormHeight / 2,
+													width: worm.vision,
+													height: worm.vision,
+													backgroundColor: worm.color,
+												}}
+											/>
+											<div
+												className="wormCollisionAnimation"
+												style={{
+													transform: `rotate(${worm.headingDegree}deg)`,
+													left: 0,
+													top: -worm.size / 2,
+													width: worm.size,
+													height: worm.size,
+													opacity: worm.collisionAnimationCounter / 200,
+												}}
+											/>
+										</div>
 									</div>
 								</div>
 							)

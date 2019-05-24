@@ -20,6 +20,7 @@
   position: absolute;
   right: 0;
   border-radius: 50% 0% 0% 50%;
+  transition: all 0.1s ease-in-out;
 }
 
 .wormEye {
@@ -43,4 +44,12 @@
   right: 0;
   opacity: 0.15;
   border-radius: 50%;
+  transition: all 0.1s ease-in-out;
+}
+
+.wormCollisionAnimation {
+  position: absolute;
+  border-radius: 50%;
+  background-color: blue;
+  transition: all 0.1s ease-in-out;
 }
