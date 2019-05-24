@@ -8,13 +8,15 @@ import {
 	setWormColisionAnimation,
 	decreaseWormColisionAnimation,
 	setWormBounceBackDistance,
+	feedWorm,
 } from './Worm'
 import { type PositionType } from '../types'
 import { xMoveDiff, yMoveDiff, updateEachMapValue, getObjectValues } from '../utils'
 import { getRandomInt_IMPURE } from '../utils_IMPURE'
 
 type AppleType = {|
-    position: PositionType,
+	position: PositionType,
+	size: number,
 |}
 
 opaque type WorldType: {|
@@ -83,7 +85,11 @@ const spawnWorm = (worm: WormType, spawnPosition: PositionType) => (world: World
 }
 
 const spawnApple = (spawnPosition: PositionType) => (world: WorldType): WorldType => {
-	return { ...world, apples: [...world.apples, { position: spawnPosition }] }
+	return { ...world, apples: [...world.apples, { position: spawnPosition, size: 10 }] }
+}
+
+const growApples = (world: WorldType): WorldType => {
+	return { ...world, apples: world.apples.map(apple => ({ ...apple, size: apple.size + 1 })) }
 }
 
 const outOfWorld = (position: PositionType) =>
@@ -102,15 +108,29 @@ const moveWorm = (movedDistance: number) => (worm: WormType) => setWormPosition(
 
 const turnWormBack = (worm: WormType) => setWormHeadingDegree(worm.headingDegree + 180)(worm)
 
-const moveWorms = (world: WorldType, rnd: number): WorldType => {
+const collisionWithApple = (worm: WormType, apples: Array<AppleType>): number => {
+	const wormMouthSize = worm.size / 15
+
+	return apples.indexOf(
+		apples.find(apple => {
+			const r = apple.size / 2
+			const dx = worm.position.x - apple.position.x
+			const dy = worm.position.y - apple.position.y
+			const d = Math.sqrt((dy*dy) + (dx*dx))
+
+			return !(d > (r + wormMouthSize) || d < Math.abs(wormMouthSize - r))
+		})
+	)
+}
+const moveWorms = (world: WorldType): WorldType => {
 	const wormsNamesToShowCollision = []
+	const appleBaits = world.apples.map(() => 0)
 
 	let updatedWorms = updateEachMapValue(_worm => {
 		let worm = _worm
 
-		if (worm.speed === 0) {
-			return worm
-		}
+		const collisionAppleIndex = collisionWithApple(worm, world.apples)
+		const apple = world.apples[collisionAppleIndex]
 
 		if (worm.bounceBackDistance > 0) {
 			worm = turnWormBack(worm)
@@ -119,8 +139,14 @@ const moveWorms = (world: WorldType, rnd: number): WorldType => {
 			worm = setWormBounceBackDistance(worm.bounceBackDistance - moveBackDistance)(worm)
 			worm = moveWorm(moveBackDistance)(worm)
 			worm = turnWormBack(worm)
-		} else {
-			worm = moveWorm((worm.speed - (worm.size / 2 - 50)) / 100)(worm)
+		} else if (apple) {
+			const baitSize = Math.min(apple.size, worm.size / 300)
+
+			worm = feedWorm(baitSize)(worm)
+			appleBaits[collisionAppleIndex] += baitSize
+		} else if (worm.speed !== 0) {
+			worm = setWormHeadingDegree(worm.headingDegree + 0.5)(worm)
+			worm = moveWorm(Math.max(0, (worm.speed - (worm.size / 2 - 50))) / 100)(worm)
 		}
 
 		if (outOfWorld(worm.position)) {
@@ -131,9 +157,9 @@ const moveWorms = (world: WorldType, rnd: number): WorldType => {
 		const otherWorms = getObjectValues(world.worms).filter(w => w.name !== worm.name)
 		const otherWormColision = colisionWithOtherWorms(worm, otherWorms)
 
-		if (otherWormColision) {
+		if (otherWormColision && worm.bounceBackDistance <= 0) {
 			if (otherWormColision.size > worm.size) {
-				worm = setWormBounceBackDistance((otherWormColision.size - worm.size) * 3)(worm)
+				worm = setWormBounceBackDistance(otherWormColision.size - worm.size)(worm)
 				wormsNamesToShowCollision.push(otherWormColision.name)
 			}
 		}
@@ -160,7 +186,17 @@ const moveWorms = (world: WorldType, rnd: number): WorldType => {
 		}
 		return worm
 	}, updatedWorms)
-	return { ...world, worms: updatedWorms }
+
+	let updatedApples = world.apples.map((apple, index) => {
+		if (appleBaits[index] > 0) {
+			return { ...apple, size: apple.size - appleBaits[index] }
+		}
+		return apple
+	})
+
+	updatedApples = updatedApples.filter(apple => apple.size > 1)
+
+	return { ...world, worms: updatedWorms, apples: updatedApples }
 }
 
 const decreaseCollisionAnimationCounter = (world: WorldType): WorldType => {
@@ -195,6 +231,7 @@ export {
 	decreaseCollisionAnimationCounter,
 	spawnWorm,
 	spawnApple,
+	growApples,
 	generateFreeSpawnPosition_IMPURE,
 	moveWorms,
 	increaseAge,

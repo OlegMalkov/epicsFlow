@@ -16,6 +16,7 @@ opaque type WormType: {|
 	subconsciousScript: string,
 	collisionAnimationCounter: number,
 	bounceBackDistance: number,
+	attributesCapacity: number,
 |} = {|
     name: string,
     speed: number,
@@ -28,6 +29,7 @@ opaque type WormType: {|
 	subconsciousScript: string,
 	collisionAnimationCounter: number,
 	bounceBackDistance: number,
+	attributesCapacity: number,
 |}
 
 type WormSubconsciousScriptResultType = {| speed: number, size: number, vision: number, headingDegree: number |}
@@ -35,18 +37,19 @@ type WormSubconsciousScriptResultType = {| speed: number, size: number, vision: 
 const wormDefaultSubconsciousScript = `(world: WorldType, worm: WormType): WormSubconsciousScriptResultType => 
 	{| speed: 100, size: 100, vision: 100, headingDegree: 75 |}`
 
-const createWorm = ({ name, speed = 100, size = 100, vision = 100 }: {|
+const initialWormAttributesCapacity = 300
+const createWorm = ({ name, speed = 170, size = 30, vision = 100 }: {|
     name: string,
     speed?: number,
     size?: number,
     vision?: number,
 |}): WormType | null => {
-	if (!name || speed + size + vision !== 300) return null
+	if (!name || speed + size + vision !== initialWormAttributesCapacity) return null
 
 	return {
 		name,
-		speed,
-		size: 200 * Math.random(),
+		speed: 500,
+		size: 90,
 		vision,
 		color: rgbaColorRed,
 		position: { x: -1, y: -1 },
@@ -55,11 +58,22 @@ const createWorm = ({ name, speed = 100, size = 100, vision = 100 }: {|
 		subconsciousScript: wormDefaultSubconsciousScript,
 		collisionAnimationCounter: 0,
 		bounceBackDistance: 0,
+		attributesCapacity: initialWormAttributesCapacity,
 	}
 }
 
 const setWormPosition = (position: PositionType) => (worm: WormType): WormType => {
 	return { ...worm, position }
+}
+
+const feedWorm = (amount: number) => (worm: WormType): WormType => {
+	const digestedAmount = amount / 10
+
+	return {
+		...worm,
+		attributesCapacity: worm.attributesCapacity + digestedAmount,
+		size: worm.size + digestedAmount,
+	}
 }
 
 const setWormHeadingDegree = (headingDegree: number) => (worm: WormType): WormType => {
@@ -91,7 +105,7 @@ function checkLineIntersection(
 ) {
 	const denominator = ((line2EndY - line2StartY) * (line1EndX - line1StartX)) - ((line2EndX - line2StartX) * (line1EndY - line1StartY))
 
-	if (denominator == 0) {
+	if (denominator === 0) {
 		return false
 	}
 	let a = line1StartY - line2StartY
@@ -136,4 +150,5 @@ export {
 	setWormColisionAnimation,
 	decreaseWormColisionAnimation,
 	setWormBounceBackDistance,
+	feedWorm,
 }
