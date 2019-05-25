@@ -15,9 +15,17 @@ const getObjectValues = <V, O: { [string]: V }>(obj: O): Array<V> => {
 	return (Object.values(obj): any)
 }
 
+const filterObject = <V, O: { [string]: V }>(predicate: (V) => bool, obj: O): O => {
+	return (
+		Object.keys(obj).filter(k => predicate(obj[k]))
+			.reduce((a, k) => ({ ...a, [k]: obj[k] }), {}): any
+	)
+}
+
 export {
 	xMoveDiff,
 	yMoveDiff,
 	updateEachMapValue,
 	getObjectValues,
+	filterObject,
 }

@@ -9,23 +9,29 @@ import {
 	decreaseWormColisionAnimation,
 	setWormBounceBackDistance,
 	feedWorm,
+	setWormSubconsciousError,
+	setWormDesiredAttributes,
+	setWormMove,
 } from './Worm'
 import { type PositionType } from '../types'
-import { xMoveDiff, yMoveDiff, updateEachMapValue, getObjectValues } from '../utils'
+import { xMoveDiff, yMoveDiff, updateEachMapValue, getObjectValues, filterObject } from '../utils'
 import { getRandomInt_IMPURE } from '../utils_IMPURE'
+import { deepFreeze } from '../../../../src/epics'
 
 type AppleType = {|
 	position: PositionType,
 	size: number,
 |}
 
+type ApplesType = $ReadOnlyArray<AppleType>
+
 opaque type WorldType: {|
     worms: { [name: string]: WormType },
-    apples: Array<AppleType>,
+    apples: ApplesType,
     age: number,
 |} = {|
     worms: { [name: string]: WormType },
-    apples: Array<AppleType>,
+    apples: ApplesType,
     age: number,
 |}
 
@@ -108,20 +114,124 @@ const moveWorm = (movedDistance: number) => (worm: WormType) => setWormPosition(
 
 const turnWormBack = (worm: WormType) => setWormHeadingDegree(worm.headingDegree + 180)(worm)
 
-const collisionWithApple = (worm: WormType, apples: Array<AppleType>): number => {
-	const wormMouthSize = worm.size / 15
+type CircleType = {| position: PositionType, radius: number |}
 
-	return apples.indexOf(
-		apples.find(apple => {
-			const r = apple.size / 2
-			const dx = worm.position.x - apple.position.x
-			const dy = worm.position.y - apple.position.y
-			const d = Math.sqrt((dy*dy) + (dx*dx))
+const circleIntersects = (circle1: CircleType) => (circle2: CircleType): bool => {
+	const dx = circle1.position.x - circle2.position.x
+	const dy = circle1.position.y - circle2.position.y
+	const d = Math.sqrt((dy*dy) + (dx*dx))
 
-			return !(d > (r + wormMouthSize) || d < Math.abs(wormMouthSize - r))
-		})
-	)
+	return d < circle2.radius + circle1.radius
 }
+
+const intersectsWithApple = (position: PositionType, radius: number) => (apple: AppleType): bool => {
+	return circleIntersects({ position, radius })({ position: apple.position, radius: apple.size / 2 })
+}
+
+const collisionWithApple = (worm: WormType, apples: ApplesType): number => {
+	const wormMouthSize = Math.max(2, worm.size / 50)
+
+	return apples.indexOf(apples.find(intersectsWithApple(worm.position, wormMouthSize)))
+}
+
+function angleBetween2Points(point1: PositionType, point2: PositionType) {
+	const dy = point2.y - point1.y
+	const dx = point2.x - point1.x
+
+	let theta = Math.atan2(dy, dx)
+
+	theta *= 180 / Math.PI
+
+	return theta < 0 ? 360 + theta : theta
+}
+
+const getDistanceBetweenPoints = (p1, p2) =>
+	Math.hypot(p1.x - p2.x, p1.y - p2.y)
+
+const getClosestApple = (apples: ApplesType, position: PositionType): AppleType | void => {
+	const mutableApples = [...apples]
+
+	mutableApples.sort((a1, a2) => getDistanceBetweenPoints(a2.position, position)
+		- getDistanceBetweenPoints(a1.position, position))
+
+	return mutableApples[mutableApples.length - 1]
+}
+
+function evalInContext(js: string) {
+	return function() { return eval(js) }.call({
+		angleBetween2Points,
+		getClosestApple,
+		getDistanceBetweenPoints,
+	})
+}
+
+const processWormsSubconscious = (world: WorldType): WorldType => {
+	const updatedWorms = updateEachMapValue(_worm => {
+		let worm = _worm
+
+		try {
+			const fn = evalInContext(worm.subconsciousScript)
+
+			const visibleWorld = {
+				...world,
+				apples: world.apples.filter(intersectsWithApple(worm.position, worm.vision)),
+				worms: filterObject(w =>
+					circleIntersects({
+						position: worm.position,
+						radius: worm.vision,
+					})({
+						position: w.position,
+						radius: worm.size,
+					}),
+				world.worms
+				),
+			}
+
+			const result = fn(deepFreeze({ world: visibleWorld, self: worm }))
+
+			if (!result) return worm
+
+			const { headingDegree, speed, size, vision, move }: WormType = result
+
+			if (headingDegree !== undefined) {
+				const currentHeading = worm.headingDegree % 360
+				const desiredHeading = headingDegree % 360
+				const headingDiff = desiredHeading - currentHeading
+				const headingDiffSign = headingDiff / Math.abs(headingDiff)
+
+				let diffToApply = headingDiffSign * worm.speed / 70
+
+				if (headingDiff <= diffToApply) {
+					diffToApply = headingDiff
+				}
+				if (currentHeading !== desiredHeading) {
+					worm = setWormHeadingDegree(currentHeading + diffToApply)(worm)
+				}
+			}
+
+			if (move !== undefined) {
+				worm = setWormMove(move)(worm)
+			}
+
+			worm = setWormDesiredAttributes({
+				speed: speed === undefined ? worm.speed : speed,
+				size: size === undefined ? worm.size : size,
+				vision: vision === undefined ? worm.vision : vision,
+			})(worm)
+
+			return worm
+		} catch (e) {
+			//console.log(worm.name, 'error', e)
+			return setWormSubconsciousError(e.message)(worm)
+		}
+	}, world.worms)
+
+	return {
+		...world,
+		worms: updatedWorms,
+	}
+}
+
 const moveWorms = (world: WorldType): WorldType => {
 	const wormsNamesToShowCollision = []
 	const appleBaits = world.apples.map(() => 0)
@@ -140,13 +250,12 @@ const moveWorms = (world: WorldType): WorldType => {
 			worm = moveWorm(moveBackDistance)(worm)
 			worm = turnWormBack(worm)
 		} else if (apple) {
-			const baitSize = Math.min(apple.size, worm.size / 300)
+			const baitSize = Math.min(apple.size, worm.size / 1000)
 
 			worm = feedWorm(baitSize)(worm)
 			appleBaits[collisionAppleIndex] += baitSize
-		} else if (worm.speed !== 0) {
-			worm = setWormHeadingDegree(worm.headingDegree + 0.5)(worm)
-			worm = moveWorm(Math.max(0, (worm.speed - (worm.size / 2 - 50))) / 100)(worm)
+		} else if (worm.speed !== 0 && worm.move) {
+			worm = moveWorm(Math.max(25, (worm.speed - (worm.size / 2 - 50))) / 100)(worm)
 		}
 
 		if (outOfWorld(worm.position)) {
@@ -194,8 +303,7 @@ const moveWorms = (world: WorldType): WorldType => {
 		return apple
 	})
 
-	updatedApples = updatedApples.filter(apple => apple.size > 1)
-
+	updatedApples = updatedApples.filter(apple => apple.size > 4)
 	return { ...world, worms: updatedWorms, apples: updatedApples }
 }
 
@@ -239,4 +347,5 @@ export {
 	applyWormsConsciousInstructions,
 	WorldBoundaries,
 	WorldDimensions,
+	processWormsSubconscious,
 }

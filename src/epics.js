@@ -2348,6 +2348,7 @@ export type { // eslint-disable-line import/group-exports
 
 export { // eslint-disable-line import/group-exports
 	unnest,
+	deepFreeze,
 	makeSimpleEvent,
 	makeEvent,
 	makeSimpleCommand,

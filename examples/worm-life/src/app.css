@@ -54,5 +54,18 @@
 .apple {
   position: absolute;
   border-radius: 50%;
-  background-color: green;
+  background-color: rgb(251, 255, 0);
+}
+
+.playerStats {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: monospace;
+  font-size: 32px;
+}
+
+.wormName {
+  position: absolute;
+  font-size: 18px;
 }

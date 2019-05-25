@@ -14,9 +14,11 @@ opaque type WormType: {|
     headingDegree: number,
 	applesEaten: number,
 	subconsciousScript: string,
+	subconsciousError: string,
 	collisionAnimationCounter: number,
 	bounceBackDistance: number,
 	attributesCapacity: number,
+	move: bool,
 |} = {|
     name: string,
     speed: number,
@@ -27,18 +29,39 @@ opaque type WormType: {|
     headingDegree: number,
 	applesEaten: number,
 	subconsciousScript: string,
+	subconsciousError: string,
 	collisionAnimationCounter: number,
 	bounceBackDistance: number,
 	attributesCapacity: number,
+	move: bool,
 |}
 
-type WormSubconsciousScriptResultType = {| speed: number, size: number, vision: number, headingDegree: number |}
+type WormSubconsciousScriptResultType = {|
+	speed: number,
+	size: number,
+	vision: number,
+	headingDegree: number,
+	move: bool,
+|}
 
-const wormDefaultSubconsciousScript = `(world: WorldType, worm: WormType): WormSubconsciousScriptResultType => 
-	{| speed: 100, size: 100, vision: 100, headingDegree: 75 |}`
+const wormDefaultSubconsciousScript = `({ world, self }) => {
+	const apple = getClosestApple(world.apples, self.position)
+
+	if (!apple) return { speed: 500, vision: 2000, size: 1, move: true }
+	const headingDegree = angleBetween2Points(self.position, apple.position)
+	const distanceToApple = getDistanceBetweenPoints(self.position, apple.position)
+
+	return ({ 
+		move: Math.floor(headingDegree) === Math.floor(self.headingDegree) ? true : false,
+		headingDegree,
+		vision: distanceToApple * 1.2,
+		speed: distanceToApple > apple.size + 10 ? 2000 : 1,
+		size: distanceToApple > apple.size + 10 ? 1 : 2000 / Math.sqrt(getDistanceBetweenPoints(self.position, apple.position))
+	})
+}`
 
 const initialWormAttributesCapacity = 300
-const createWorm = ({ name, speed = 170, size = 30, vision = 100 }: {|
+const createWorm = ({ name, speed = 100, size = 100, vision = 100 }: {|
     name: string,
     speed?: number,
     size?: number,
@@ -48,22 +71,32 @@ const createWorm = ({ name, speed = 170, size = 30, vision = 100 }: {|
 
 	return {
 		name,
-		speed: 500,
-		size: 90,
+		speed,
+		size,
 		vision,
 		color: rgbaColorRed,
 		position: { x: -1, y: -1 },
 		headingDegree: 45,
 		applesEaten: 0,
 		subconsciousScript: wormDefaultSubconsciousScript,
+		subconsciousError: '',
 		collisionAnimationCounter: 0,
 		bounceBackDistance: 0,
 		attributesCapacity: initialWormAttributesCapacity,
+		move: true,
 	}
+}
+
+const setWormSubconsciousError = (error: string) => (worm: WormType): WormType => {
+	return { ...worm, subconsciousError: error }
 }
 
 const setWormPosition = (position: PositionType) => (worm: WormType): WormType => {
 	return { ...worm, position }
+}
+
+const setWormMove = (move: bool) => (worm: WormType): WormType => {
+	return { ...worm, move }
 }
 
 const feedWorm = (amount: number) => (worm: WormType): WormType => {
@@ -135,6 +168,43 @@ function setWormColisionAnimation (worm: WormType): WormType {
 function decreaseWormColisionAnimation (worm: WormType): WormType {
 	return ({ ...worm, collisionAnimationCounter: worm.collisionAnimationCounter - 2 }: WormType)
 }
+
+const MinAttributeValue = 25
+const tickDiff = 0.3
+
+const setWormDesiredAttributes = ({ speed, size, vision }: {| speed: number, size: number, vision: number |}) =>
+	(_worm: WormType): WormType => {
+		let worm = _worm
+
+		const calcFreePoints = () => worm.attributesCapacity - worm.speed - worm.size - worm.vision
+
+		const totalDesiredPoints = speed + size + vision
+		const idealSpeed = worm.attributesCapacity * speed / totalDesiredPoints
+		const idealSize = worm.attributesCapacity * size / totalDesiredPoints
+		const idealVision = worm.attributesCapacity * vision / totalDesiredPoints
+
+		if (worm.speed > idealSpeed && worm.speed > MinAttributeValue) {
+			worm = { ...worm, speed: worm.speed - tickDiff }
+		}
+		if (worm.size > idealSize && worm.size > MinAttributeValue) {
+			worm = { ...worm, size: worm.size - tickDiff }
+		}
+		if (worm.vision > idealVision && worm.vision > MinAttributeValue) {
+			worm = { ...worm, vision: worm.vision - tickDiff }
+		}
+		if (calcFreePoints() > 0 && worm.speed < idealSpeed) {
+			worm = { ...worm, speed: worm.speed + tickDiff }
+		}
+		if (calcFreePoints() > 0 && worm.size < idealSize) {
+			worm = { ...worm, size: worm.size + tickDiff }
+		}
+		if (calcFreePoints() > 0 && worm.vision < idealVision) {
+			worm = { ...worm, vision: worm.vision + tickDiff }
+		}
+
+		return worm
+	}
+
 // eslint-disable-next-line import/group-exports
 export type {
 	WormType,
@@ -151,4 +221,7 @@ export {
 	decreaseWormColisionAnimation,
 	setWormBounceBackDistance,
 	feedWorm,
+	setWormSubconsciousError,
+	setWormDesiredAttributes,
+	setWormMove,
 }

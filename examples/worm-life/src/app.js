@@ -14,6 +14,7 @@ import {
 	WorldDimensions,
 	decreaseCollisionAnimationCounter,
 	growApples,
+	processWormsSubconscious,
 } from './models/World'
 import { createWorm } from './models/Worm'
 import './app.css'
@@ -30,8 +31,8 @@ export class App extends Component<{}, WorldType> {
 	}
 
 	spawnWorm(i: number) {
-		if (Object.keys(this.state.worms).length > 8) return
-		const maybeWorm = createWorm({ name: `Oleg${i}` })
+		if (Object.keys(this.state.worms).length > 3) return
+		const maybeWorm = createWorm({ name: `Roman${10 + i}` })
 		const maybeSpawnPosition = generateFreeSpawnPosition_IMPURE(this.state)
 
 		// $FlowFixMe
@@ -50,7 +51,7 @@ export class App extends Component<{}, WorldType> {
 	gameLoop() {
 		let nextState = this.state
 
-		if (this.state.age % 120 === 0) { // spawn apple every 120 frames (2 sec)
+		if (this.state.age % 180 === 0) {
 			const maybeSpawnPosition = generateFreeSpawnPosition_IMPURE(this.state)
 
 			if (maybeSpawnPosition) {
@@ -67,9 +68,12 @@ export class App extends Component<{}, WorldType> {
 		nextState = decreaseCollisionAnimationCounter(nextState)
 
 		// grow apples
-		if (this.state.age % 60 === 0) {
+		if (this.state.age % 120 === 0) {
 			nextState = growApples(nextState)
 		}
+
+		// process worms brains
+		nextState = processWormsSubconscious(nextState)
 
 		// move worms
 		nextState = moveWorms(nextState)
@@ -78,6 +82,7 @@ export class App extends Component<{}, WorldType> {
 		nextState = increaseAge(nextState)
 
 		if (nextState !== this.state) {
+			window.world = this.state
 			this.setState((nextState: any))
 		}
 
@@ -107,6 +112,12 @@ export class App extends Component<{}, WorldType> {
 									transform: `rotate(${worm.headingDegree}deg)`,
 								}}
 							>
+								<div
+									className="wormName"
+									style={{transform: `rotate(${-worm.headingDegree}deg)`}}
+								>
+									{wormName}
+								</div>
 								<div
 									className="worm"
 									style={{
@@ -138,10 +149,10 @@ export class App extends Component<{}, WorldType> {
 									<div
 										className="wormVision"
 										style={{
-											right: - worm.vision / 2,
-											top: -(worm.vision / 2) + wormHeight / 2,
-											width: worm.vision,
-											height: worm.vision,
+											right: - worm.vision,
+											top: -worm.vision + wormHeight / 2,
+											width: worm.vision * 2,
+											height: worm.vision * 2,
 											backgroundColor: worm.color,
 										}}
 									/>
@@ -195,6 +206,18 @@ export class App extends Component<{}, WorldType> {
 					{this.renderApples()}
 					{this.renderWorms()}
 				</div>
+
+				<div className="playerStats">{Object.keys(this.state.worms).map(name => {
+					const { attributesCapacity } = this.state.worms[name]
+					const attrs = Math.round(attributesCapacity)
+					/* const spd = Math.round(speed).toString().padStart(3, '0')
+					const sz = Math.round(size).toString().padStart(3, '0')
+					const vs = Math.round(vision).toString().padStart(3,'0') */
+
+					return (
+						<div key={name}>{name}: {attrs}</div>
+					)
+				})}</div>
 			</div>
 		)
 	}
