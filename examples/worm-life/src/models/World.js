@@ -149,7 +149,7 @@ const getDistanceBetweenPoints = (p1, p2) =>
 	Math.hypot(p1.x - p2.x, p1.y - p2.y)
 
 const getClosestApple = (apples: ApplesType, position: PositionType): AppleType | void => {
-	const mutableApples = [...apples]
+	const mutableApples = [...apples].filter(apple => apple.size > 5)
 
 	mutableApples.sort((a1, a2) => getDistanceBetweenPoints(a2.position, position)
 		- getDistanceBetweenPoints(a1.position, position))
@@ -303,7 +303,7 @@ const moveWorms = (world: WorldType): WorldType => {
 		return apple
 	})
 
-	updatedApples = updatedApples.filter(apple => apple.size > 4)
+	updatedApples = updatedApples.filter(apple => apple.size > 2)
 	return { ...world, worms: updatedWorms, apples: updatedApples }
 }
 
