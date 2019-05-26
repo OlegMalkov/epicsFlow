@@ -4,11 +4,14 @@
     "private": true,
     "dependencies": {
         "pure-random": "^0.1.1",
+        "ramda": "^0.26.1",
         "react": "^16.8.4",
         "react-dom": "^16.8.4",
-        "react-scripts": "2.1.8"
+        "react-scripts": "2.1.8",
+        "socket.io": "^2.2.0"
     },
     "scripts": {
+        "server": "node src/server.js",
         "start": "react-app-rewired start",
         "build": "react-app-rewired build",
         "test": "react-app-rewired test --env=jsdom"

@@ -44,28 +44,32 @@ type WormSubconsciousScriptResultType = {|
 	move: bool,
 |}
 
-const wormDefaultSubconsciousScript = `({ world, self }) => {
+const wormDefaultSubconsciousScript = 'identity'/* `(world) => {
+	const self = world.me
 	const apple = getClosestApple(world.apples, self.position)
 
-	if (!apple) return { speed: 500, vision: 2000, size: 1, move: true }
+	if (!apple) return { me: { speed: 500, vision: 2000, size: 1, move: true } }
 	const headingDegree = angleBetween2Points(self.position, apple.position)
 	const distanceToApple = getDistanceBetweenPoints(self.position, apple.position)
 
-	return ({ 
-		move: Math.floor(headingDegree) === Math.floor(self.headingDegree) ? true : false,
-		headingDegree,
-		vision: distanceToApple * 1.2,
-		speed: distanceToApple > apple.size + 10 ? 2000 : 1,
-		size: distanceToApple > apple.size + 10 ? 1 : 2000 / Math.sqrt(getDistanceBetweenPoints(self.position, apple.position))
-	})
-}`
+	return ({
+			me: { 
+				move: Math.floor(headingDegree) === Math.floor(self.headingDegree) ? true : false,
+				headingDegree,
+				vision: distanceToApple * 1.2,
+				speed: distanceToApple > apple.size + 10 ? 2000 : 1,
+				size: distanceToApple > apple.size + 10 ? 1 : 2000 / Math.sqrt(getDistanceBetweenPoints(self.position, apple.position))
+			}
+		})
+}` */
 
 const initialWormAttributesCapacity = 300
-const createWorm = ({ name, speed = 100, size = 100, vision = 100 }: {|
+const createWorm = ({ name, speed = 100, size = 100, vision = 100, color = rgbaColorRed }: {|
     name: string,
     speed?: number,
     size?: number,
-    vision?: number,
+	vision?: number,
+	color?: RgbaColorType,
 |}): WormType | null => {
 	if (!name || speed + size + vision !== initialWormAttributesCapacity) return null
 
@@ -74,7 +78,7 @@ const createWorm = ({ name, speed = 100, size = 100, vision = 100 }: {|
 		speed,
 		size,
 		vision,
-		color: rgbaColorRed,
+		color,
 		position: { x: -1, y: -1 },
 		headingDegree: 45,
 		applesEaten: 0,
@@ -83,7 +87,7 @@ const createWorm = ({ name, speed = 100, size = 100, vision = 100 }: {|
 		collisionAnimationCounter: 0,
 		bounceBackDistance: 0,
 		attributesCapacity: initialWormAttributesCapacity,
-		move: true,
+		move: false,
 	}
 }
 

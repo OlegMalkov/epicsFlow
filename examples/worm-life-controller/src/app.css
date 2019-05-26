@@ -21,3 +21,8 @@ button {
   width: 90%;
   margin: 10px;
 }
+
+textarea {
+  width: 95%;
+  border: 1px solid gray;
+}

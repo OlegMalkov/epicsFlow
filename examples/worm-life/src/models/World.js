@@ -1,5 +1,6 @@
-/* @flow strict */
+/* @flow */
 
+import * as R from 'ramda'
 import {
 	type WormType,
 	setWormPosition,
@@ -95,7 +96,7 @@ const spawnApple = (spawnPosition: PositionType) => (world: WorldType): WorldTyp
 }
 
 const growApples = (world: WorldType): WorldType => {
-	return { ...world, apples: world.apples.map(apple => ({ ...apple, size: apple.size + 1 })) }
+	return { ...world, apples: world.apples.map(apple => ({ ...apple, size: Math.min(apple.size + 1, 50) })) }
 }
 
 const outOfWorld = (position: PositionType) =>
@@ -158,11 +159,7 @@ const getClosestApple = (apples: ApplesType, position: PositionType): AppleType 
 }
 
 function evalInContext(js: string) {
-	return function() { return eval(js) }.call({
-		angleBetween2Points,
-		getClosestApple,
-		getDistanceBetweenPoints,
-	})
+	return function() { return eval(js) }.call({})
 }
 
 const processWormsSubconscious = (world: WorldType): WorldType => {
@@ -172,10 +169,8 @@ const processWormsSubconscious = (world: WorldType): WorldType => {
 		try {
 			const fn = evalInContext(worm.subconsciousScript)
 
-			const visibleWorld = {
-				...world,
-				apples: world.apples.filter(intersectsWithApple(worm.position, worm.vision)),
-				worms: filterObject(w =>
+			const otherWorms = filterObject(
+				w =>
 					circleIntersects({
 						position: worm.position,
 						radius: worm.vision,
@@ -184,14 +179,19 @@ const processWormsSubconscious = (world: WorldType): WorldType => {
 						radius: worm.size,
 					}),
 				world.worms
-				),
+			)
+			const visibleWorld = {
+				...world,
+				apples: world.apples.filter(intersectsWithApple(worm.position, worm.vision)),
+				worms: otherWorms,
+				me: worm,
 			}
 
-			const result = fn(deepFreeze({ world: visibleWorld, self: worm }))
+			const desiredWorld = fn(deepFreeze(visibleWorld))
 
-			if (!result) return worm
+			if (!desiredWorld) return worm
 
-			const { headingDegree, speed, size, vision, move }: WormType = result
+			const { me: { headingDegree, speed, size, vision, move } } = desiredWorld
 
 			if (headingDegree !== undefined) {
 				const currentHeading = worm.headingDegree % 360
@@ -201,7 +201,7 @@ const processWormsSubconscious = (world: WorldType): WorldType => {
 
 				let diffToApply = headingDiffSign * worm.speed / 70
 
-				if (headingDiff <= diffToApply) {
+				if (Math.abs(headingDiff) <= Math.abs(diffToApply)) {
 					diffToApply = headingDiff
 				}
 				if (currentHeading !== desiredHeading) {
@@ -221,7 +221,6 @@ const processWormsSubconscious = (world: WorldType): WorldType => {
 
 			return worm
 		} catch (e) {
-			//console.log(worm.name, 'error', e)
 			return setWormSubconsciousError(e.message)(worm)
 		}
 	}, world.worms)
@@ -327,6 +326,13 @@ const applyWormsSubconsciousInstructions = (world: WorldType): WorldType => worl
 const applyWormsConsciousInstructions = (world: WorldType): WorldType => world
 
 const increaseAge = (world: WorldType): WorldType => ({ ...world, age: world.age + 1 })
+
+Object.assign(window, {
+	angleBetween2Points,
+	getClosestApple,
+	getDistanceBetweenPoints,
+	...R,
+})
 
 // eslint-disable-next-line import/group-exports
 export type {

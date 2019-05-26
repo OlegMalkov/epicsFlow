@@ -1,5 +1,7 @@
 // @flow
 
+import { evolve } from 'ramda'
+import io from 'socket.io-client'
 import React, { Component } from 'react'
 import {
 	type WorldType,
@@ -18,6 +20,13 @@ import {
 } from './models/World'
 import { createWorm } from './models/Worm'
 import './app.css'
+import { createRgbaColor } from './models/RgbaColor'
+
+const socket = io('http://localhost:3005')
+
+socket.on('connect', () => {
+	socket.emit('identity', { type: 'world' })
+})
 
 export class App extends Component<{}, WorldType> {
 	constructor(props: {}) {
@@ -30,28 +39,34 @@ export class App extends Component<{}, WorldType> {
 		this.spawnWorm = this.spawnWorm.bind(this)
 	}
 
-	spawnWorm(i: number) {
-		if (Object.keys(this.state.worms).length > 3) return
-		const maybeWorm = createWorm({ name: `Roman${10 + i}` })
-		const maybeSpawnPosition = generateFreeSpawnPosition_IMPURE(this.state)
+	spawnWorm(name: string, color: string) {
+		const mayBeRgbaColor = createRgbaColor(color)
 
-		// $FlowFixMe
-		maybeWorm.headingDegree = Math.random() * 360
-		if (maybeWorm && maybeSpawnPosition) {
-			const maybeState = spawnWorm(maybeWorm, maybeSpawnPosition)(this.state)
+		if (mayBeRgbaColor) {
+			const maybeWorm = createWorm({ name, color: mayBeRgbaColor })
+			const maybeSpawnPosition = generateFreeSpawnPosition_IMPURE(this.state)
 
-			if (maybeState) {
+			// $FlowFixMe
+			maybeWorm.headingDegree = Math.random() * 360
+			if (maybeWorm && maybeSpawnPosition) {
+				const maybeState = spawnWorm(maybeWorm, maybeSpawnPosition)(this.state)
+
+				if (maybeState) {
 				// $FlowFixMe
-				this.setState(maybeState)
+					this.setState(maybeState)
+				}
 			}
 		}
-		setTimeout(() => this.spawnWorm(i+1), 1000)
 	}
 
 	gameLoop() {
 		let nextState = this.state
 
-		if (this.state.age % 180 === 0) {
+		if (this.state.age > 300 && this.state.age % 60 === 0) {
+			socket.emit('worldState', this.state)
+		}
+
+		if (this.state.age % 600 === 0) {
 			const maybeSpawnPosition = generateFreeSpawnPosition_IMPURE(this.state)
 
 			if (maybeSpawnPosition) {
@@ -68,7 +83,7 @@ export class App extends Component<{}, WorldType> {
 		nextState = decreaseCollisionAnimationCounter(nextState)
 
 		// grow apples
-		if (this.state.age % 120 === 0) {
+		if (this.state.age % 240 === 0) {
 			nextState = growApples(nextState)
 		}
 
@@ -90,7 +105,20 @@ export class App extends Component<{}, WorldType> {
 	}
 	componentDidMount() {
 		window.requestAnimationFrame(this.gameLoop)
-		this.spawnWorm(0)
+
+		socket.on('worldState', (worldState) => {
+			if (worldState !== null) {
+				this.setState(worldState)
+			}
+		})
+		socket.on('createWorm', ({ name, color }) => {
+			if (!name) return
+			this.spawnWorm(name, color)
+		})
+		socket.on('burnSubcounscious', ({ name, script }) => {
+			if (!name) return
+			this.setState(evolve({ worms: { [name]: { subconsciousScript: () => script}}}))
+		})
 	}
 
 	renderWorms() {

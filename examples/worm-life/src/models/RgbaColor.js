@@ -6,7 +6,7 @@ const rgbaColorRed: RgbaColorType = 'rgba(255,0,0,1)'
 const rgbaColorGreen: RgbaColorType = 'rgba(0,255,0,1)'
 const rgbaColorBlue: RgbaColorType = 'rgba(0,0,255,1)'
 
-const createRgbaColor = (input: string): RgbaColorType | null => {
+const createRgbaColor = (input: string = ''): RgbaColorType | null => {
 	const [r,g,b,a] = input.replace('rgba(', '').replace(')', '').split(',').map(parseFloat)
 	const colorParts = [r,g,b]
 

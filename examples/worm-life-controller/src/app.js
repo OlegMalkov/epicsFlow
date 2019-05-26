@@ -1,21 +1,24 @@
 // @flow
 
+import io from 'socket.io-client'
 import React, { Component } from 'react'
 import { rgbaColorBlue, type RgbaColorType, createRgbaColor } from '../../worm-life/src/models/RgbaColor'
 import { type WormType } from '../../worm-life/src/models/Worm'
 import './app.css'
 
-type StateType = {| type: 'notloaded', name: string, color: RgbaColorType |}
-| {|
-	type: 'loaded',
-	worm: WormType,
+type StateType = {|
+	connected: false,
+	name: string,
+	color: RgbaColorType,
+	worm?: WormType,
 	subconsciousScript: string,
 |}
 
 const controllerIntialState: StateType = {
-	type: 'notloaded',
+	connected: false,
 	name: '',
 	color: rgbaColorBlue,
+	subconsciousScript: 'identity',
 }
 
 function hexToRgbA(hex) {
@@ -27,12 +30,15 @@ function hexToRgbA(hex) {
 			c= [c[0], c[0], c[1], c[1], c[2], c[2]]
 		}
 		c= `0x${c.join('')}`
+		// $FlowFixMe
 		return `rgba(${[(c>>16)&255, (c>>8)&255, c&255].join(',')},1)`
 	}
 	throw new Error('Bad Hex')
 }
 
 export class App extends Component<{}, StateType> {
+	initialized: bool = false
+	socket: any
 	constructor(props: {}) {
 		super(props)
 		this.state = controllerIntialState
@@ -46,15 +52,35 @@ export class App extends Component<{}, StateType> {
 	}
 
 	connect() {
-		// send msg to connect to worm
+		if (this.initialized || !this.state.name) return
+
+		this.initialized = true
+		const socket = io('http://192.168.1.140:3005')
+
+		this.socket = socket
+		socket.on('connect', () => {
+			socket.emit('identity', {
+				type: 'controller',
+				name: this.state.name,
+				color: this.state.color,
+			})
+		})
+
+		socket.on('wormState', (worm: WormType) => {
+			if (!this.state.connected) {
+				this.setState({ subconsciousScript: worm.subconsciousScript })
+			}
+			// $FlowFixMe
+			this.setState({ worm, connected: true })
+		})
 	}
 
 	render() {
-		if (this.state.type === 'notloaded') {
+		if (!this.state.connected) {
 			const { name, color } = this.state
 
 			const hexColor = `#${ color
-				// $FlowFixMe
+			// $FlowFixMe
 				.replace('rgba(', '')
 				.replace(')', '')
 				.split(',')
@@ -87,26 +113,29 @@ export class App extends Component<{}, StateType> {
 						}}
 					/>
 					<div style={{ flex: 1 }}/>
-					<button onClick={this.connect}>Connect</button>
+					<button onClick={this.connect} style={{ cursor: 'pointer' }}>Connect</button>
 				</div>
-			)
-		}
-
-		if (this.state.type === 'loaded') {
+			)} else {
 			const { worm, subconsciousScript } = this.state
 
 			return (
 				<div className="app">
 					<label>Name: {worm.name}</label>
-					<label>Script</label>
+					<label>spd: {Math.round(worm.speed)} | spd: {Math.round(worm.vision)} | spd: {Math.round(worm.size)} | move: {worm.move}</label>
+					<label>error: {worm.subconsciousError}</label>
 					<textarea
 						style={{ flex: 1}}
 						value={subconsciousScript}
+						onChange={(e) => this.setState({ subconsciousScript: e.target.value })}
 					/>
-					<button>Burn subcoscious</button>
+					<button
+						onClick={() => this.socket.emit('burnSubcounscious', subconsciousScript)}
+						style={{ cursor: 'pointer' }}
+					>
+						Burn subcoscious
+					</button>
 				</div>
 			)
 		}
-		return <div/>
 	}
 }
