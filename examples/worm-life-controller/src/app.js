@@ -55,7 +55,7 @@ export class App extends Component<{}, StateType> {
 		if (this.initialized || !this.state.name) return
 
 		this.initialized = true
-		const socket = io('http://192.168.1.140:3005')
+		const socket = io('http://192.168.193.14:3005')
 
 		this.socket = socket
 		socket.on('connect', () => {

@@ -22,7 +22,7 @@ import { createWorm } from './models/Worm'
 import './app.css'
 import { createRgbaColor } from './models/RgbaColor'
 
-const socket = io('http://localhost:3005')
+const socket = io('http://192.168.193.14:3005')
 
 socket.on('connect', () => {
 	socket.emit('identity', { type: 'world' })

@@ -19,6 +19,7 @@ opaque type WormType: {|
 	bounceBackDistance: number,
 	attributesCapacity: number,
 	move: bool,
+	memory: Object,
 |} = {|
     name: string,
     speed: number,
@@ -34,6 +35,7 @@ opaque type WormType: {|
 	bounceBackDistance: number,
 	attributesCapacity: number,
 	move: bool,
+	memory: Object,
 |}
 
 type WormSubconsciousScriptResultType = {|
@@ -88,6 +90,7 @@ const createWorm = ({ name, speed = 100, size = 100, vision = 100, color = rgbaC
 		bounceBackDistance: 0,
 		attributesCapacity: initialWormAttributesCapacity,
 		move: false,
+		memory: {},
 	}
 }
 

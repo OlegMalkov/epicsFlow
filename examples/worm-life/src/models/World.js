@@ -1,6 +1,5 @@
 /* @flow */
 
-import * as R from 'ramda'
 import {
 	type WormType,
 	setWormPosition,
@@ -34,6 +33,11 @@ opaque type WorldType: {|
     worms: { [name: string]: WormType },
     apples: ApplesType,
     age: number,
+|}
+
+type ScriptDataType = {|
+    world: WorldType,
+	me: WormType,
 |}
 
 const worldInitialState: WorldType = {
@@ -135,29 +139,6 @@ const collisionWithApple = (worm: WormType, apples: ApplesType): number => {
 	return apples.indexOf(apples.find(intersectsWithApple(worm.position, wormMouthSize)))
 }
 
-function angleBetween2Points(point1: PositionType, point2: PositionType) {
-	const dy = point2.y - point1.y
-	const dx = point2.x - point1.x
-
-	let theta = Math.atan2(dy, dx)
-
-	theta *= 180 / Math.PI
-
-	return theta < 0 ? 360 + theta : theta
-}
-
-const getDistanceBetweenPoints = (p1, p2) =>
-	Math.hypot(p1.x - p2.x, p1.y - p2.y)
-
-const getClosestApple = (apples: ApplesType, position: PositionType): AppleType | void => {
-	const mutableApples = [...apples].filter(apple => apple.size > 5)
-
-	mutableApples.sort((a1, a2) => getDistanceBetweenPoints(a2.position, position)
-		- getDistanceBetweenPoints(a1.position, position))
-
-	return mutableApples[mutableApples.length - 1]
-}
-
 function evalInContext(js: string) {
 	return function() { return eval(js) }.call({})
 }
@@ -180,14 +161,16 @@ const processWormsSubconscious = (world: WorldType): WorldType => {
 					}),
 				world.worms
 			)
-			const visibleWorld = {
-				...world,
-				apples: world.apples.filter(intersectsWithApple(worm.position, worm.vision)),
-				worms: otherWorms,
+			const scriptData: ScriptDataType = {
+				world: {
+					...world,
+					apples: world.apples.filter(intersectsWithApple(worm.position, worm.vision)),
+					worms: otherWorms,
+				},
 				me: worm,
 			}
 
-			const desiredWorld = fn(deepFreeze(visibleWorld))
+			const desiredWorld = fn(deepFreeze(scriptData))
 
 			if (!desiredWorld) return worm
 
@@ -327,16 +310,10 @@ const applyWormsConsciousInstructions = (world: WorldType): WorldType => world
 
 const increaseAge = (world: WorldType): WorldType => ({ ...world, age: world.age + 1 })
 
-Object.assign(window, {
-	angleBetween2Points,
-	getClosestApple,
-	getDistanceBetweenPoints,
-	...R,
-})
-
 // eslint-disable-next-line import/group-exports
 export type {
 	WorldType,
+	ScriptDataType,
 }
 
 // eslint-disable-next-line import/group-exports
