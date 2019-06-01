@@ -3,10 +3,12 @@
     "version": "0.1.0",
     "private": true,
     "dependencies": {
+        "prismjs": "^1.16.0",
         "pure-random": "^0.1.1",
         "react": "^16.8.4",
         "react-dom": "^16.8.4",
         "react-scripts": "2.1.8",
+        "react-simple-code-editor": "^0.9.10",
         "socket.io": "^2.2.0"
     },
     "scripts": {

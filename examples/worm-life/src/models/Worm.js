@@ -1,8 +1,9 @@
-/* @flow strict */
+/* @flow */
 
 import { type PositionType } from '../types'
-import { type RgbaColorType, rgbaColorRed } from './RgbaColor'
+import { type RgbaColorType, rgbaColorRed, getRgbaColorParts, createRgbaColor } from './RgbaColor'
 import { xMoveDiff, yMoveDiff } from '../utils'
+import { type AnyValueType } from '../../../../src/epics'
 
 opaque type WormType: {|
     name: string,
@@ -20,6 +21,7 @@ opaque type WormType: {|
 	attributesCapacity: number,
 	move: bool,
 	memory: Object,
+	print: string,
 |} = {|
     name: string,
     speed: number,
@@ -36,17 +38,10 @@ opaque type WormType: {|
 	attributesCapacity: number,
 	move: bool,
 	memory: Object,
+	print: string,
 |}
 
-type WormSubconsciousScriptResultType = {|
-	speed: number,
-	size: number,
-	vision: number,
-	headingDegree: number,
-	move: bool,
-|}
-
-const wormDefaultSubconsciousScript = 'identity'/* `(world) => {
+const wormDefaultSubconsciousScript = 'setAll(0, 0, 0, 0, false)'/* `(world) => {
 	const self = world.me
 	const apple = getClosestApple(world.apples, self.position)
 
@@ -55,7 +50,7 @@ const wormDefaultSubconsciousScript = 'identity'/* `(world) => {
 	const distanceToApple = getDistanceBetweenPoints(self.position, apple.position)
 
 	return ({
-			me: { 
+			me: {
 				move: Math.floor(headingDegree) === Math.floor(self.headingDegree) ? true : false,
 				headingDegree,
 				vision: distanceToApple * 1.2,
@@ -82,7 +77,7 @@ const createWorm = ({ name, speed = 100, size = 100, vision = 100, color = rgbaC
 		vision,
 		color,
 		position: { x: -1, y: -1 },
-		headingDegree: 45,
+		headingDegree: 0,
 		applesEaten: 0,
 		subconsciousScript: wormDefaultSubconsciousScript,
 		subconsciousError: '',
@@ -91,7 +86,27 @@ const createWorm = ({ name, speed = 100, size = 100, vision = 100, color = rgbaC
 		attributesCapacity: initialWormAttributesCapacity,
 		move: false,
 		memory: {},
+		print: '',
 	}
+}
+
+const dummyWorm: WormType = {
+	name: 'Dummy',
+	speed: 100,
+	size: 100,
+	vision: 100,
+	color: rgbaColorRed,
+	position: { x: -1, y: -1 },
+	headingDegree: 0,
+	applesEaten: 0,
+	subconsciousScript: wormDefaultSubconsciousScript,
+	subconsciousError: '',
+	collisionAnimationCounter: 0,
+	bounceBackDistance: 0,
+	attributesCapacity: initialWormAttributesCapacity,
+	move: false,
+	memory: {},
+	print: '',
 }
 
 const setWormSubconsciousError = (error: string) => (worm: WormType): WormType => {
@@ -114,10 +129,6 @@ const feedWorm = (amount: number) => (worm: WormType): WormType => {
 		attributesCapacity: worm.attributesCapacity + digestedAmount,
 		size: worm.size + digestedAmount,
 	}
-}
-
-const setWormHeadingDegree = (headingDegree: number) => (worm: WormType): WormType => {
-	return { ...worm, headingDegree }
 }
 
 const getWormLine = (worm: WormType): {| x: number, y: number, xe: number, ye: number |} => {
@@ -177,9 +188,13 @@ function decreaseWormColisionAnimation (worm: WormType): WormType {
 }
 
 const MinAttributeValue = 25
-const tickDiff = 0.3
+const tickDiff = 2
 
-const setWormDesiredAttributes = ({ speed, size, vision }: {| speed: number, size: number, vision: number |}) =>
+const setWormColor = (color: RgbaColorType) => (worm: WormType): WormType => {
+	return { ...worm, color }
+}
+
+const setWormDesiredAttributes = ({ speed, size, vision, color }: {| speed: number, size: number, vision: number, color: RgbaColorType | null |}) =>
 	(_worm: WormType): WormType => {
 		let worm = _worm
 
@@ -209,20 +224,45 @@ const setWormDesiredAttributes = ({ speed, size, vision }: {| speed: number, siz
 			worm = { ...worm, vision: worm.vision + tickDiff }
 		}
 
+		if (color) {
+			const [r,g,b,a] = getRgbaColorParts(worm.color)
+			const [tr,tg,tb,ta] = getRgbaColorParts(color)
+
+			const dr = tr - r === 0 ? 0 : (tr - r) / Math.abs(tr - r) / 2
+			const dg = tg - g === 0 ? 0 : (tg - g) / Math.abs(tg - g) / 2
+			const db = tb - b === 0 ? 0 : (tb - b) / Math.abs(tb - b) / 2
+			const da = ta - a === 0 ? 0 : (ta - a) / Math.abs(ta - a) * 0.005
+
+			const finalRgba = createRgbaColor(`rgba(${Math.max(Math.min(r + dr, 255), 0)},${Math.max(Math.min(g + dg, 255), 0)},${Math.max(Math.min(b + db, 255), 0)},${Math.max(Math.min(a + da, 1), 0)})`)
+
+			if (finalRgba) {
+				worm = setWormColor(finalRgba)(worm)
+			}
+		}
+
 		return worm
 	}
+
+const wormRemember = (key: string, value: AnyValueType) => (worm: WormType): WormType => {
+	return {
+		...worm,
+		memory: { ...worm.memory, [key]: value },
+	}
+}
+
+const setWormSpeed = (speed: number) => (worm: WormType): WormType => ({ ...worm, speed }: WormType)
+const setWormSize = (size: number) => (worm: WormType): WormType => ({ ...worm, size }: WormType)
+const setWormHeadingDegree = (headingDegree: number) => (worm: WormType): WormType => ({ ...worm, headingDegree }: WormType)
 
 // eslint-disable-next-line import/group-exports
 export type {
 	WormType,
-	WormSubconsciousScriptResultType,
 }
 
 // eslint-disable-next-line import/group-exports
 export {
 	createWorm,
 	setWormPosition,
-	setWormHeadingDegree,
 	isWormCollide,
 	setWormColisionAnimation,
 	decreaseWormColisionAnimation,
@@ -231,4 +271,9 @@ export {
 	setWormSubconsciousError,
 	setWormDesiredAttributes,
 	setWormMove,
+	wormRemember,
+	dummyWorm,
+	setWormSpeed,
+	setWormSize,
+	setWormHeadingDegree,
 }

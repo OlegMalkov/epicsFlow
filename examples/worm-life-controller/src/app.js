@@ -2,7 +2,12 @@
 
 import io from 'socket.io-client'
 import React, { Component } from 'react'
-import { rgbaColorBlue, type RgbaColorType, createRgbaColor } from '../../worm-life/src/models/RgbaColor'
+/* import Editor from 'react-simple-code-editor'
+import { highlight, languages } from 'prismjs/components/prism-core'
+import 'prismjs/components/prism-clike'
+import 'prismjs/components/prism-javascript'
+import 'prismjs/components/prism-markup' */
+import { type RgbaColorType, createRgbaColor } from '../../worm-life/src/models/RgbaColor'
 import { type WormType } from '../../worm-life/src/models/Worm'
 import './app.css'
 
@@ -14,11 +19,15 @@ type StateType = {|
 	subconsciousScript: string,
 |}
 
-const controllerIntialState: StateType = {
-	connected: false,
-	name: '',
-	color: rgbaColorBlue,
-	subconsciousScript: 'identity',
+function getRandomColor() {
+	const letters = '0123456789ABCDEF'
+
+	let color = '#'
+
+	for (let i = 0; i < 6; i++) {
+		color += letters[Math.floor(Math.random() * 16)]
+	}
+	return color
 }
 
 function hexToRgbA(hex) {
@@ -34,6 +43,93 @@ function hexToRgbA(hex) {
 		return `rgba(${[(c>>16)&255, (c>>8)&255, c&255].join(',')},1)`
 	}
 	throw new Error('Bad Hex')
+}
+
+const Snippets = {
+	identity: {
+		key: 'identity',
+		code: 'identity',
+	},
+	setAttributes: {
+		key: 'setAttributes',
+		code: `pipe(
+ setSpeed(100),
+ setSize(100),
+ setVision(100),
+ setHeading(90),
+ startMove,
+ setColor('rgba(46, 204, 113, 1)')
+)`,
+	},
+	shuriken : {
+		key: 'shuriken',
+		code: `pipe(
+ converge(
+  setHeading,
+  [pipe(heading, add(20)), identity]
+ ),
+ megaEater
+)`,
+	},
+	headTowardsFirstApple: {
+		key: 'headTowardsFirstApple',
+		code: `const grabApple = pipe(
+ turnToFirstApple,
+ megaEater,
+ startMove,
+)
+const stopAndLookAround = pipe(
+ megaVision,
+ stopMove
+)
+
+ifElse(
+ firstApple,
+ grabApple,
+ stopAndLookAround
+)		
+`,
+		eatingWithMemo:{
+			key: 'eatingWithMemo',
+			code: `const grabApple = pipe(
+ turnToAppleInMemo,
+ megaEater,
+ startMove,
+)
+const stopAndLookAround = pipe(
+ megaVision,
+ stopMove
+)
+const rememberFirstApple = converge(
+ remember('apple'),
+ [firstApple, identity]
+)
+
+ifElse(
+ recallApple,
+ ifElse(
+  iamNearTheAppleButItsGone,
+  forgetApple,
+  grabApple
+ ),
+ pipe(
+  stopAndLookAround,
+  when(
+   firstApple,
+   rememberFirstApple
+  )
+ )
+)		
+`,
+		},
+	},
+}
+
+const controllerIntialState: StateType = {
+	connected: false,
+	name: '',
+	color: hexToRgbA(getRandomColor()),
+	subconsciousScript: Snippets.identity.code,
 }
 
 export class App extends Component<{}, StateType> {
@@ -55,7 +151,7 @@ export class App extends Component<{}, StateType> {
 		if (this.initialized || !this.state.name) return
 
 		this.initialized = true
-		const socket = io('http://192.168.193.14:3005')
+		const socket = io('http://192.168.1.140:3005')
 
 		this.socket = socket
 		socket.on('connect', () => {
@@ -67,6 +163,7 @@ export class App extends Component<{}, StateType> {
 		})
 
 		socket.on('wormState', (worm: WormType) => {
+			if (!worm) return
 			if (!this.state.connected) {
 				this.setState({ subconsciousScript: worm.subconsciousScript })
 			}
@@ -112,19 +209,43 @@ export class App extends Component<{}, StateType> {
 							})
 						}}
 					/>
-					<div style={{ flex: 1 }}/>
 					<button onClick={this.connect} style={{ cursor: 'pointer' }}>Connect</button>
 				</div>
 			)} else {
 			const { worm, subconsciousScript } = this.state
 
+			if (!worm) {
+				window.location.reload()
+				return <div />
+			}
 			return (
 				<div className="app">
-					<label>Name: {worm.name}</label>
-					<label>spd: {Math.round(worm.speed)} | spd: {Math.round(worm.vision)} | spd: {Math.round(worm.size)} | move: {worm.move}</label>
-					<label>error: {worm.subconsciousError}</label>
+					<select onChange={e => { this.setState({ subconsciousScript: Snippets[e.target.value].code }) }}>
+						<option value={Snippets.identity.key}>identity</option>
+						<option value={Snippets.setAttributes.key}>set attributes</option>
+						<option value={Snippets.shuriken.key}>shuriken</option>
+						<option value={Snippets.headTowardsFirstApple.key}>head towards first apple</option>
+					</select>
+					<label>{worm.name}</label>
+					<label> speed: {Math.round(worm.speed)} | vision: {Math.round(worm.vision)} | size: {Math.round(worm.size)}</label>
+					<label> heading: {Math.round(worm.headingDegree)} | moving: {worm.move ? 'yes' : 'no'}</label>
+					{worm.subconsciousError && <label>error: {worm.subconsciousError}</label>}
+					{/* <Editor
+						placeholder="Type some code…"
+						value={subconsciousScript}
+						onValueChange={subconsciousScript => this.setState({ subconsciousScript })}
+						highlight={code => highlight(code, languages.js)}
+						padding={10}
+						style={{
+							border: '2px solid gray',
+							height: 250,
+							width: '100%',
+							fontFamily: '"Fira code", "Fira Mono", monospace',
+							fontSize: 12,
+						}}
+					/> */}
 					<textarea
-						style={{ flex: 1}}
+						style={{ height: 350, width: '100%', border: '2px solid gray', fontFamily: '"Fira code", "Fira Mono", monospace' }}
 						value={subconsciousScript}
 						onChange={(e) => this.setState({ subconsciousScript: e.target.value })}
 					/>

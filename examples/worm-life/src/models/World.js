@@ -17,6 +17,9 @@ import { type PositionType } from '../types'
 import { xMoveDiff, yMoveDiff, updateEachMapValue, getObjectValues, filterObject } from '../utils'
 import { getRandomInt_IMPURE } from '../utils_IMPURE'
 import { deepFreeze } from '../../../../src/epics'
+import '../globalHelpers'
+import { globalsStub } from '../globalHelpers'
+import { createRgbaColor } from './RgbaColor'
 
 type AppleType = {|
 	position: PositionType,
@@ -58,7 +61,7 @@ const WorldDimensions = {
 	height: WorldBoundaries.bottom - WorldBoundaries.top,
 }
 
-const getApplesAroundPosition = ({ searchRadius = 10, position, world }: {|
+const getApplesAroundPosition = ({ searchRadius = 200, position, world }: {|
     searchRadius?: number, position: PositionType, world: WorldType,
 |}): Array<AppleType> => {
 	return world.apples.filter(apple =>
@@ -74,17 +77,18 @@ const generateRandomWorldPosition_IMPURE = (): PositionType => ({
 	y: getRandomInt_IMPURE(WorldBoundaries.top + Gap, WorldBoundaries.bottom - Gap),
 })
 
-const generateFreeSpawnPosition_IMPURE = (world: WorldType): PositionType | null => {
+const generateFreeSpawnPosition_IMPURE = (world: WorldType, searchRadius: number = 200): PositionType | null => {
 	let position: PositionType = generateRandomWorldPosition_IMPURE()
 
 	let tries = 1
 
-	while (getApplesAroundPosition({ position, world }).length > 0) {
+	while (getApplesAroundPosition({ position, world, searchRadius }).length > 0) {
 		position = generateRandomWorldPosition_IMPURE()
 		tries ++
+
+		if (tries > 100) return null
 	}
 
-	if (tries > 100) return null
 
 	return position
 }
@@ -100,7 +104,7 @@ const spawnApple = (spawnPosition: PositionType) => (world: WorldType): WorldTyp
 }
 
 const growApples = (world: WorldType): WorldType => {
-	return { ...world, apples: world.apples.map(apple => ({ ...apple, size: Math.min(apple.size + 1, 50) })) }
+	return { ...world, apples: world.apples.map(apple => ({ ...apple, size: Math.min(apple.size + 1, 100) })) }
 }
 
 const outOfWorld = (position: PositionType) =>
@@ -117,7 +121,7 @@ const moveWorm = (movedDistance: number) => (worm: WormType) => setWormPosition(
 	y: worm.position.y + yMoveDiff(worm.headingDegree, movedDistance),
 })(worm)
 
-const turnWormBack = (worm: WormType) => setWormHeadingDegree(worm.headingDegree + 180)(worm)
+const turnWormBack = (worm: WormType) => setWormHeadingDegree(((worm.headingDegree + 180) % 360))(worm)
 
 type CircleType = {| position: PositionType, radius: number |}
 
@@ -134,13 +138,27 @@ const intersectsWithApple = (position: PositionType, radius: number) => (apple: 
 }
 
 const collisionWithApple = (worm: WormType, apples: ApplesType): number => {
-	const wormMouthSize = Math.max(2, worm.size / 50)
+	const wormMouthSize = Math.max(2, worm.size / 25)
 
 	return apples.indexOf(apples.find(intersectsWithApple(worm.position, wormMouthSize)))
 }
 
+const forbiddenWords = [
+	'for',
+	'while',
+	'do',
+	'eval',
+	'arguments',
+]
+
 function evalInContext(js: string) {
-	return function() { return eval(js) }.call({})
+	const forbiddenWordsInJs = forbiddenWords.filter(fw => js.indexOf(fw) !== -1)
+
+	return function() { return eval(`
+	${globalsStub}
+	
+	${forbiddenWordsInJs.length > 0 ? `throw new Error('${forbiddenWordsInJs.join(',')} forbidden.');`: js}
+`) }.call({})
 }
 
 const processWormsSubconscious = (world: WorldType): WorldType => {
@@ -148,6 +166,7 @@ const processWormsSubconscious = (world: WorldType): WorldType => {
 		let worm = _worm
 
 		try {
+			window.name = worm.name
 			const fn = evalInContext(worm.subconsciousScript)
 
 			const otherWorms = filterObject(
@@ -174,33 +193,40 @@ const processWormsSubconscious = (world: WorldType): WorldType => {
 
 			if (!desiredWorld) return worm
 
-			const { me: { headingDegree, speed, size, vision, move } } = desiredWorld
+			const { me: { headingDegree, speed, size, vision, move, color } } = desiredWorld
 
 			if (headingDegree !== undefined) {
-				const currentHeading = worm.headingDegree % 360
-				const desiredHeading = headingDegree % 360
-				const headingDiff = desiredHeading - currentHeading
-				const headingDiffSign = headingDiff / Math.abs(headingDiff)
+				const currentHeading = (worm.headingDegree + 360) % 360
+				const desiredHeading = (headingDegree + 360) % 360
 
-				let diffToApply = headingDiffSign * worm.speed / 70
+				let headingDiff = desiredHeading - currentHeading
 
-				if (Math.abs(headingDiff) <= Math.abs(diffToApply)) {
-					diffToApply = headingDiff
+				if (headingDiff < -180) {
+					headingDiff += 360
+				} else if (headingDiff > 180) {
+					headingDiff -= 360
 				}
+
+				const diffToApply = Math.abs(headingDiff) / headingDiff * worm.speed / 30
+
 				if (currentHeading !== desiredHeading) {
-					worm = setWormHeadingDegree(currentHeading + diffToApply)(worm)
+					worm = setWormHeadingDegree(Math.abs(headingDiff) <= 1 ? desiredHeading : currentHeading + diffToApply)(worm)
 				}
 			}
 
 			if (move !== undefined) {
 				worm = setWormMove(move)(worm)
 			}
+			const rgbaColor = createRgbaColor(color)
 
 			worm = setWormDesiredAttributes({
 				speed: speed === undefined ? worm.speed : speed,
 				size: size === undefined ? worm.size : size,
 				vision: vision === undefined ? worm.vision : vision,
+				color: rgbaColor,
 			})(worm)
+
+			worm.subconsciousError = ''
 
 			return worm
 		} catch (e) {
@@ -226,13 +252,13 @@ const moveWorms = (world: WorldType): WorldType => {
 
 		if (worm.bounceBackDistance > 0) {
 			worm = turnWormBack(worm)
-			const moveBackDistance = Math.max(1, worm.bounceBackDistance / 30)
+			const moveBackDistance = Math.max(1, worm.bounceBackDistance / 10)
 
 			worm = setWormBounceBackDistance(worm.bounceBackDistance - moveBackDistance)(worm)
 			worm = moveWorm(moveBackDistance)(worm)
 			worm = turnWormBack(worm)
 		} else if (apple) {
-			const baitSize = Math.min(apple.size, worm.size / 1000)
+			const baitSize = Math.min(apple.size, Math.sqrt(worm.size * worm.speed) / 1000)
 
 			worm = feedWorm(baitSize)(worm)
 			appleBaits[collisionAppleIndex] += baitSize
@@ -242,7 +268,8 @@ const moveWorms = (world: WorldType): WorldType => {
 
 		if (outOfWorld(worm.position)) {
 			worm = turnWormBack(worm)
-			worm = moveWorm(worm.speed / 50)(worm)
+			worm = moveWorm(worm.speed / 2)(worm)
+			worm = turnWormBack(worm)
 		}
 
 		const otherWorms = getObjectValues(world.worms).filter(w => w.name !== worm.name)

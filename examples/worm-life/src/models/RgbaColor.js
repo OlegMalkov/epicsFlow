@@ -6,8 +6,9 @@ const rgbaColorRed: RgbaColorType = 'rgba(255,0,0,1)'
 const rgbaColorGreen: RgbaColorType = 'rgba(0,255,0,1)'
 const rgbaColorBlue: RgbaColorType = 'rgba(0,0,255,1)'
 
+const getRgbaColorParts = (rgbaColor: string | RgbaColorType) => rgbaColor.replace('rgba(', '').replace(')', '').split(',').map<number>(parseFloat)
 const createRgbaColor = (input: string = ''): RgbaColorType | null => {
-	const [r,g,b,a] = input.replace('rgba(', '').replace(')', '').split(',').map(parseFloat)
+	const [r,g,b,a] = getRgbaColorParts(input)
 	const colorParts = [r,g,b]
 
 	if (
@@ -29,4 +30,5 @@ export {
 	rgbaColorGreen,
 	rgbaColorBlue,
 	createRgbaColor,
+	getRgbaColorParts,
 }

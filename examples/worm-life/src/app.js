@@ -22,7 +22,10 @@ import { createWorm } from './models/Worm'
 import './app.css'
 import { createRgbaColor } from './models/RgbaColor'
 
-const socket = io('http://192.168.193.14:3005')
+// $FlowFixMe
+const isStop = (new URL(document.location)).searchParams.get('stop')
+
+const socket = io('http://192.168.1.140:3005')
 
 socket.on('connect', () => {
 	socket.emit('identity', { type: 'world' })
@@ -37,6 +40,8 @@ export class App extends Component<{}, WorldType> {
 		this.gameLoop = this.gameLoop.bind(this)
 		// $FlowFixMe
 		this.spawnWorm = this.spawnWorm.bind(this)
+		// $FlowFixMe
+		this.restart = this.restart.bind(this)
 	}
 
 	spawnWorm(name: string, color: string) {
@@ -44,7 +49,7 @@ export class App extends Component<{}, WorldType> {
 
 		if (mayBeRgbaColor) {
 			const maybeWorm = createWorm({ name, color: mayBeRgbaColor })
-			const maybeSpawnPosition = generateFreeSpawnPosition_IMPURE(this.state)
+			const maybeSpawnPosition = generateFreeSpawnPosition_IMPURE(this.state, 50)
 
 			// $FlowFixMe
 			maybeWorm.headingDegree = Math.random() * 360
@@ -60,13 +65,15 @@ export class App extends Component<{}, WorldType> {
 	}
 
 	gameLoop() {
+		if (isStop) return
+
 		let nextState = this.state
 
 		if (this.state.age > 300 && this.state.age % 60 === 0) {
 			socket.emit('worldState', this.state)
 		}
 
-		if (this.state.age % 600 === 0) {
+		if (this.state.age % 600 === 0 && this.state.apples.length < 30) {
 			const maybeSpawnPosition = generateFreeSpawnPosition_IMPURE(this.state)
 
 			if (maybeSpawnPosition) {
@@ -109,6 +116,7 @@ export class App extends Component<{}, WorldType> {
 		socket.on('worldState', (worldState) => {
 			if (worldState !== null) {
 				this.setState(worldState)
+				window.world = this.state
 			}
 		})
 		socket.on('createWorm', ({ name, color }) => {
@@ -116,6 +124,7 @@ export class App extends Component<{}, WorldType> {
 			this.spawnWorm(name, color)
 		})
 		socket.on('burnSubcounscious', ({ name, script }) => {
+			if (isStop) return
 			if (!name) return
 			this.setState(evolve({ worms: { [name]: { subconsciousScript: () => script}}}))
 		})
@@ -126,12 +135,28 @@ export class App extends Component<{}, WorldType> {
 			{
 				Object.keys(this.state.worms).map(wormName => {
 					const worm = this.state.worms[wormName]
-					const wormHeight = worm.size / 10
+					const wormHeight = worm.size / 8
 					const wormEyeSize = worm.size / 15 * worm.vision / 100
 					const halfWormEyeSize = wormEyeSize / 2
 
 					return (
-						<div key={wormName}>
+						<div
+							key={wormName}
+							onClick={() => this.setState({
+								...this.state,
+								worms: { ...this.state.worms, [wormName]: { ...this.state.worms[wormName], subconsciousScript: 'identity' } },
+							})}
+							onDoubleClick={() => {
+								const yes = prompt('delete?')
+
+								if (yes === 'yes') {
+									const worms = { ...this.state.worms }
+
+									delete worms[wormName]
+									this.setState({	...this.state, worms })
+								}
+							}}
+						>
 							<div
 								className="wormPosition"
 								style={{
@@ -154,6 +179,8 @@ export class App extends Component<{}, WorldType> {
 										backgroundColor: worm.color,
 									}}
 								>
+									<span className="print" id={`print_${wormName}`}/>
+
 									<div
 										className="wormEye"
 										style={{
@@ -227,9 +254,20 @@ export class App extends Component<{}, WorldType> {
 		</div>
 	}
 
+	restart() {
+		// $FlowFixMe
+		this.setState(worldInitialState)
+	}
+
 	render() {
 		return (
 			<div className="app">
+				<button
+					className="restart"
+					onClick={this.restart}
+				>
+					Restart
+				</button>
 				<div className="world" style={{ ...WorldDimensions }}>
 					{this.renderApples()}
 					{this.renderWorms()}
@@ -250,3 +288,5 @@ export class App extends Component<{}, WorldType> {
 		)
 	}
 }
+
+window.showCode = () => Object.keys(window.world.worms).map(name => [name, window.world.worms[name].subconsciousScript])
