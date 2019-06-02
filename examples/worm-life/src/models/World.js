@@ -207,10 +207,10 @@ const processWormsSubconscious = (world: WorldType): WorldType => {
 					headingDiff -= 360
 				}
 
-				const diffToApply = Math.abs(headingDiff) / headingDiff * worm.speed / 30
+				const diffToApply = Math.max(Math.abs(headingDiff) / headingDiff * worm.speed / 30, 1)
 
 				if (currentHeading !== desiredHeading) {
-					worm = setWormHeadingDegree(Math.abs(headingDiff) <= 1 ? desiredHeading : currentHeading + diffToApply)(worm)
+					worm = setWormHeadingDegree(Math.abs(headingDiff) <= 5 ? desiredHeading : currentHeading + diffToApply)(worm)
 				}
 			}
 
@@ -252,7 +252,7 @@ const moveWorms = (world: WorldType): WorldType => {
 
 		if (worm.bounceBackDistance > 0) {
 			worm = turnWormBack(worm)
-			const moveBackDistance = Math.max(1, worm.bounceBackDistance / 10)
+			const moveBackDistance = Math.max(1, worm.bounceBackDistance / 5)
 
 			worm = setWormBounceBackDistance(worm.bounceBackDistance - moveBackDistance)(worm)
 			worm = moveWorm(moveBackDistance)(worm)

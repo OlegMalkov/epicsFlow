@@ -3,9 +3,8 @@
 import * as R from 'ramda'
 import { type AnyValueType } from '../../../src/epics'
 import { type PositionType } from './types'
-import { type ScriptDataType } from './models/World'
 
-const { assocPath, path, converge, evolve, always, tap, pipe, prop, head, identity } = R
+const { assocPath, path, converge, evolve, always, tap, pipe, prop, head, identity, equals, when } = R
 
 function angleBetween2Points(point1: PositionType, point2: PositionType) {
 	const dy = point2.y - point1.y
@@ -133,6 +132,26 @@ const megaExplorer = pipe(
 	setSpeed(1000)
 )
 
+const x = prop('x')
+const y = prop('y')
+const myPositionX = pipe(
+	myPosition,
+	x
+)
+const myPositionY = pipe(
+	myPosition,
+	y
+)
+const headingIs = degree => pipe(
+	heading,
+	equals(degree)
+)
+const startMoveIfHeadingIs =
+heading => when(
+	headingIs(heading),
+	startMove
+)
+
 const globalKeys = []
 
 if (typeof window !== 'undefined') {
@@ -178,6 +197,12 @@ if (typeof window !== 'undefined') {
 		world,
 		apples,
 		firstApple,
+		x,
+		y,
+		myPositionX,
+		myPositionY,
+		headingIs,
+		startMoveIfHeadingIs,
 
 		position,
 		firstApplePos,

@@ -61,8 +61,119 @@ const Snippets = {
  setColor('rgba(46, 204, 113, 1)')
 )`,
 	},
-	shuriken : {
-		key: 'shuriken',
+	patrolX : {
+		key: 'patrolX',
+		code: `const x = prop('x')
+const myPositionX = pipe(
+ myPosition,
+ x
+)
+const myXGt800 = converge(
+ gt(__, 800),
+ [myPositionX]
+)
+const myXLt400 = converge(
+ lt(__, 400),
+ [myPositionX]
+)
+const headingIs = degree => pipe(
+ heading,
+ equals(degree)
+)
+const myHeadingIs180or0 = either(
+ headingIs(180),
+ headingIs(0)
+)
+
+pipe(
+ ifElse(
+  myXGt800,
+  pipe(
+   stopMove,
+   setHeading(180),
+  ),
+  when(
+   myXLt400,
+   pipe(
+    stopMove,
+    setHeading(0)
+   )
+  )
+ ),
+ ifElse(
+  myHeadingIs180or0,
+  startMove,
+  setHeading(180)
+ ),
+ megaEater
+)`,
+	},
+	patrolXY : {
+		key: 'patrolXY',
+		code: `const axisLogic = (
+ getter,
+ minHeading,
+ maxHeading,
+) => (
+ minX, 
+ maxX
+) => 
+ifElse(
+ converge(
+  gt(__, maxX),
+  [getter]
+ ),
+ setHeading(maxHeading),
+ when(
+  converge(
+   lt(__, minX),
+   [getter]
+  ),
+  setHeading(minHeading)
+ )
+)
+
+const xAxisLogic = axisLogic(
+ myPositionX,
+ 0,
+ 180
+)
+
+const yAxisLogic = axisLogic(
+ myPositionY,
+ 90,
+ 270
+)
+
+const boundTo = (
+ minX,
+ minY,
+ maxX,
+ maxY
+) => pipe(
+ xAxisLogic(minX, maxX),
+ yAxisLogic(minY, maxY),
+)
+
+pipe(
+ startMove,
+ boundTo(100, 100, 500, 300),
+ megaSpeed
+)`,
+	},
+	shuriken_evolve : {
+		key: 'shuriken_evolve',
+		code: `pipe(
+ evolve({
+  me: {
+   headingDegree: add(20)
+  }
+ }),
+ megaSize
+)`,
+	},
+	shuriken_converge : {
+		key: 'shuriken_converge',
 		code: `pipe(
  converge(
   setHeading,
@@ -223,7 +334,10 @@ export class App extends Component<{}, StateType> {
 					<select onChange={e => { this.setState({ subconsciousScript: Snippets[e.target.value].code }) }}>
 						<option value={Snippets.identity.key}>identity</option>
 						<option value={Snippets.setAttributes.key}>set attributes</option>
-						<option value={Snippets.shuriken.key}>shuriken</option>
+						<option value={Snippets.patrolX.key}>patrol X</option>
+						<option value={Snippets.patrolXY.key}>patrol XY</option>
+						<option value={Snippets.shuriken_evolve.key}>shuriken evolve</option>
+						<option value={Snippets.shuriken_converge.key}>shuriken converge</option>
 						<option value={Snippets.headTowardsFirstApple.key}>head towards first apple</option>
 					</select>
 					<label>{worm.name}</label>
