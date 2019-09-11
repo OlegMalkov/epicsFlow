@@ -1,0 +1,9 @@
+.User {
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 10;
+    background-color: rgba(0,0,0,0.7);
+    font-size: 11px;
+    color: white;
+}

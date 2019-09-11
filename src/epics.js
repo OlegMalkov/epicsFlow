@@ -85,7 +85,15 @@ opaque type SendMsgOutsideEpicsEffectType = {|
 	msg: any,
 	type: typeof sendMsgOutsideEpicsEffectType,
 |}
-type ReducerType<S: AnyValueType, SC: Object, CV, E> = ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<CV, typeof toTrueV>, scope: SC, sourceMsg: AnyMsgType, state: S, values: CV |}) => ReducerResult<S, SC, E>
+type ReducerType<S: AnyValueType, SC: Object, CV, E> = ({|
+	R: ReducerResult<S, SC, E>,
+	changedActiveConditionsKeysMap: $ObjMap<CV, typeof toTrueV>,
+	scope: SC,
+	sourceMsg: AnyMsgType,
+	state: S,
+	values: CV,
+	dispatch: DispatchType,
+|}) => ReducerResult<S, SC, E>
 type BuiltInEffectType = DispatchMsgEffectType | SendMsgOutsideEpicsEffectType | DispatchBatchedMsgsEffectType
 type UpdaterType<S, SC, C: { [string]: { msgType: string } & Object }, E> = {|
 	compulsoryConditionsKeys: Array<$Keys<C>>,
@@ -414,7 +422,15 @@ type MergeType<T, T1> = {| ...$Exact<T>, ...$Exact<T1> |}
 function createUpdater<S: AnyValueType, SC: Object, DO: { [string]: { msgType: string } & Object }, ReactsTo: { [string]: { msgType: string } & Object }, E> ({ given, when, then }: {|
 	given: DO,
 	when: ReactsTo,
-	then: ({| R: ReducerResult<S, SC, E>, changedActiveConditionsKeysMap: $ObjMap<MergeType<DO, ReactsTo>, typeof toTrueV>, scope: SC, sourceMsg: AnyMsgType, state: S, values: $Exact<$ObjMap<MergeType<DO, ReactsTo>, typeof extractConditionV>> |}) => ReducerResult<S, SC, E>,
+	then: ({|
+		R: ReducerResult<S, SC, E>,
+		changedActiveConditionsKeysMap: $ObjMap<MergeType<DO, ReactsTo>, typeof toTrueV>,
+		scope: SC,
+		sourceMsg: AnyMsgType,
+		state: S,
+		values: $Exact<$ObjMap<MergeType<DO, ReactsTo>, typeof extractConditionV>>,
+		dispatch: DispatchType,
+	|}) => ReducerResult<S, SC, E>,
 |}): UpdaterType<S, SC, any, E> {
 	let noActiveConditions = true
 	const conditionKeysToConditionUpdaterKeys = []
@@ -713,7 +729,7 @@ function traceToString(trace: ExecutionLevelInfoType, executedEpicsFilter?: Epic
 		.filter(({ output }) => output)	// if executedEpicsOutputs.length > 1 - branching
 
 	if (executedEpicsOutputs.length === 0 && whitespaceLength === 0) {
-		return `${trace.triggerMsg.type} does not have any effect`
+		return '' // `${trace.triggerMsg.type} does not have any effect`
 	}
 	const branches = executedEpicsOutputs.map(({ output, epicExecutionInfo }) => {
 		const whitespace = new Array(whitespaceLength).join(' ')
@@ -1147,7 +1163,8 @@ const createExecuteMsg = ({
 					let result
 
 					try {
-						// TODO flow - mark everything passed inside then as $ReadOnly
+						let isSyncDispatch = true
+
 						result = updater.then({
 							values: thenValues,
 							state: prevState,
@@ -1155,7 +1172,20 @@ const createExecuteMsg = ({
 							sourceMsg,
 							changedActiveConditionsKeysMap: changedActiveConditionsKeys.reduce((m, k) => { m[k] = true; return m }, {}),
 							R: new ReducerResult(prevState, prevScope),
+							dispatch() {
+								if (isSyncDispatch) {
+									// Effect managers replying to requirest consitently in async manner, to simplify trace and reasoning
+									setTimeout(() => dispatch(...arguments), 0)
+								} else {
+									dispatch(...arguments)
+								}
+							},
 						})
+
+						isSyncDispatch = false
+
+						// TODO flow - mark everything passed inside then as $ReadOnly
+
 					} catch (e) {
 						if (trace && executionLevelTrace) {
 							const updaters = getTraceUpdaters({ executionLevelTrace, subVcet })
@@ -1846,8 +1876,12 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 	debug,
 	isSubStore,
 }: CreateStorePropsType<Epics>, hotReload?: true): EpicsStoreType<Epics> {
-	// eslint-disable-next-line no-console
-	const { warn = (() => null: Function), trace, devTools: devToolsConfig } = debug === true ? { devTools: { config: { } }, warn: undefined, trace: e => console.log(traceToString(e))} : (debug || {})
+	const { warn = (() => null: Function), trace, devTools: devToolsConfig } = debug === true ? { devTools: { config: { } }, warn: undefined, trace: e => {
+		const output = traceToString(e)
+
+		// eslint-disable-next-line no-console
+		if (output) console.log(output)
+	}} : (debug || {})
 
 	let devTools
 
