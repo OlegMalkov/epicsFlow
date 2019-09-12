@@ -3,7 +3,15 @@
 import React from 'react'
 import { type WorkspaceStateType } from './workspaceEpic'
 import { type DispatchType } from '../../../../../src/epics'
-import { WorkspaceHtmlDraggingOverEvent, WorkspaceHtmlOnDropEvent } from './workspaceEvents'
+import {
+	WorkspaceHtmlDraggingOverEvent,
+	WorkspaceHtmlOnDropEvent,
+	WorkspaceImageLoadedEvent,
+	WorkspacePickSelectionAreaKindNameBtnPressedEvent,
+	WorkspacePickSelectionAreaKindPhoneBtnPressedEvent,
+	WorkspacePickSelectionAreaKindEmailBtnPressedEvent,
+	WorkspacePickSelectionAreaKindCancelBtnPressedEvent,
+} from './workspaceEvents'
 import './Workspace.css'
 
 type PropsType = {|
@@ -11,10 +19,10 @@ type PropsType = {|
     dispatch: DispatchType,
 |}
 
-export const Workspace = ({ state, dispatch }: PropsType) => {
+const workspaceImageId = 'workspaceImage'
 
+export const Workspace = ({ state, dispatch }: PropsType) => {
 	return (<div
-		style={{ backgroundImage: `url(${state.openedFile.url})` }}
 		className={`Workspace${state.draggingFileOverWorkspace ? ' draggingFileOverWorkspace' : ''}`}
 		onDragOver={(e) => {
 			e.preventDefault()
@@ -45,6 +53,35 @@ export const Workspace = ({ state, dispatch }: PropsType) => {
 			dispatch(WorkspaceHtmlOnDropEvent.create({ files }))
 		}}
 	>
-		{ state.uploadingFile.active ? <span className="text">Uploading: {state.uploadingFile.progress}%</span> : <div/> }
+		{
+			state.openedFile.url
+				&& <img
+					id={workspaceImageId}
+					src={state.openedFile.url}
+					onLoad={() => {
+						const img: HTMLImageElement = (document.getElementById(workspaceImageId): any)
+
+						dispatch(WorkspaceImageLoadedEvent.create({ width: img.naturalWidth, height: img.naturalHeight }))
+					}}
+				/>
+		}
+		<div className="fileInfo">
+			{ state.openedFile.name ? <span className="text">Opened file: {state.openedFile.name}.</span> : <div/> }
+			{ state.uploadingFile.active ? <span className="text"> Uploading: {state.uploadingFile.progress}%</span> : <div/> }
+		</div>
+		<div className="regognizedTextsBoxes">
+			{
+				state.openedFile.recognizedTextsScaled.map(({ box, text }, i) => {
+					return <div key={i} className="regognizedTextBox" style={box} title={text} />
+				})
+			}
+		</div>
+		{ state.pickSelectionArea.active && <div className="selectionTypeDialog">
+			<h3>What this selection represents?</h3>
+			<button onClick={() => dispatch(WorkspacePickSelectionAreaKindNameBtnPressedEvent.create())} >name</button>
+			<button onClick={() => dispatch(WorkspacePickSelectionAreaKindPhoneBtnPressedEvent.create())} >phone</button>
+			<button onClick={() => dispatch(WorkspacePickSelectionAreaKindEmailBtnPressedEvent.create())} >email</button>
+			<button onClick={() => dispatch(WorkspacePickSelectionAreaKindCancelBtnPressedEvent.create())} >cancel</button>
+		</div> }
 	</div>)
 }

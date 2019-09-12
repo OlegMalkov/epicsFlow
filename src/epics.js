@@ -475,12 +475,12 @@ function createUpdater<S: AnyValueType, SC: Object, DO: { [string]: { msgType: s
 
 function createSimpleUpdater<S: AnyValueType, SC: Object, Condition: *, E> (
 	condition: Condition,
-	then: ({| R: ReducerResult<S, SC, E>, value: $Call<typeof extractConditionV, Condition>, scope: SC, sourceMsg: AnyMsgType, state: S |}) => ReducerResult<S, SC, E>
+	then: ({| R: ReducerResult<S, SC, E>, value: $Call<typeof extractConditionV, Condition>, scope: SC, sourceMsg: AnyMsgType, state: S, dispatch: DispatchType |}) => ReducerResult<S, SC, E>
 ): UpdaterType<S, SC, any, E> {
 	return createUpdater({
 		given: {},
 		when: { value: condition },
-		then: ({ values, state, scope, R, sourceMsg }) => then({ value: values.value, state, scope, R, sourceMsg }),
+		then: ({ values, state, scope, R, sourceMsg, dispatch }) => then({ value: values.value, state, scope, R, sourceMsg, dispatch }),
 	})
 }
 

@@ -22,3 +22,23 @@ html, body, #root {
   top: 0;
   z-index: 10000;
 }
+
+body {
+  -webkit-user-select: none;
+  -moz-user-select: -moz-none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea {
+    -webkit-user-select: text;
+    -moz-user-select:text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
+button {
+  font-size: 20px;
+  margin: 5px;
+}

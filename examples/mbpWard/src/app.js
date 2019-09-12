@@ -3,11 +3,12 @@
 import React, { Component } from 'react'
 import { type DispatchType } from '../../../src/epics'
 import './app.css'
-import { windowMouseMoveEvent, windowMouseUpEvent, keyDownEvent } from './globalEvents'
+import { windowMouseMoveEvent, windowMouseUpEvent, keyDownEvent, windowMouseDownEvent } from './globalEvents'
 import { BrowserDimensionsEvent } from './components/env/envEvents'
 import { mbpStore } from './mbpStore'
 import { Workspace } from './components/workspace/Workspace'
-import { User } from './components/user/User';
+import { User } from './components/user/User'
+import { SelectionFrame } from './components/selectionFrame/SelectionFrame'
 
 declare var window: EventTarget;
 const initialState = mbpStore.getState()
@@ -39,6 +40,7 @@ export class App extends Component<{}, typeof initialState> {
 				windowMouseMoveEvent.create({ position: { left: e.clientX, top: e.clientY } })
 			)
 		)
+		window.addEventListener('mousedown', () => this.dispatch(windowMouseDownEvent.create()))
 		window.addEventListener('mouseup', () => this.dispatch(windowMouseUpEvent.create()))
 		window.addEventListener('keydown', (e: KeyboardEvent) => this.dispatch(keyDownEvent.create({ keyCode: e.keyCode })))
 
@@ -53,6 +55,7 @@ export class App extends Component<{}, typeof initialState> {
 			>
 				<Workspace state={this.state.workspace} dispatch={mbpStore.dispatch}/>
 				<User state={this.state.user} />
+				<SelectionFrame state={this.state.selectionFrame} />
 			</div>
 		)
 	}

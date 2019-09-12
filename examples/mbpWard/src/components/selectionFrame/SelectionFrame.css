@@ -1,0 +1,6 @@
+.SelectionFrame {
+  background-color: rgba(2, 99, 179, 0.308);
+  outline: solid 1px rgb(0, 140, 255);
+  position: absolute;
+  z-index: 10000;
+}
