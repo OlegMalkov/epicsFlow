@@ -1,16 +1,17 @@
 // @flow
 
-import { type BoxType } from './types'
+import { type BoxType, type BBoxType } from './types'
 
 const EventKind = {
-	PEACE_INVOKING_CEREMONY: 'PEACE_INVOKING_CEREMONY',
-	SAMBODH_DHYAAN: 'SAMBODH_DHYAAN',
-	MAITRI_LIGHT: 'MAITRI_LIGHT',
-	SOUL_NOURISHING: 'SOUL_NOURISHING',
-	BODH_1: 'BODH_1',
-	BODH_2: 'BODH_2',
-	BODH_3: 'BODH_3',
-	BODH_4: 'BODH_4',
+	PEACE_INVOKING_CEREMONY: 'pic',
+	SAMBODH_DHYAAN: 'sd',
+	MAITRI_LIGHT: 'ml',
+	SOUL_NOURISHING: 'sn',
+	BODH_1: 'b1',
+	BODH_2: 'b2',
+	BODH_3: 'b3',
+	BODH_4: 'b4',
+	UNKNOWN: 'unknown',
 }
 
 const emptyBox: BoxType = {
@@ -20,7 +21,15 @@ const emptyBox: BoxType = {
 	height: 0,
 }
 
+const emptyBBox: BBoxType = {
+	left: 0,
+	top: 0,
+	right: 0,
+	bottom: 0,
+}
+
 export {
 	EventKind,
 	emptyBox,
+	emptyBBox,
 }

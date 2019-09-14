@@ -9,6 +9,7 @@ import { mbpStore } from './mbpStore'
 import { Workspace } from './components/workspace/Workspace'
 import { User } from './components/user/User'
 import { SelectionFrame } from './components/selectionFrame/SelectionFrame'
+import { ParticipantEditor } from './components/participantEditor/ParticipantEditor'
 
 declare var window: EventTarget;
 const initialState = mbpStore.getState()
@@ -56,6 +57,7 @@ export class App extends Component<{}, typeof initialState> {
 				<Workspace state={this.state.workspace} dispatch={mbpStore.dispatch}/>
 				<User state={this.state.user} />
 				<SelectionFrame state={this.state.selectionFrame} />
+				<ParticipantEditor state={this.state.participantEditor} dispatch={mbpStore.dispatch} />
 			</div>
 		)
 	}

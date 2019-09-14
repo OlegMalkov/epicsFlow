@@ -14,6 +14,7 @@ const WorkspaceImageLoadedEvent = createEvent<{| width: number, height: number |
 const WorkspacePickSelectionAreaKindNameBtnPressedEvent = createSimpleEvent('WORKSPACE_PICK_SELECTION_AREA_NAME_BTN_PRESSED')
 const WorkspacePickSelectionAreaKindEmailBtnPressedEvent = createSimpleEvent('WORKSPACE_PICK_SELECTION_AREA_EMAIL_BTN_PRESSED')
 const WorkspacePickSelectionAreaKindPhoneBtnPressedEvent = createSimpleEvent('WORKSPACE_PICK_SELECTION_AREA_PHONE_BTN_PRESSED')
+const WorkspacePickSelectionAreaKindNationalityBtnPressedEvent = createSimpleEvent('WORKSPACE_PICK_SELECTION_AREA_NATIONALITY_BTN_PRESSED')
 const WorkspacePickSelectionAreaKindCancelBtnPressedEvent = createSimpleEvent('WORKSPACE_PICK_SELECTION_AREA_CANCEL_BTN_PRESSED')
 
 export {
@@ -27,5 +28,6 @@ export {
 	WorkspacePickSelectionAreaKindNameBtnPressedEvent,
 	WorkspacePickSelectionAreaKindEmailBtnPressedEvent,
 	WorkspacePickSelectionAreaKindPhoneBtnPressedEvent,
+	WorkspacePickSelectionAreaKindNationalityBtnPressedEvent,
 	WorkspacePickSelectionAreaKindCancelBtnPressedEvent,
 }

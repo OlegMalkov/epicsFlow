@@ -1,0 +1,29 @@
+.ParticipantEditor {
+  background-color: lightgray;
+  outline: solid 1px black;
+  position: absolute;
+  right: 3px;
+  top: 16px;
+  width: 300px; 
+  z-index: 1000;
+}
+
+.ParticipantEditor .inputRow {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  font-size: 16px;
+}
+
+.ParticipantEditor .inputRow input {
+  margin-left: 5px;
+  flex: 1;
+  padding: 5px;
+}
+
+.matchedParticipant {
+  font-size: 10px;
+  margin: 5px;
+  display: flex;
+  border: 1px solid black;
+}

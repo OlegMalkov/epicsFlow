@@ -10,8 +10,9 @@ import {
 	WorkspacePickSelectionAreaKindNameBtnPressedEvent,
 	WorkspacePickSelectionAreaKindPhoneBtnPressedEvent,
 	WorkspacePickSelectionAreaKindEmailBtnPressedEvent,
+	WorkspacePickSelectionAreaKindNationalityBtnPressedEvent,
 	WorkspacePickSelectionAreaKindCancelBtnPressedEvent,
-} from './workspaceEvents'
+} from './workspaceMsgs'
 import './Workspace.css'
 
 type PropsType = {|
@@ -56,6 +57,7 @@ export const Workspace = ({ state, dispatch }: PropsType) => {
 		{
 			state.openedFile.url
 				&& <img
+					alt="event"
 					id={workspaceImageId}
 					src={state.openedFile.url}
 					onLoad={() => {
@@ -71,8 +73,8 @@ export const Workspace = ({ state, dispatch }: PropsType) => {
 		</div>
 		<div className="regognizedTextsBoxes">
 			{
-				state.openedFile.recognizedTextsScaled.map(({ box, text }, i) => {
-					return <div key={i} className="regognizedTextBox" style={box} title={text} />
+				state.openedFile.visibleBoxes.map(({ box, text, color, thickness }, i) => {
+					return <div key={i} className="regognizedTextBox" style={{ ...box, outline: `${thickness}px solid ${color}` }} title={text} />
 				})
 			}
 		</div>
@@ -81,6 +83,7 @@ export const Workspace = ({ state, dispatch }: PropsType) => {
 			<button onClick={() => dispatch(WorkspacePickSelectionAreaKindNameBtnPressedEvent.create())} >name</button>
 			<button onClick={() => dispatch(WorkspacePickSelectionAreaKindPhoneBtnPressedEvent.create())} >phone</button>
 			<button onClick={() => dispatch(WorkspacePickSelectionAreaKindEmailBtnPressedEvent.create())} >email</button>
+			<button onClick={() => dispatch(WorkspacePickSelectionAreaKindNationalityBtnPressedEvent.create())} >nationality</button>
 			<button onClick={() => dispatch(WorkspacePickSelectionAreaKindCancelBtnPressedEvent.create())} >cancel</button>
 		</div> }
 	</div>)

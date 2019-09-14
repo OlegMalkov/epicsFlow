@@ -60,9 +60,13 @@ const selectionFrameEpic = createEpic<SelectionFrameStateType, BuiltInEffectType
 
 				if (mouseUp) {
 					if (state.active) {
-						return R
-							.mapState(setActive(false))
-							.sideEffect(dispatchMsgEffectCreator(SelectionFrameSelectionCompleteEvent.create({ box: state.box })))
+						let result = R.mapState(setActive(false))
+
+						if (state.box.width > 2) {
+							result = result.sideEffect(dispatchMsgEffectCreator(SelectionFrameSelectionCompleteEvent.create({ box: state.box })))
+						}
+
+						return result
 					}
 					return R
 				}

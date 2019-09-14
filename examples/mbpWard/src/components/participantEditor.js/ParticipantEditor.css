@@ -1,9 +1,0 @@
-.ParticipantEditor {
-  background-color: rgba(2, 99, 179, 0.308);
-  outline: solid 1px black;
-  position: absolute;
-  right: 0;
-  top: 30px;
-  width: 300px; 
-  z-index: 1000;
-}

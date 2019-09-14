@@ -6,7 +6,7 @@ import 'firebase/auth'
 import 'firebase/firestore'
 import 'firebase/storage'
 import { mbpStore } from '../../mbpStore'
-import { SignedInEvent } from './firebaseEvents'
+import { SignedInEvent, DbParticipantsUpdatedEvent } from './firebaseEvents'
 const firebaseui = require('firebaseui')
 
 const firebaseConfig = {
@@ -19,7 +19,7 @@ const firebaseConfig = {
 	appId: '1:987164261211:web:c4bc36fa94e3407a16f87e',
 }
 
-firebase.initializeApp(firebaseConfig)
+const app = firebase.initializeApp(firebaseConfig)
 
 firebase.auth().onAuthStateChanged(function(user) {
 	if (user) {
@@ -35,9 +35,23 @@ firebase.auth().onAuthStateChanged(function(user) {
 	}
 })
 
+const db = app.firestore()
+
+db.collection('participants')
+	.onSnapshot(function(querySnapshot) {
+		const participants = []
+
+		querySnapshot.forEach(function(doc) {
+			participants.push({ id: doc.id, ...doc.data() })
+		})
+
+		mbpStore.dispatch(DbParticipantsUpdatedEvent.create({ participants }))
+	})
+
 const storageRef = firebase.storage().ref()
 
 export {
+	db,
 	firebase,
 	storageRef,
 }
