@@ -53,3 +53,15 @@
     position: absolute;
     pointer-events: none;
 }
+
+.openEventDetailsDialogActionBtn {
+  position: absolute;
+  right: 20px;
+  bottom: 90px;
+  border-radius: 50%;
+  background-color: lightblue;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  z-index: 100000;
+}

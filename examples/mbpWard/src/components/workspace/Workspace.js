@@ -12,6 +12,7 @@ import {
 	WorkspacePickSelectionAreaKindEmailBtnPressedEvent,
 	WorkspacePickSelectionAreaKindNationalityBtnPressedEvent,
 	WorkspacePickSelectionAreaKindCancelBtnPressedEvent,
+	WorkspaceOpenEventDetailDialogBtnPressedEvent,
 } from './workspaceMsgs'
 import './Workspace.css'
 
@@ -86,5 +87,9 @@ export const Workspace = ({ state, dispatch }: PropsType) => {
 			<button onClick={() => dispatch(WorkspacePickSelectionAreaKindNationalityBtnPressedEvent.create())} >nationality</button>
 			<button onClick={() => dispatch(WorkspacePickSelectionAreaKindCancelBtnPressedEvent.create())} >cancel</button>
 		</div> }
+		{state.openedFile.name && <div
+			className="openEventDetailsDialogActionBtn"
+			onClick={() => dispatch(WorkspaceOpenEventDetailDialogBtnPressedEvent.create())}
+		/>}
 	</div>)
 }

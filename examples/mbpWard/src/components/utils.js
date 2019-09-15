@@ -39,9 +39,19 @@ function areBoxIntersect(box1: BoxType, box2: BoxType) {
 	return areBBoxIntersect(boxToBBox(box1), boxToBBox(box2))
 }
 
+function getEventKindFromFileName(fileName: string) {
+	return fileName.split('.')[1]
+}
+
+function getDateFromFileName(fileName: string) {
+	return new Date(fileName.split('.')[2])
+}
+
 export {
 	bboxToBox,
 	scaleBox,
 	areBBoxIntersect,
 	areBoxIntersect,
+	getEventKindFromFileName,
+	getDateFromFileName,
 }

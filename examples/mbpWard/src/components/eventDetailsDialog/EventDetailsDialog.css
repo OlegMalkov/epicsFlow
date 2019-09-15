@@ -1,0 +1,20 @@
+.EventDetailsDialog {
+    position: fixed;
+    z-index: 100000;
+    background-color: lightgray;
+    right: 0;
+    top: 0;
+    padding-top: 50px;
+    font-size: 12px;
+}
+
+.EventDetailsDialog table, .EventDetailsDialog  td, .EventDetailsDialog th {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+.EventDetailsDialogCloseBtn {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+}

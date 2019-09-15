@@ -6,7 +6,8 @@ import { type TextInBoxType } from '../types'
 const WorkspaceHtmlDraggingOverEvent = createSimpleEvent('WORKSPACE_HTML_DRAGGING_OVER')
 const WorkspaceHtmlOnDropEvent = createEvent<{| files: Array<File> |}>('WORKSPACE_HTML_ON_DROP')
 const WorkspaceFileUploadingProgressEvent = createEvent<{| progress: number |}>('WORKSPACE_FILE_UPLOADING_PROGRESS')
-const WorkspaceFileUploadCompleteEvent = createEvent<{| fileUrl: string, fileName: string |}>('WORKSPACE_FILE_UPLOAD_COMPLETE')
+const WorkspaceOpenFileCmd = createEvent<{| fileName: string |}>('WORKSPACE_OPEN_FILE')
+const WorkspaceFileUrlFetchedEvent = createEvent<{| fileUrl: string |}>('WORKSPACE_FILE_URL_FETCHED')
 const WorkspaceFileUploadFailedEvent = createSimpleEvent('WORKSPACE_FILE_UPLOAD_FAILED')
 const WorkspaceTextsRecognizedEvent = createEvent<{| texts: Array<TextInBoxType> |}>('WORKSPACE_ELEMENTS_RECOGNIZED')
 const WorkspaceImageLoadedEvent = createEvent<{| width: number, height: number |}>('WORKSPACE_IMAGE_LOADED')
@@ -16,12 +17,13 @@ const WorkspacePickSelectionAreaKindEmailBtnPressedEvent = createSimpleEvent('WO
 const WorkspacePickSelectionAreaKindPhoneBtnPressedEvent = createSimpleEvent('WORKSPACE_PICK_SELECTION_AREA_PHONE_BTN_PRESSED')
 const WorkspacePickSelectionAreaKindNationalityBtnPressedEvent = createSimpleEvent('WORKSPACE_PICK_SELECTION_AREA_NATIONALITY_BTN_PRESSED')
 const WorkspacePickSelectionAreaKindCancelBtnPressedEvent = createSimpleEvent('WORKSPACE_PICK_SELECTION_AREA_CANCEL_BTN_PRESSED')
+const WorkspaceOpenEventDetailDialogBtnPressedEvent = createSimpleEvent('WORKSPACE_OPEN_EVENT_DETAIL_DIALOG_BTN_PRESSED')
 
 export {
 	WorkspaceHtmlDraggingOverEvent,
 	WorkspaceHtmlOnDropEvent,
 	WorkspaceFileUploadingProgressEvent,
-	WorkspaceFileUploadCompleteEvent,
+	WorkspaceOpenFileCmd,
 	WorkspaceFileUploadFailedEvent,
 	WorkspaceTextsRecognizedEvent,
 	WorkspaceImageLoadedEvent,
@@ -30,4 +32,6 @@ export {
 	WorkspacePickSelectionAreaKindPhoneBtnPressedEvent,
 	WorkspacePickSelectionAreaKindNationalityBtnPressedEvent,
 	WorkspacePickSelectionAreaKindCancelBtnPressedEvent,
+	WorkspaceFileUrlFetchedEvent,
+	WorkspaceOpenEventDetailDialogBtnPressedEvent,
 }

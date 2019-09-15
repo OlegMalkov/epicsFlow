@@ -198,9 +198,9 @@ const participantEditorEpic = createEpic<ParticipantEditorStateType, BuiltInEffe
 
 				const matches = []
 
-				if (name) matches.push({ rating: nameMatchRating, index: nameBestMatchIndex, source: 'name' })
+				if (name && nameMatchRating > 0.5) matches.push({ rating: nameMatchRating, index: nameBestMatchIndex, source: 'name' })
 
-				if (phone) {
+				if (phone && phoneMatchRating > 0.5) {
 					const existing = matches.find(({ index }) => index === phoneBestMatchIndex)
 
 					if (existing) {
@@ -211,7 +211,7 @@ const participantEditorEpic = createEpic<ParticipantEditorStateType, BuiltInEffe
 					}
 				}
 
-				if (email) {
+				if (email && emailMatchRating > 0.5) {
 					const existing = matches.find(({ index }) => index === emailBestMatchIndex)
 
 					if (existing) {

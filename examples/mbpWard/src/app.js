@@ -10,6 +10,10 @@ import { Workspace } from './components/workspace/Workspace'
 import { User } from './components/user/User'
 import { SelectionFrame } from './components/selectionFrame/SelectionFrame'
 import { ParticipantEditor } from './components/participantEditor/ParticipantEditor'
+import { FloatingActionBtnPressedEvent } from './appMsgs'
+import { EventsListDialog } from './components/eventsListDialog/EventsListDialog'
+import { EventDetailsDialog } from './components/eventDetailsDialog/EventDetailsDialog'
+import { Sync } from './components/sync/Sync'
 
 declare var window: EventTarget;
 const initialState = mbpStore.getState()
@@ -41,7 +45,11 @@ export class App extends Component<{}, typeof initialState> {
 				windowMouseMoveEvent.create({ position: { left: e.clientX, top: e.clientY } })
 			)
 		)
-		window.addEventListener('mousedown', () => this.dispatch(windowMouseDownEvent.create()))
+		window.addEventListener('mousedown', (e: MouseEvent) => {
+			if ((e.target: any).nodeName === 'INPUT') return
+
+			this.dispatch(windowMouseDownEvent.create())
+		})
 		window.addEventListener('mouseup', () => this.dispatch(windowMouseUpEvent.create()))
 		window.addEventListener('keydown', (e: KeyboardEvent) => this.dispatch(keyDownEvent.create({ keyCode: e.keyCode })))
 
@@ -58,6 +66,10 @@ export class App extends Component<{}, typeof initialState> {
 				<User state={this.state.user} />
 				<SelectionFrame state={this.state.selectionFrame} />
 				<ParticipantEditor state={this.state.participantEditor} dispatch={mbpStore.dispatch} />
+				<div className="openEventsListDialogActionBtn" onClick={() => mbpStore.dispatch(FloatingActionBtnPressedEvent.create())} />
+				<EventsListDialog state={this.state.eventsListDialog} dispatch={mbpStore.dispatch} />
+				<EventDetailsDialog state={this.state.eventDetailsDialog} dispatch={mbpStore.dispatch} />
+				<Sync state={this.state.sync} dispatch={mbpStore.dispatch} />
 			</div>
 		)
 	}

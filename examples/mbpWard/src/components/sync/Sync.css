@@ -1,0 +1,34 @@
+.SyncBtn {
+    position: absolute;
+    left: 20px;
+    bottom: 20px;
+    z-index: 10;
+    background-color: rgba(0,0,0,0.7);
+    font-size: 11px;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.SyncProgress {
+    position: absolute;
+    z-index: 100000000;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color: white;
+}
+
+.SyncProgress > div > div {
+    padding: 5px;
+}

@@ -5,7 +5,6 @@ import {
 	WorkspaceHtmlDraggingOverEvent,
 	WorkspaceHtmlOnDropEvent,
 	WorkspaceFileUploadingProgressEvent,
-	WorkspaceFileUploadCompleteEvent,
 	WorkspaceFileUploadFailedEvent,
 	WorkspaceTextsRecognizedEvent,
 	WorkspaceImageLoadedEvent,
@@ -14,6 +13,9 @@ import {
 	WorkspacePickSelectionAreaKindPhoneBtnPressedEvent,
 	WorkspacePickSelectionAreaKindEmailBtnPressedEvent,
 	WorkspacePickSelectionAreaKindNationalityBtnPressedEvent,
+	WorkspaceOpenFileCmd,
+	WorkspaceFileUrlFetchedEvent,
+	WorkspaceOpenEventDetailDialogBtnPressedEvent,
 } from './workspaceMsgs'
 import { setProp, setPath2 } from '../../../../../src/utils'
 import { storageRef } from '../firebase/firebase'
@@ -29,6 +31,7 @@ import {
 } from '../participantEditor/participantEditorMsgs'
 import { bboxToBox, scaleBox } from '../utils'
 import { DbParticipantsUpdatedEvent } from '../firebase/firebaseEvents'
+import { OpenEventDetailsDialogCmd } from '../eventDetailsDialog/eventDetailsDialogMsgs'
 
 type WorkspaceStateType = {|
 	allParticipants: Array<ParticipantType>,
@@ -61,7 +64,7 @@ const initialState: WorkspaceStateType = {
 		dimensions: { width: 0, height: 0 },
 		scale: 0,
 		recognizedTextsScaled: [],
-		eventKind: EventKind.PEACE_INVOKING_CEREMONY,
+		eventKind: EventKind.HAVAN,
 		eventDate: 'jan-01-2019',
 		eventLocation: 'uae-dubai-center',
 		participants: [],
@@ -200,9 +203,7 @@ const workspaceEpic = createEpic<WorkspaceStateType, BuiltInEffectType, empty>({
 				}, function() {
 					dispatch(WorkspaceFileUploadFailedEvent.create())
 				}, function() {
-					uploadTask.snapshot.ref.getDownloadURL().then(function(fileUrl) {
-						dispatch(WorkspaceFileUploadCompleteEvent.create({ fileUrl, fileName: file.name }))
-					})
+					dispatch(WorkspaceOpenFileCmd.create({ fileName: file.name }))
 				})
 
 				return R
@@ -215,8 +216,12 @@ const workspaceEpic = createEpic<WorkspaceStateType, BuiltInEffectType, empty>({
 			({ R, value: { progress } }) => R.mapState(setFileUploadProgress(progress)),
 		),
 		fileUploadComplete: createSimpleUpdater(
-			WorkspaceFileUploadCompleteEvent.condition,
-			({ R, value: { fileUrl, fileName }, dispatch }) => {
+			WorkspaceOpenFileCmd.condition,
+			({ R, value: { fileName }, dispatch }) => {
+				storageRef.child(`raw/${fileName}`).getDownloadURL().then(function(fileUrl) {
+					dispatch(WorkspaceFileUrlFetchedEvent.create({ fileUrl }))
+				})
+
 				fetch(makeReadTextUrl(fileName)).then((response) => {
 					response.json().then(json => {
 						const { textAnnotations } = json
@@ -241,11 +246,15 @@ const workspaceEpic = createEpic<WorkspaceStateType, BuiltInEffectType, empty>({
 					})
 				})
 				return R
+					.mapState(setOpenedFileRecognizedTexts(initialState.openedFile.recognizedTexts))
 					.mapState(resetFileUpload)
-					.mapState(setOpenedFileUrl(fileUrl))
 					.mapState(setOpenedFileName(fileName))
 					.mapState(setOpenedFileDimensions({ width: 0, height: 0 }))
 			},
+		),
+		fileUrlFetched: createSimpleUpdater(
+			WorkspaceFileUrlFetchedEvent.condition,
+			({ R, value: { fileUrl } }) => R.mapState(setOpenedFileUrl(fileUrl))
 		),
 		fileUploadFailed: createSimpleUpdater(
 			WorkspaceFileUploadFailedEvent.condition,
@@ -373,6 +382,11 @@ const workspaceEpic = createEpic<WorkspaceStateType, BuiltInEffectType, empty>({
 				))
 			},
 		}),
+
+		openEventDetails: createSimpleUpdater(
+			WorkspaceOpenEventDetailDialogBtnPressedEvent.condition,
+			({ R, state: { openedFile: { name }} }) => R.sideEffect(dispatchMsgEffectCreator(OpenEventDetailsDialogCmd.create({ eventFileName: name })))
+		),
 	},
 })
 

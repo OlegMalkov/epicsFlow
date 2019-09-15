@@ -3,7 +3,7 @@
 import { type BoxType, type BBoxType } from './types'
 
 const EventKind = {
-	PEACE_INVOKING_CEREMONY: 'pic',
+	HAVAN: 'pic',
 	SAMBODH_DHYAAN: 'sd',
 	MAITRI_LIGHT: 'ml',
 	SOUL_NOURISHING: 'sn',
@@ -13,6 +13,11 @@ const EventKind = {
 	BODH_4: 'b4',
 	UNKNOWN: 'unknown',
 }
+
+const EventKindToString = Object.keys(EventKind).reduce((a,k) => {
+	a[EventKind[k]] = k
+	return a
+},{})
 
 const emptyBox: BoxType = {
 	left: 0,
@@ -28,8 +33,14 @@ const emptyBBox: BBoxType = {
 	bottom: 0,
 }
 
+const SeekerJorneySpreadsheetId = '1GaD30yoKNxD3etVqnIb8UFN6MEFL-dg425vRc61IWYw'
+const SeekerJorneySpreadsheetDataOffset = 5
+
 export {
 	EventKind,
 	emptyBox,
 	emptyBBox,
+	EventKindToString,
+	SeekerJorneySpreadsheetId,
+	SeekerJorneySpreadsheetDataOffset,
 }

@@ -1,0 +1,45 @@
+.EventsListDialog {
+    min-width: 200px;
+    position: absolute;
+    left: 0;
+    z-index: 100000;
+    background-color: lightgray;
+    min-height: 100%;
+    padding-top: 40px;
+}
+
+.EventsListDialog {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+.EventsListDialogTitle {
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    font-size: 20px;
+}
+
+.EventsListDialogEventRow {
+    padding: 2px;
+    margin: 2px;
+    border: 1px solid black;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+}
+
+.EventsListDialogEventRow button {
+    font-size: 12px;
+    margin: 2px;
+}
+.EventsListDialogEventRowText {
+    white-space: nowrap;
+}
+
+.EventsListDialogCloseBtn {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+}
