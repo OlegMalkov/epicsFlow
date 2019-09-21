@@ -19,7 +19,7 @@ export const Sync = ({ state, dispatch }: PropsType) => {
 		return <div className="SyncProgress">
 			<div>
 				<h2>Do not touch computer.</h2>
-				<div>Processing: <b>{state.progress.participant.name} [{state.progress.index + 1} of {state.progress.count}]</b></div>
+				<div>Processing <b>{state.progress.count} participants</b></div>
 			</div>
 		</div>
 	}

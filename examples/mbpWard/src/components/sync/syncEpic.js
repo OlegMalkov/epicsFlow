@@ -2,7 +2,6 @@
 
 import { createEpic, createUpdater, createSimpleUpdater } from '../../../../../src/epics'
 import { setProp } from '../../../../../src/utils'
-import { type ParticipantType } from '../types'
 import { GapiSeekerJorneySheetDataFetched } from '../gapi/gapiEvents'
 import { initGapiAndFetchSeekersJorneyData, gapi } from '../gapi/gapi'
 import { DbParticipantsUpdatedEvent } from '../firebase/firebaseEvents'
@@ -11,7 +10,7 @@ import { SeekerJorneySpreadsheetId, EventKind, SeekerJorneySpreadsheetDataOffset
 import { getEventKindFromFileName, getDateFromFileName } from '../utils'
 
 type SyncStateType = {|
-	progress: {| active: false |} | {| active: true, awaitingSeekersJorneyData: bool, index: number, count: number, participant: ParticipantType |},
+	progress: {| active: false |} | {| active: true, awaitingSeekersJorneyData: bool, count: number |},
 |}
 
 const setProgress = setProp<SyncStateType, *>('progress')
@@ -35,77 +34,50 @@ const syncEpic = createEpic<SyncStateType, empty, empty>({
 				startSync: SyncBtnPressedEvent.condition,
 			},
 			then: ({ R, values: { allParticipants, seekerJorneySheetData }, dispatch }) => {
-				const initialProgressState = { active: true, index: 0, count: allParticipants.length, participant: allParticipants[0] }
+				const initialProgressState = { active: true, count: allParticipants.length }
 
 				if (seekerJorneySheetData) {
-					let newEntriesAddedCount = 0
+					const offset = SeekerJorneySpreadsheetDataOffset + 1
+					const range = `A${offset}:M${allParticipants.length + offset}`
 
-					allParticipants.reduce((prevPromise, participant, index) => {
-						return prevPromise.then(() => {
-							return new Promise((resolve, reject) => {
-								let counter = 0
+					const sortedParticipants = []
 
-								function exec() {
-									const existingSheetRecord = seekerJorneySheetData.find(({id}) => participant.id === id)
+					seekerJorneySheetData.forEach(({ id }) => {
+						sortedParticipants.push(allParticipants.find(p => p.id === id))
+					})
 
-									const indexInSheet = existingSheetRecord ? seekerJorneySheetData.indexOf(existingSheetRecord) : seekerJorneySheetData.length + newEntriesAddedCount
+					allParticipants.forEach(p => {
+						if (sortedParticipants.includes(p)) return
+						sortedParticipants.push(p)
+					})
 
-									dispatch(SyncProgressEvent.create({ index, participant }))
-									const rowIndex = indexInSheet + SeekerJorneySpreadsheetDataOffset + 1
-									const range = `A${rowIndex}:M${rowIndex}`
-									const params = {
-										spreadsheetId: SeekerJorneySpreadsheetId,
-										range,
-										valueInputOption: 'RAW',
-									}
+					const valueRangeBody = {
+						range,
+						majorDimension: 'ROWS',
+						values: sortedParticipants.map((participant, index) => participant ? [
+							participant.id,
+							index + 1,
+							participant.name,
+							participant.phone,
+							participant.email,
+							eventsFor(EventKind.SAMBODH_DHYAAN, participant),
+							eventsFor(EventKind.MAITRI_LIGHT, participant),
+							eventsFor(EventKind.HAVAN, participant),
+							eventsFor(EventKind.SOUL_NOURISHING, participant),
+							eventsFor(EventKind.BODH_1, participant),
+							eventsFor(EventKind.BODH_2, participant),
+							eventsFor(EventKind.BODH_3, participant),
+							eventsFor(EventKind.BODH_4, participant),
+						] : undefined),
+					}
 
-									const valueRangeBody = {
-										range,
-										majorDimension: 'ROWS',
-										values: [
-											[
-												participant.id,
-												indexInSheet + 1,
-												participant.name,
-												participant.phone,
-												participant.email,
-												eventsFor(EventKind.SAMBODH_DHYAAN, participant),
-												eventsFor(EventKind.MAITRI_LIGHT, participant),
-												eventsFor(EventKind.HAVAN, participant),
-												eventsFor(EventKind.SOUL_NOURISHING, participant),
-												eventsFor(EventKind.BODH_1, participant),
-												eventsFor(EventKind.BODH_2, participant),
-												eventsFor(EventKind.BODH_3, participant),
-												eventsFor(EventKind.BODH_4, participant),
-											],
-										],
-									}
+					const params = {
+						spreadsheetId: SeekerJorneySpreadsheetId,
+						range,
+						valueInputOption: 'RAW',
+					}
 
-									const request = gapi.client.sheets.spreadsheets.values.update(params, valueRangeBody)
-
-									return request.then(function(response) {
-										if (!existingSheetRecord) {
-											newEntriesAddedCount ++
-										}
-										resolve(response)
-									}, function(reason) {
-										if (counter > 10) {
-											const msg = `Failed to sync ${participant.name}(${participant.id}): ${reason}`
-
-											// eslint-disable-next-line no-console
-											console.warn(msg, reason)
-											alert(msg)
-											reject(msg)
-										} else {
-											counter++
-											setTimeout(exec, 5000)
-										}
-									})
-								}
-								exec()
-							})
-						})
-					}, Promise.resolve()).then(() => {
+					gapi.client.sheets.spreadsheets.values.update(params, valueRangeBody).then(() => {
 						dispatch(SyncCompleteEvent.create())
 					})
 
@@ -119,10 +91,6 @@ const syncEpic = createEpic<SyncStateType, empty, empty>({
 				}
 			},
 		}),
-		syncProgress: createSimpleUpdater(
-			SyncProgressEvent.condition,
-			({ R, value: { index, participant }, state }) => state.progress.active ? R.mapState(setProgress({ ...state.progress, index, participant })) : R
-		),
 		syncComplete: createSimpleUpdater(
 			SyncCompleteEvent.condition,
 			({ R }) => R.mapState(setProgress({ active: false }))
