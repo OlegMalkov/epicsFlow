@@ -16,4 +16,3 @@ if (module.hot) {
 
 window.$R = {}
 window.$R.store = mbpStore
-

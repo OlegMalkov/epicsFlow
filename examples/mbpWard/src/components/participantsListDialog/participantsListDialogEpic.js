@@ -18,6 +18,7 @@ import {
 	SetNationalityBtnClickedEvent,
 	EditParticipantNationalityBtnClickedEvent,
 	CancelSetNationalityBtnClickedEvent,
+	ParticipantListDialogFileNamePressedEvent,
 } from './participantsListDialogMsgs'
 import { db } from '../firebase/firebase'
 import { OpenAllParticipantsBtnPressedEvent } from '../../appMsgs'
@@ -121,7 +122,10 @@ const eventDetailsDialogEpic = createEpic<ParticipantsListDialogEpicStateType, B
 				if (!participant) return R
 
 				const participantNationality = participant.nationality
-				const values = [...countries].sort((c1, c2) => compareTwoStrings(c2.toLocaleLowerCase(), participantNationality.toLocaleLowerCase()) - compareTwoStrings(c1.toLocaleLowerCase(), participantNationality.toLocaleLowerCase()))
+				const values = [...countries].sort(
+					(c1, c2) =>	compareTwoStrings(c2.toLocaleLowerCase(), participantNationality.toLocaleLowerCase())
+						- compareTwoStrings(c1.toLocaleLowerCase(), participantNationality.toLocaleLowerCase())
+				)
 
 				return R
 					.mapState(setSelectNationalityVisible(true))
@@ -149,6 +153,23 @@ const eventDetailsDialogEpic = createEpic<ParticipantsListDialogEpicStateType, B
 
 				return R
 					.mapState(setSelectNationalityVisible(false))
+			},
+		}),
+
+		participantListDialogFileNamePressed: createUpdater({
+			given: {
+				allParicipants: DbParticipantsUpdatedEvent.condition.wsk('participants'),
+			},
+			when: {
+				participantListDialogFileNamePressedEvent: ParticipantListDialogFileNamePressedEvent.condition,
+			},
+			then: ({
+				R,
+				values: { participantListDialogFileNamePressedEvent: { participantId, fileName }, allParicipants },
+			}) => {
+				window.open(`http://${window.location.host}?participantId=${participantId}&fileName=${fileName}`, '_blank')
+
+				return R
 			},
 		}),
 

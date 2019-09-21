@@ -42,51 +42,67 @@ const syncEpic = createEpic<SyncStateType, empty, empty>({
 
 					allParticipants.reduce((prevPromise, participant, index) => {
 						return prevPromise.then(() => {
-							const existingSheetRecord = seekerJorneySheetData.find(({id}) => participant.id === id)
+							return new Promise((resolve, reject) => {
+								let counter = 0
 
-							const indexInSheet = existingSheetRecord ? seekerJorneySheetData.indexOf(existingSheetRecord) : seekerJorneySheetData.length + newEntriesAddedCount
+								function exec() {
+									const existingSheetRecord = seekerJorneySheetData.find(({id}) => participant.id === id)
 
-							if (!existingSheetRecord) {
-								newEntriesAddedCount ++
-							}
+									const indexInSheet = existingSheetRecord ? seekerJorneySheetData.indexOf(existingSheetRecord) : seekerJorneySheetData.length + newEntriesAddedCount
 
-							dispatch(SyncProgressEvent.create({ index, participant }))
-							const rowIndex = indexInSheet + SeekerJorneySpreadsheetDataOffset + 1
-							const range = `A${rowIndex}:M${rowIndex}`
-							const params = {
-								spreadsheetId: SeekerJorneySpreadsheetId,
-								range,
-								valueInputOption: 'RAW',
-							}
+									dispatch(SyncProgressEvent.create({ index, participant }))
+									const rowIndex = indexInSheet + SeekerJorneySpreadsheetDataOffset + 1
+									const range = `A${rowIndex}:M${rowIndex}`
+									const params = {
+										spreadsheetId: SeekerJorneySpreadsheetId,
+										range,
+										valueInputOption: 'RAW',
+									}
 
-							const valueRangeBody = {
-								range,
-								majorDimension: 'ROWS',
-								values: [
-									[
-										participant.id,
-										indexInSheet + 1,
-										participant.name,
-										participant.phone,
-										participant.email,
-										eventsFor(EventKind.SAMBODH_DHYAAN, participant),
-										eventsFor(EventKind.MAITRI_LIGHT, participant),
-										eventsFor(EventKind.HAVAN, participant),
-										eventsFor(EventKind.SOUL_NOURISHING, participant),
-										eventsFor(EventKind.BODH_1, participant),
-										eventsFor(EventKind.BODH_2, participant),
-										eventsFor(EventKind.BODH_3, participant),
-										eventsFor(EventKind.BODH_4, participant),
-									],
-								],
-							}
+									const valueRangeBody = {
+										range,
+										majorDimension: 'ROWS',
+										values: [
+											[
+												participant.id,
+												indexInSheet + 1,
+												participant.name,
+												participant.phone,
+												participant.email,
+												eventsFor(EventKind.SAMBODH_DHYAAN, participant),
+												eventsFor(EventKind.MAITRI_LIGHT, participant),
+												eventsFor(EventKind.HAVAN, participant),
+												eventsFor(EventKind.SOUL_NOURISHING, participant),
+												eventsFor(EventKind.BODH_1, participant),
+												eventsFor(EventKind.BODH_2, participant),
+												eventsFor(EventKind.BODH_3, participant),
+												eventsFor(EventKind.BODH_4, participant),
+											],
+										],
+									}
 
-							const request = gapi.client.sheets.spreadsheets.values.update(params, valueRangeBody)
+									const request = gapi.client.sheets.spreadsheets.values.update(params, valueRangeBody)
 
-							return request.then(function(response) {
-								console.log('sync response for', participant.id, participant.name, response.result) // eslint-disable-line
-							}, function(reason) {
-								alert(`Failed to sync ${participant.name}(${participant.id}): ${reason}`)
+									return request.then(function(response) {
+										if (!existingSheetRecord) {
+											newEntriesAddedCount ++
+										}
+										resolve(response)
+									}, function(reason) {
+										if (counter > 10) {
+											const msg = `Failed to sync ${participant.name}(${participant.id}): ${reason}`
+
+											// eslint-disable-next-line no-console
+											console.warn(msg, reason)
+											alert(msg)
+											reject(msg)
+										} else {
+											counter++
+											setTimeout(exec, 5000)
+										}
+									})
+								}
+								exec()
 							})
 						})
 					}, Promise.resolve()).then(() => {

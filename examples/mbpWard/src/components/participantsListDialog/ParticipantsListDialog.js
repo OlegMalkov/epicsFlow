@@ -63,22 +63,22 @@ export const ParticipantsListDialog = ({ state, dispatch }: PropsType) => {
 												<button onClick={() => dispatch(EditParticipantNationalityBtnClickedEvent.create({ participantId: participant.id }))}>edit</button>
 										}
 									</td>
-									<td>{participant.events.map(e => e.fileName.split('.')[1]).map(fileName => {
-										return (
-											<span key={fileName}>
-												<a
-													href="javascript:void(0)"
-													onClick={() => dispatch(ParticipantListDialogFileNamePressedEvent.create({
-														participantId: participant.id,
-														fileName,
-													}))}
-												>
-													{fileName}
-												</a>
-												<span> </span>
-											</span>
-										)
-									})}</td>
+									<td>{participant.events.map(({ fileName }) => ({ shortName: fileName.split('.')[1], fileName }))
+										.map(({ fileName, shortName }, i) => {
+											return (
+												<span key={i}>
+													<button
+														onClick={() => dispatch(ParticipantListDialogFileNamePressedEvent.create({
+															participantId: participant.id,
+															fileName,
+														}))}
+													>
+														{shortName}
+													</button>
+													<span> </span>
+												</span>
+											)
+										})}</td>
 									<td><button onClick={() => dispatch(EventDetailsDialogDeleteParticipantBtnPressedEvent.create({ index }))}>Delete participant</button></td>
 								</tr>
 							)

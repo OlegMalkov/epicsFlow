@@ -23,28 +23,3 @@ exports.eventFileCrop = (request, response) => {
             });
     });
 };
-
-/**
- * Responds to any HTTP request.
- *
- * @param {!express:Request} req HTTP request context.
- * @param {!express:Response} res HTTP response context.
- */
-exports.read = async (req, res) => {
-  res.set('Access-Control-Allow-Origin', '*');
-
-  // Creates a client
-  const client = new vision.ImageAnnotatorClient();
-
-  /**
-   * TODO(developer): Uncomment the following lines before running the sample.
-   */
-  const fileName = req.query.fileName;
-
-  // Read a remote image as a text document
-  const [result] = await client.documentTextDetection(
-    `gs://${bucketName}/raw/${fileName}`
-  );
-  
-  res.status(200).send(result);
-};

@@ -49,6 +49,7 @@ type WorkspaceStateType = {|
 		participants: Array<ParticipantType>,
 		participantsBoxesScaled: Array<{| box: BoxType, participant: ParticipantType |}>,
 		visibleBoxes: Array<{| box: BoxType, text: string, color: string, thickness: number |}>,
+		focusedParticipantId: string,
 	|},
 	uploadingFile: {| active: bool, progress: number |},
 	pickSelectionArea: {| active: bool, box: BoxType |},
@@ -70,10 +71,13 @@ const initialState: WorkspaceStateType = {
 		participants: [],
 		participantsBoxesScaled: [],
 		visibleBoxes: [],
+		focusedParticipantId: '',
 	},
 	uploadingFile: { progress: 0, active: false },
 	pickSelectionArea: { active: false, box: emptyBox },
 }
+
+const MARGIN = 10
 
 const setOpenedFileUrl = setPath2<WorkspaceStateType, *, *>('openedFile', 'url')
 const setOpenedFileParticipants = setPath2<WorkspaceStateType, *, *>('openedFile', 'participants')
@@ -81,6 +85,7 @@ const setOpenedFileParticipantsBoxesScaled = setPath2<WorkspaceStateType, *, *>(
 const setOpenedFileVisibleBoxes = setPath2<WorkspaceStateType, *, *>('openedFile', 'visibleBoxes')
 const setOpenedFileName = setPath2<WorkspaceStateType, *, *>('openedFile', 'name')
 const setOpenedFileDimensions = setPath2<WorkspaceStateType, *, *>('openedFile', 'dimensions')
+const setOpenedFileFocusedParticipantId = setPath2<WorkspaceStateType, *, *>('openedFile', 'focusedParticipantId')
 const setOpenedFileScale = setPath2<WorkspaceStateType, *, *>('openedFile', 'scale')
 const setOpenedFileRecognizedTexts = setPath2<WorkspaceStateType, *, *>('openedFile', 'recognizedTexts')
 const setOpenedFileRecognizedTextsScaled = setPath2<WorkspaceStateType, *, *>('openedFile', 'recognizedTextsScaled')
@@ -217,7 +222,7 @@ const workspaceEpic = createEpic<WorkspaceStateType, BuiltInEffectType, empty>({
 		),
 		fileUploadComplete: createSimpleUpdater(
 			WorkspaceOpenFileCmd.condition,
-			({ R, value: { fileName }, dispatch }) => {
+			({ R, value: { fileName, participantId }, dispatch }) => {
 				storageRef.child(`raw/${fileName}`).getDownloadURL().then(function(fileUrl) {
 					dispatch(WorkspaceFileUrlFetchedEvent.create({ fileUrl }))
 				})
@@ -250,6 +255,7 @@ const workspaceEpic = createEpic<WorkspaceStateType, BuiltInEffectType, empty>({
 					.mapState(resetFileUpload)
 					.mapState(setOpenedFileName(fileName))
 					.mapState(setOpenedFileDimensions({ width: 0, height: 0 }))
+					.mapState(setOpenedFileFocusedParticipantId(participantId || ''))
 			},
 		),
 		fileUrlFetched: createSimpleUpdater(
@@ -368,16 +374,24 @@ const workspaceEpic = createEpic<WorkspaceStateType, BuiltInEffectType, empty>({
 				recognizedTextsScaled: WorkspaceOpenedFileRecognizedTextsScaled,
 				participantsBoxesScaled: WorkspaceOpenedFileParticipantsBoxesScaled,
 			},
-			then: ({ values: { recognizedTextsScaled, participantsBoxesScaled }, R }) => {
+			then: ({ values: { recognizedTextsScaled, participantsBoxesScaled }, R, state }) => {
+				const { focusedParticipantId } = state.openedFile
+
 				return R.mapState(setOpenedFileVisibleBoxes(
 					[
-						...recognizedTextsScaled.map(({box, text}) => ({ box, text, color: 'orange', thickness: 1 })),
-						...participantsBoxesScaled.map(({ box, participant }) => ({
-							box,
-							text: `${participant.name} - ${participant.nationality} - ${participant.phone} - ${participant.email}`,
-							color: 'green',
-							thickness: 2,
-						})),
+						...(focusedParticipantId ? [] : recognizedTextsScaled)
+							.map(({box, text}) => ({ box, text, color: 'orange', thickness: 1 })),
+						...participantsBoxesScaled
+							.filter(({ participant }) => {
+								if (!focusedParticipantId) return true
+								return participant.id === focusedParticipantId
+							})
+							.map(({ box, participant }) => ({
+								box: { left: box.left - MARGIN, top: box.top, width: box.width + 2 * MARGIN, height: box.height },
+								text: `${participant.name} - ${participant.nationality} - ${participant.phone} - ${participant.email}`,
+								color: participant.id === focusedParticipantId ? 'red' : 'green',
+								thickness: 2,
+							})),
 					]
 				))
 			},
