@@ -4,8 +4,10 @@
     left: 0;
     z-index: 100000;
     background-color: lightgray;
-    min-height: 100%;
+    min-height: 30%;
     padding-top: 40px;
+    max-height: 90%;
+    overflow-y: scroll;
 }
 
 .EventsListDialog {

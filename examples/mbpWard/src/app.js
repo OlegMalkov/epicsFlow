@@ -10,10 +10,11 @@ import { Workspace } from './components/workspace/Workspace'
 import { User } from './components/user/User'
 import { SelectionFrame } from './components/selectionFrame/SelectionFrame'
 import { ParticipantEditor } from './components/participantEditor/ParticipantEditor'
-import { FloatingActionBtnPressedEvent } from './appMsgs'
+import { FloatingActionBtnPressedEvent, OpenAllParticipantsBtnPressedEvent } from './appMsgs'
 import { EventsListDialog } from './components/eventsListDialog/EventsListDialog'
-import { EventDetailsDialog } from './components/eventDetailsDialog/EventDetailsDialog'
+import { ParticipantsListDialog } from './components/participantsListDialog/ParticipantsListDialog'
 import { Sync } from './components/sync/Sync'
+import './components/participantsListDialog/ParticipantsListDialog.css'
 
 declare var window: EventTarget;
 const initialState = mbpStore.getState()
@@ -67,8 +68,11 @@ export class App extends Component<{}, typeof initialState> {
 				<SelectionFrame state={this.state.selectionFrame} />
 				<ParticipantEditor state={this.state.participantEditor} dispatch={mbpStore.dispatch} />
 				<div className="openEventsListDialogActionBtn" onClick={() => mbpStore.dispatch(FloatingActionBtnPressedEvent.create())} />
+				<div className="openAllParticipantsListDialogBtn" onClick={() => mbpStore.dispatch(OpenAllParticipantsBtnPressedEvent.create())} >
+					list
+				</div>
 				<EventsListDialog state={this.state.eventsListDialog} dispatch={mbpStore.dispatch} />
-				<EventDetailsDialog state={this.state.eventDetailsDialog} dispatch={mbpStore.dispatch} />
+				<ParticipantsListDialog state={this.state.participantsListDialog} dispatch={mbpStore.dispatch} />
 				<Sync state={this.state.sync} dispatch={mbpStore.dispatch} />
 			</div>
 		)

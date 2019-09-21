@@ -77,3 +77,24 @@
   cursor: pointer;
   z-index: 100000;
 }
+
+.openAllParticipantsListDialogBtn {
+  position: absolute;
+  left: 20px;
+  bottom: 70px;
+  border-radius: 50%;
+  background-color: gray;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  z-index: 100000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  color: white;
+}
+
+select {
+  font-size: 16px;
+}

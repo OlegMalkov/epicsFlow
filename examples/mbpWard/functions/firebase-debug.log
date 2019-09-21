@@ -1,0 +1,13 @@
+[debug] [2019-09-21T16:39:10.258Z] ----------------------------------------------------------------------
+[debug] [2019-09-21T16:39:10.260Z] Command:       /usr/local/bin/firebase /Users/olgamalkova/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/bin/firebase deploy
+[debug] [2019-09-21T16:39:10.260Z] CLI Version:   7.3.2
+[debug] [2019-09-21T16:39:10.260Z] Platform:      darwin
+[debug] [2019-09-21T16:39:10.260Z] Node Version:  v8.16.0
+[debug] [2019-09-21T16:39:10.261Z] Time:          Sat Sep 21 2019 20:39:10 GMT+0400 (+04)
+[debug] [2019-09-21T16:39:10.261Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2019-09-21T16:39:10.268Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2019-09-21T16:39:10.268Z] > authorizing via signed-in user
+[debug] [2019-09-21T16:39:10.268Z] [iam] checking project mbp-ward for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2019-09-21T16:39:10.270Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/mbp-ward:testIamPermissions  
+

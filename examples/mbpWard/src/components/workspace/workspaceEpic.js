@@ -31,7 +31,7 @@ import {
 } from '../participantEditor/participantEditorMsgs'
 import { bboxToBox, scaleBox } from '../utils'
 import { DbParticipantsUpdatedEvent } from '../firebase/firebaseEvents'
-import { OpenEventDetailsDialogCmd } from '../eventDetailsDialog/eventDetailsDialogMsgs'
+import { OpenEventDetailsDialogCmd } from '../participantsListDialog/participantsListDialogMsgs'
 
 type WorkspaceStateType = {|
 	allParticipants: Array<ParticipantType>,

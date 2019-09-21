@@ -4,8 +4,11 @@ import React from 'react'
 import { type EventsListDialogEpicStateType } from './eventsListDialogEpic'
 import './EventsListDialog.css'
 import { type DispatchType } from '../../../../../src/epics'
-import { EventListDialogEventRowPressedEvent, EventsListDialogCloseBtnPressedEvent } from './eventsListDialogMsgs'
-import { OpenEventDetailsDialogCmd } from '../eventDetailsDialog/eventDetailsDialogMsgs'
+import {
+	EventListDialogEventRowPressedEvent,
+	EventsListDialogCloseBtnPressedEvent,
+} from './eventsListDialogMsgs'
+import { OpenEventDetailsDialogCmd } from '../participantsListDialog/participantsListDialogMsgs'
 
 type PropsType = {|
     state: EventsListDialogEpicStateType,
@@ -25,7 +28,7 @@ export const EventsListDialog = ({ state, dispatch }: PropsType) => {
 					>
 						<span className="EventsListDialogEventRowText" style={{ width: 100 }}>{event.date}</span>
 						<span className="EventsListDialogEventRowText" style={{ width: 150 }}>{event.eventKind}</span>
-						<span className="EventsListDialogEventRowText" style={{ width: 60 }}>{event.place}</span>
+						<span className="EventsListDialogEventRowText" style={{ width: 160 }}>{event.place}</span>
 						<span className="EventsListDialogEventRowText" style={{ width: 20 }}>{event.participantsCount}</span>
 						<button onClick={() => dispatch(EventListDialogEventRowPressedEvent.create({ index }))}>Open</button>
 						<button onClick={() => dispatch(OpenEventDetailsDialogCmd.create({ eventFileName: event.fileName }))}>Details</button>
