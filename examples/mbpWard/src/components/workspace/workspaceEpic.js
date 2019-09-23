@@ -32,6 +32,7 @@ import {
 import { bboxToBox, scaleBox } from '../utils'
 import { DbParticipantsUpdatedEvent } from '../firebase/firebaseEvents'
 import { OpenEventDetailsDialogCmd } from '../participantsListDialog/participantsListDialogMsgs'
+import { keyDownEvent } from '../../globalEvents'
 
 type WorkspaceStateType = {|
 	allParticipants: Array<ParticipantType>,
@@ -128,9 +129,13 @@ const rectsAreIntersect = (r1, r2) => {
 			r2.bottom < r1.top)
 }
 
-const makeSelectionAreaBtnKindPressedUpdater = ({ btnPressedEvent, cmd, fix }) => createSimpleUpdater(
-	btnPressedEvent.condition,
-	({ R, state }) => {
+const makeSelectionAreaBtnKindPressedUpdater = ({ btnPressedEvent, keyCode, cmd, fix }) => createUpdater({
+	given: {},
+	when: {
+		_: btnPressedEvent.condition.to(),
+		_kd: keyDownEvent.condition.withGuard(e => e.keyCode === keyCode).to(),
+	},
+	then: ({ R, state }) => {
 		const result = R.mapState(resetPickSelectionArea)
 
 		const box = toOrigBox(state.pickSelectionArea.box, state.openedFile.scale)
@@ -171,8 +176,8 @@ const makeSelectionAreaBtnKindPressedUpdater = ({ btnPressedEvent, cmd, fix }) =
 				box: bboxToBox(recognizedTextsBbox),
 			}))
 		)
-	}
-)
+	},
+})
 
 const workspaceEpic = createEpic<WorkspaceStateType, BuiltInEffectType, empty>({
 	vcet,
@@ -315,21 +320,25 @@ const workspaceEpic = createEpic<WorkspaceStateType, BuiltInEffectType, empty>({
 			({ R }) => R.mapState(resetPickSelectionArea)
 		),
 		pickSelectionAreaKindName: makeSelectionAreaBtnKindPressedUpdater({
+			keyCode: 49,
 			btnPressedEvent: WorkspacePickSelectionAreaKindNameBtnPressedEvent,
 			cmd: ParticipantEditorSetNameAndBoxCmd,
 			fix: s => s,
 		}),
 		pickSelectionAreaKindPhone: makeSelectionAreaBtnKindPressedUpdater({
+			keyCode: 50,
 			btnPressedEvent: WorkspacePickSelectionAreaKindPhoneBtnPressedEvent,
 			cmd: ParticipantEditorSetPhoneAndBoxCmd,
 			fix: s => s.toLowerCase().replace(/s/g, '5').replace(/j/g, '5').replace(/o/g, '0').replace(/\s/g, '').replace(/\./g, '').replace(/-/g, '').replace(/t/g, '+'),
 		}),
 		pickSelectionAreaKindEmail: makeSelectionAreaBtnKindPressedUpdater({
+			keyCode: 51,
 			btnPressedEvent: WorkspacePickSelectionAreaKindEmailBtnPressedEvent,
 			cmd: ParticipantEditorSetEmailAndBoxCmd,
 			fix: s => s.replace(/\s/g, ''),
 		}),
 		pickSelectionAreaKindNationality: makeSelectionAreaBtnKindPressedUpdater({
+			keyCode: 52,
 			btnPressedEvent: WorkspacePickSelectionAreaKindNationalityBtnPressedEvent,
 			cmd: ParticipantEditorSetNationalityAndBoxCmd,
 			fix: s => s.replace(/\s/g, ''),
