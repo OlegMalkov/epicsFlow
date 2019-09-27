@@ -55,7 +55,7 @@ function getQueryVariable(variable: string) {
 	for (let i = 0; i < vars.length; i++) {
 		const pair = vars[i].split('=')
 
-		if (decodeURIComponent(pair[0]) == variable) {
+		if (decodeURIComponent(pair[0]).toString() === variable.toString()) {
 			return decodeURIComponent(pair[1])
 		}
 	}

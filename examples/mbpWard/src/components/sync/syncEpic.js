@@ -5,7 +5,7 @@ import { setProp } from '../../../../../src/utils'
 import { GapiSeekerJorneySheetDataFetched } from '../gapi/gapiEvents'
 import { initGapiAndFetchSeekersJorneyData, gapi } from '../gapi/gapi'
 import { DbParticipantsUpdatedEvent } from '../firebase/firebaseEvents'
-import { SyncBtnPressedEvent, SyncCompleteEvent, SyncProgressEvent } from './syncMsgs'
+import { SyncBtnPressedEvent, SyncCompleteEvent } from './syncMsgs'
 import { SeekerJorneySpreadsheetId, EventKind, SeekerJorneySpreadsheetDataOffset } from '../constants'
 import { getEventKindFromFileName, getDateFromFileName } from '../utils'
 

@@ -1733,4 +1733,22 @@ const countries = [
 	},
 ].map(x => x.en_short_name)
 
+declare var $R: any
+window.countries = countries
+window.getNationaliesCount = () => {
+	const map = $R.store.getState().workspace.allParticipants.reduce((a,p) => {
+		let n = p.nationality
+
+		if (!countries.includes(n)) {
+			n = 'unknown'
+		}
+		if (!a[n]) {
+			a[n] = 0
+		}
+		a[n]++
+		return a
+	}, {})
+
+	return Object.keys(map).sort((k1,k2) => map[k2] - map[k1]).map(k => `${k} - ${map[k]}`).join('\n')
+}
 export { countries }
