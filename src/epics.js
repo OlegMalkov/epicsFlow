@@ -427,6 +427,7 @@ function createUpdater<S: AnyValueType, SC: Object, DO: { [string]: { msgType: s
 	let noActiveConditions = true
 	const conditionKeysToConditionUpdaterKeys = []
 	const compulsoryConditionsKeys = []
+	// $FlowFixMe
 	const conditions = given ? ({ ...Object.keys(given).reduce((r, k: string) => ({ ...r, [k]: given[k].toPassive() }), {}), ...when }) : when
 
 	Object.keys(when).forEach(reactsToKey => {
@@ -1050,6 +1051,7 @@ const createExecuteMsg = ({
 						executionLevelTrace.executedEpics.push({
 							epicVcet: subVcet,
 							epicKey: epicKeyByVcet[subVcet],
+							// $FlowFixMe
 							epicNotExecutedBecause: `msg.targetEpicVcetMap ${Object.keys(msg.targetEpicVcetMap).join(', ')} does not contain ${subVcet}`,
 						})
 					}
@@ -1292,11 +1294,11 @@ const createExecuteMsg = ({
 					}
 				})
 				if (updaterKeysThatChangedState.length) {
-					const epicChangedEvent: EpicStateChangedEventType = {
+					const epicChangedEvent: EpicStateChangedEventType = ({
 						type: subVcet,
 						payload: epicStateUpdate.state,
 						...customEpicChangedEventFields,
-					}
+					}: any)
 
 					msgsChain.forEach(msg => {
 						if (msg.type === subVcet) {
@@ -1991,8 +1993,8 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 				}
 			}),
 			injectEpics: epicsToInject => {
-				// eslint-disable-next-line no-param-reassign
-				epics = { ...epics, ...getObjectKeys(epicsToInject).reduce((r,k) => ({ ...r, [createPluginStateKey(k)]: epicsToInject[k] }), {})}
+				// $FlowFixMe
+				epics = ({ ...epics, ...getObjectKeys(epicsToInject).reduce((r,k) => ({ ...r, [createPluginStateKey(k)]: epicsToInject[k] }), {})}: any)// eslint-disable-line no-param-reassign
 			},
 			getEpics: () => {
 				if (!pluginInitializationComplete) {throw new Error('getEpics can not be used during plugin initialization because they are not in the final state yet.')}
@@ -2109,7 +2111,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		},
 		_getNextStateForMsgWithoutUpdatingStoreState: (msg) => {
 			if (storeReplacement) {
-				return storeReplacement._getNextStateForMsgWithoutUpdatingStoreState(msg)
+				return (storeReplacement._getNextStateForMsgWithoutUpdatingStoreState(msg): any)
 			}
 			const epicsStateUpdate = {}
 			const conditionsValuesUpdate = {}
@@ -2179,7 +2181,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 
 			storeReplacement = createStore(creaceEpicsStoreConfig, true)
 			storeReplacement._setState(currentState)
-			stateChangedSubscribers.forEach(sub => storeReplacement.subscribe(sub))
+			stateChangedSubscribers.forEach(sub => storeReplacement.subscribe((sub: any)))
 			outMsgSubscribers.forEach(sub => storeReplacement.subscribeOutMsg(sub))
 			// TODO dispose side effects
 		},
@@ -2194,7 +2196,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		},
 		getState() {
 			if (storeReplacement) {
-				return storeReplacement.getState()
+				return (storeReplacement.getState(): any)
 			}
 			return (outsideState: any)
 		},
@@ -2206,6 +2208,7 @@ function createStore<Epics: { [string]: EpicType<*, *, *, *> }> ({
 		},
 		subscribe: subscriber => {
 			if (storeReplacement) {
+				// $FlowFixMe
 				storeReplacement.subscribe(subscriber)
 			}
 			stateChangedSubscribers.push(subscriber)
